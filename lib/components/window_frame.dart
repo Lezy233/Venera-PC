@@ -416,10 +416,10 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
                             if (!App.isMacOS) const DesktopInlineMenuBar(),
                             if (App.isMacOS)
                               const SizedBox(width: AppSpacing.md),
+                            const DesktopBookshelfToggle(),
                             const Expanded(
                               child: DragToMoveArea(child: SizedBox.expand()),
                             ),
-                            const DesktopLayoutControls(),
                             if (kDebugMode && widget.debugAction != null)
                               TextButton(
                                 onPressed: widget.debugAction,
@@ -431,9 +431,6 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
                         // Keep the command center at the exact window
                         // centre instead of centring inside the remaining
                         // space after the menus/buttons.
-                        const Positioned.fill(
-                          child: Center(child: DesktopSearchBox()),
-                        ),
                       ],
                     ),
                   ),

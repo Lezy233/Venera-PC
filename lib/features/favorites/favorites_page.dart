@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 import 'package:venera_next/components/sidebar_resize_handle.dart';
@@ -33,7 +34,47 @@ class FavoritesPage extends StatefulWidget {
   State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
+class _FavoritesPageState extends SettingsSaveState<FavoritesPage>
+    with WorkspaceViewState<FavoritesPage> {
+  @override
+  String get workspaceViewKey => 'favorites';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'folder': folder,
+    'seriesId': seriesId,
+    'network': isNetwork,
+    'sidebarCollapsed': leftBarCollapsed,
+    'sidebarWidth': _leftBarWidth,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    final name = saved['folder'];
+    final network = saved['network'] == true;
+    folder =
+        name is String &&
+            (network || FavoritesScope.read(context).existsFolder(name))
+        ? name
+        : null;
+    isNetwork = network;
+    final series = saved['seriesId'];
+    seriesId =
+        series is String &&
+            FavoritesScope.read(context).seriesById(series) != null
+        ? series
+        : null;
+    if (saved['sidebarCollapsed'] is bool) {
+      leftBarCollapsed = saved['sidebarCollapsed'] as bool;
+    }
+    final width = saved['sidebarWidth'];
+    if (width is num && width.isFinite) {
+      _leftBarWidth = width.toDouble().clamp(
+        _kLeftBarMinWidth,
+        _kLeftBarMaxWidth,
+      );
+    }
+  }
+
   Route<void>? _folderSelector;
   late final FavoriteSidebarSections _sections;
   final _sectionFeedback = ValueNotifier<int>(0);
@@ -145,8 +186,9 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    bindWorkspaceView();
     _chrome = DesktopChromeScope.maybeRead(context);
-    _syncChrome();
+    // build schedules the complete chrome sync after dependency/layout changes.
   }
 
   void _syncChrome() {

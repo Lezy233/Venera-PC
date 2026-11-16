@@ -62,6 +62,26 @@ class DesktopLayoutControls extends StatelessWidget {
   }
 }
 
+class DesktopBookshelfToggle extends StatelessWidget {
+  const DesktopBookshelfToggle({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final chrome = DesktopChromeScope.maybeOf(context);
+    if (chrome?.bookshelfAvailable != true) return const SizedBox.shrink();
+    return Semantics(
+      toggled: chrome!.bookshelfExpanded,
+      child: IconButton(
+        tooltip: 'Toggle bookshelf'.tl,
+        icon: const Icon(
+          Icons.view_sidebar_outlined,
+          size: AppSizes.shellIconSize,
+        ),
+        onPressed: chrome.toggleBookshelf,
+      ),
+    );
+  }
+}
+
 class _SidebarToggleButton extends StatelessWidget {
   const _SidebarToggleButton({
     required this.tooltip,
@@ -195,98 +215,120 @@ class DesktopInlineMenuBar extends StatelessWidget {
     return ListenableBuilder(
       listenable: chrome,
       builder: (context, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _InlineMenu(
-              label: 'File'.tl,
-              items: [
+        final menus = <_InlineMenu>[
+          _InlineMenu(
+            label: 'File'.tl,
+            items: [
+              _InlineItem(
+                label: 'Settings…'.tl,
+                onSelected: chrome.openSettingsAction,
+              ),
+              _InlineItem(
+                label: 'Search…'.tl,
+                onSelected: chrome.openSearchAction,
+              ),
+              _InlineItem(
+                label: 'Close Window'.tl,
+                onSelected: () => windowManager.close(),
+              ),
+            ],
+          ),
+          _InlineMenu(
+            label: 'View'.tl,
+            items: [
+              _InlineItem(
+                label: 'Left sidebar'.tl,
+                checked: chrome.leftExpanded,
+                enabled: chrome.favoritesActive && chrome.leftAvailable,
+                onSelected: chrome.toggleLeftSidebar,
+              ),
+              _InlineItem(
+                label: 'Right sidebar'.tl,
+                checked: chrome.rightExpanded,
+                enabled: chrome.favoritesActive && chrome.rightAvailable,
+                onSelected: chrome.toggleRightSidebar,
+              ),
+              _InlineItem(
+                label: 'Full Screen'.tl,
+                onSelected: () => toggleDesktopFullScreen(),
+              ),
+            ],
+          ),
+          _InlineMenu(
+            label: 'Navigate'.tl,
+            items: [
+              for (var index = 0; index < 4; index++)
                 _InlineItem(
-                  label: 'Settings…'.tl,
-                  onSelected: chrome.openSettingsAction,
+                  label: const [
+                    'Home',
+                    'Favorites',
+                    'Explore',
+                    'Categories',
+                  ][index].tl,
+                  onSelected: chrome.canNavigate
+                      ? () => chrome.navigateTo(index)
+                      : null,
                 ),
-                _InlineItem(
-                  label: 'Search…'.tl,
-                  onSelected: chrome.openSearchAction,
-                ),
-                _InlineItem(
-                  label: 'Close Window'.tl,
-                  onSelected: () => windowManager.close(),
-                ),
-              ],
-            ),
-            _InlineMenu(
-              label: 'View'.tl,
-              items: [
-                _InlineItem(
-                  label: 'Left sidebar'.tl,
-                  checked: chrome.leftExpanded,
-                  enabled: chrome.favoritesActive && chrome.leftAvailable,
-                  onSelected: chrome.toggleLeftSidebar,
-                ),
-                _InlineItem(
-                  label: 'Right sidebar'.tl,
-                  checked: chrome.rightExpanded,
-                  enabled: chrome.favoritesActive && chrome.rightAvailable,
-                  onSelected: chrome.toggleRightSidebar,
-                ),
-                _InlineItem(
-                  label: 'Full Screen'.tl,
-                  onSelected: () => toggleDesktopFullScreen(),
-                ),
-              ],
-            ),
-            _InlineMenu(
-              label: 'Navigate'.tl,
-              items: [
-                for (var index = 0; index < 4; index++)
-                  _InlineItem(
-                    label: const [
-                      'Home',
-                      'Favorites',
-                      'Explore',
-                      'Categories',
-                    ][index].tl,
-                    onSelected: chrome.canNavigate
-                        ? () => chrome.navigateTo(index)
-                        : null,
+              _InlineItem(label: 'Back'.tl, onSelected: chrome.goBack),
+            ],
+          ),
+          _InlineMenu(
+            label: 'Reader'.tl,
+            items: [
+              _InlineItem(
+                label: 'Reading Settings'.tl,
+                onSelected: chrome.readerActions?.openSettings,
+              ),
+              _InlineItem(
+                label: 'Chapter List'.tl,
+                onSelected: chrome.readerActions?.openChapters,
+              ),
+              _InlineItem(
+                label: 'Thumbnails'.tl,
+                onSelected: chrome.readerActions?.toggleThumbnails,
+              ),
+            ],
+          ),
+          _InlineMenu(
+            label: 'Help'.tl,
+            items: [
+              _InlineItem(
+                label: 'About VeneraNext'.tl,
+                onSelected: () => showDesktopAbout(),
+              ),
+              _InlineItem(
+                label: 'GitHub Repository'.tl,
+                onSelected: () =>
+                    launchUrlString('https://github.com/Lezy233/Venera-Next'),
+              ),
+            ],
+          ),
+        ];
+        if (Breakpoints.isCompact(context)) {
+          return PopupMenuButton<(int, int)>(
+            tooltip: 'Application menu'.tl,
+            icon: const Icon(Icons.menu, size: AppSizes.shellIconSize),
+            onSelected: (selection) =>
+                menus[selection.$1].items[selection.$2].onSelected?.call(),
+            itemBuilder: (_) => [
+              for (var group = 0; group < menus.length; group++) ...[
+                if (group > 0) const PopupMenuDivider(),
+                for (var item = 0; item < menus[group].items.length; item++)
+                  CheckedPopupMenuItem(
+                    value: (group, item),
+                    checked: menus[group].items[item].checked,
+                    enabled:
+                        menus[group].items[item].enabled &&
+                        menus[group].items[item].onSelected != null,
+                    child: Text(
+                      '${menus[group].label} · ${menus[group].items[item].label}',
+                    ),
                   ),
-                _InlineItem(label: 'Back'.tl, onSelected: chrome.goBack),
               ],
-            ),
-            _InlineMenu(
-              label: 'Reader'.tl,
-              items: [
-                _InlineItem(
-                  label: 'Reading Settings'.tl,
-                  onSelected: chrome.readerActions?.openSettings,
-                ),
-                _InlineItem(
-                  label: 'Chapter List'.tl,
-                  onSelected: chrome.readerActions?.openChapters,
-                ),
-                _InlineItem(
-                  label: 'Thumbnails'.tl,
-                  onSelected: chrome.readerActions?.toggleThumbnails,
-                ),
-              ],
-            ),
-            _InlineMenu(
-              label: 'Help'.tl,
-              items: [
-                _InlineItem(
-                  label: 'About VeneraNext'.tl,
-                  onSelected: () => showDesktopAbout(),
-                ),
-                _InlineItem(
-                  label: 'GitHub Repository'.tl,
-                  onSelected: () =>
-                      launchUrlString('https://github.com/Lezy233/Venera-Next'),
-                ),
-              ],
-            ),
-          ],
-        );
+            ],
+          );
+        }
+        return Row(mainAxisSize: MainAxisSize.min, children: menus);
       },
     );
   }

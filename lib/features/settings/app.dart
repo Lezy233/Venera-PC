@@ -51,6 +51,27 @@ class _AppSettingsState extends State<AppSettings> {
     return SmoothCustomScrollView(
       slivers: [
         SliverAppbar(title: Text("App".tl)),
+        if (App.isDesktop) ...[
+          SettingPartTitle(title: 'Workspace'.tl, icon: Icons.tab_outlined),
+          SelectSetting.preference(
+            title: 'After closing a tab'.tl,
+            preference: WorkspacePreferences.closeTarget,
+            optionTranslation: {
+              'recent': 'Most recently viewed'.tl,
+              'right': 'Right tab'.tl,
+              'left': 'Left tab'.tl,
+            },
+          ).toSliver(),
+          SelectSetting.preference(
+            title: 'Application startup'.tl,
+            preference: WorkspacePreferences.startup,
+            optionTranslation: {
+              'restore': 'Restore last tabs'.tl,
+              'fresh': 'Open favorites'.tl,
+            },
+            help: 'Applies on the next launch. Your current tabs stay open.'.tl,
+          ).toSliver(),
+        ],
         SettingPartTitle(title: "Data".tl, icon: Icons.storage),
         const LocalStorageSettings().toSliver(),
         ListTile(

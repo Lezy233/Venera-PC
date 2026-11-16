@@ -17,10 +17,45 @@ void main() {
     () {
       for (final mac in [false, true]) {
         final bindings = AppShortcutRegistry.resolve(null, macOS: mac);
-        expect(bindings, hasLength(15));
+        expect(bindings, hasLength(20));
+        expect(
+          bindings.keys,
+          containsAll([
+            'app.openSettings',
+            'app.openSearch',
+            'app.toggleLeftSidebar',
+            'app.toggleRightSidebar',
+            'app.goHome',
+            'app.goFavorites',
+            'app.goExplore',
+            'app.goCategories',
+            'reader.moveLeft',
+            'reader.moveRight',
+            'reader.moveUp',
+            'reader.moveDown',
+            'reader.toggleFullscreen',
+            'reader.nextPage',
+            'reader.prevPage',
+          ]),
+        );
+        expect(bindings['workspace.newTab']!.map(ShortcutCodec.encode), [
+          mac ? 'meta+t' : 'ctrl+t',
+        ]);
+        expect(bindings['workspace.closeTab']!.map(ShortcutCodec.encode), [
+          mac ? 'meta+w' : 'ctrl+w',
+        ]);
+        expect(bindings['workspace.nextTab']!.map(ShortcutCodec.encode), [
+          'ctrl+tab',
+        ]);
+        expect(bindings['workspace.previousTab']!.map(ShortcutCodec.encode), [
+          'ctrl+shift+tab',
+        ]);
+        expect(bindings['workspace.back']!.map(ShortcutCodec.encode), [
+          'alt+arrowleft',
+        ]);
         expect(
           shortcutActions.where((a) => a.context == ShortcutContext.global),
-          hasLength(8),
+          hasLength(13),
         );
         expect(bindings['app.openSettings']!.single.control, !mac);
         expect(bindings['app.openSettings']!.single.meta, mac);

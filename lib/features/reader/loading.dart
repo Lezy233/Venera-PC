@@ -4,7 +4,7 @@ import 'package:venera_next/network/request_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:venera_next/components/loading.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
-import 'package:venera_next/features/history/history_manager.dart';
+import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/local_comics/local.dart';
 import 'package:venera_next/features/reader/reader_page.dart';
 import 'package:venera_next/foundation/res.dart';
@@ -32,14 +32,14 @@ class ReaderWithLoading extends StatefulWidget {
 
 class _ReaderWithLoadingState
     extends LoadingState<ReaderWithLoading, ReaderProps> {
-  final _entryLoader = ReaderEntryLoader(
+  late final _entryLoader = ReaderEntryLoader(
     resolveComicLoader: (key) {
       final source = ComicSource.find(key);
       // Keep an installed source with a missing capability distinct from a
       // missing source; its original failure must not trigger local fallback.
       return source == null ? null : (id) => source.loadComicInfo!(id);
     },
-    findHistory: (id, type) => HistoryManager().find(id, type),
+    findHistory: (id, type) => HistoryScope.read(context).find(id, type),
     findLocalComic: (id, type) => LocalManager().find(id, type),
   );
 

@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -22,9 +23,41 @@ class DesktopReaderActions {
   final VoidCallback? toggleFullscreen;
 }
 
+class DesktopWorkspaceActions {
+  const DesktopWorkspaceActions({
+    required this.newTab,
+    required this.closeTab,
+    required this.nextTab,
+    required this.previousTab,
+    required this.back,
+  });
+  final VoidCallback newTab, closeTab, nextTab, previousTab, back;
+}
+
 /// Shell-level state shared by the custom title bar, menus and shortcuts.
 /// Pages register their available sidebars/actions while they are mounted.
 class DesktopChromeController extends ChangeNotifier {
+  bool _disposed = false;
+  DesktopWorkspaceActions? _workspaceActions;
+  DesktopWorkspaceActions? get workspaceActions => _workspaceActions;
+  void setWorkspaceActions(DesktopWorkspaceActions? actions) {
+    if (identical(_workspaceActions, actions)) return;
+    _workspaceActions = actions;
+    notifyListeners();
+  }
+
+  VoidCallback? _toggleBookshelf;
+  bool _bookshelfExpanded = true;
+  bool get bookshelfAvailable => _toggleBookshelf != null;
+  bool get bookshelfExpanded => _bookshelfExpanded;
+  void toggleBookshelf() => _toggleBookshelf?.call();
+  void setBookshelf({VoidCallback? toggle, bool expanded = true}) {
+    if (_toggleBookshelf == toggle && _bookshelfExpanded == expanded) return;
+    _toggleBookshelf = toggle;
+    _bookshelfExpanded = expanded;
+    notifyListeners();
+  }
+
   bool _favoritesActive = false;
   bool _leftAvailable = false;
   bool _leftExpanded = true;
@@ -91,10 +124,21 @@ class DesktopChromeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setReaderActions(DesktopReaderActions? actions) {
+  void setReaderActions(
+    DesktopReaderActions? actions, {
+    void Function(VoidCallback notification)? dispatch,
+  }) {
     if (identical(actions, _readerActions)) return;
     _readerActions = actions;
-    notifyListeners();
+    void notify() {
+      if (!_disposed) notifyListeners();
+    }
+
+    if (dispatch == null) {
+      notify();
+    } else {
+      dispatch(notify);
+    }
   }
 
   void bindGlobalActions({
@@ -125,6 +169,7 @@ class DesktopChromeController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     searchController.dispose();
     searchFocusNode.dispose();
     super.dispose();
@@ -157,6 +202,8 @@ class DesktopChromeController extends ChangeNotifier {
   }
 
   void openSearchAction() => focusSearch();
+
+  void openGlobalSearch() => _openSearch?.call();
 
   /// Reader actions take precedence over a still-mounted favorites page.
   void updateSearchQuery(String value) {
@@ -197,6 +244,23 @@ class DesktopChromeScope extends InheritedNotifier<DesktopChromeController> {
     required DesktopChromeController controller,
     required super.child,
   }) : super(notifier: controller);
+
+  /// Route owners revoke immediately, but widget listeners cannot rebuild
+  /// during a locked frame. Pure controllers retain synchronous notification.
+  static void setReaderActions(
+    DesktopChromeController? controller,
+    DesktopReaderActions? actions,
+  ) => controller?.setReaderActions(
+    actions,
+    dispatch: (notify) {
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => notify());
+      } else {
+        notify();
+      }
+    },
+  );
 
   static DesktopChromeController? maybeRead(BuildContext context) =>
       context.getInheritedWidgetOfExactType<DesktopChromeScope>()?.notifier;

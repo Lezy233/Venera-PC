@@ -86,7 +86,10 @@ class _FavoritesFolderSidebarState extends State<FavoritesFolderSidebar>
   };
   final _groupFocus = {
     for (final section in FavoriteSidebarSection.values)
-      section: FocusScopeNode(),
+      section: FocusScopeNode(
+        debugLabel: 'favorites-${section.name}-group',
+        traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
+      ),
   };
   final _focusedHeaders = <FavoriteSidebarSection>{};
 

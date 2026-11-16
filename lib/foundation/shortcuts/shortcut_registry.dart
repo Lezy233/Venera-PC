@@ -10,6 +10,11 @@ enum ShortcutContext { global, reader }
 final shortcutCaptureOwner = ValueNotifier<Object?>(null);
 
 enum ShortcutCommand {
+  newTab,
+  closeTab,
+  nextTab,
+  previousTab,
+  goBack,
   openSettings,
   openSearch,
   toggleLeftSidebar,
@@ -73,6 +78,33 @@ class ShortcutAction {
 }
 
 const shortcutActions = <ShortcutAction>[
+  ShortcutAction('workspace.newTab', 'New tab', ShortcutContext.global, [
+    SingleActivator(LogicalKeyboardKey.keyT, control: true),
+  ], ShortcutRunner(ShortcutCommand.newTab)),
+  ShortcutAction('workspace.closeTab', 'Close tab', ShortcutContext.global, [
+    SingleActivator(LogicalKeyboardKey.keyW, control: true),
+  ], ShortcutRunner(ShortcutCommand.closeTab)),
+  ShortcutAction(
+    'workspace.nextTab',
+    'Next tab',
+    ShortcutContext.global,
+    [SingleActivator(LogicalKeyboardKey.tab, control: true)],
+    ShortcutRunner(ShortcutCommand.nextTab),
+    macOSBindings: [SingleActivator(LogicalKeyboardKey.tab, control: true)],
+  ),
+  ShortcutAction(
+    'workspace.previousTab',
+    'Previous tab',
+    ShortcutContext.global,
+    [SingleActivator(LogicalKeyboardKey.tab, control: true, shift: true)],
+    ShortcutRunner(ShortcutCommand.previousTab),
+    macOSBindings: [
+      SingleActivator(LogicalKeyboardKey.tab, control: true, shift: true),
+    ],
+  ),
+  ShortcutAction('workspace.back', 'Go back', ShortcutContext.global, [
+    SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true),
+  ], ShortcutRunner(ShortcutCommand.goBack)),
   ShortcutAction('app.openSettings', 'Open settings', ShortcutContext.global, [
     SingleActivator(LogicalKeyboardKey.comma, control: true),
   ], ShortcutRunner(ShortcutCommand.openSettings)),

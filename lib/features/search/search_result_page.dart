@@ -1,5 +1,6 @@
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -38,7 +39,67 @@ class SearchResultPage extends StatefulWidget {
   State<SearchResultPage> createState() => _SearchResultPageState();
 }
 
-class _SearchResultPageState extends State<SearchResultPage> {
+class _SearchResultPageState extends State<SearchResultPage>
+    with WorkspaceViewState<SearchResultPage> {
+  ScrollController _workspaceScroll = ScrollController();
+  final _workspaceFocus = FocusNode(debugLabel: 'search-result-query');
+  double _workspaceOffset = 0;
+  int _workspacePage = 1;
+  late String _workspaceInput;
+  @override
+  String get workspaceViewKey => 'search-result';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': text,
+    'input': _workspaceInput,
+    'sourceKey': sourceKey,
+    'options': List<String>.of(options),
+    'page': _workspacePage,
+    'scroll': _workspaceOffset,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    sourceKey = saved['sourceKey'] as String? ?? sourceKey;
+    text = saved['keyword'] as String? ?? text;
+    options = (saved['options'] as List?)?.cast<String>().toList() ?? options;
+    validateOptions();
+    _workspaceInput = saved['input'] as String? ?? text;
+    controller.currentText = _workspaceInput;
+    _workspacePage = saved['page'] as int? ?? 1;
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    _workspaceScroll.dispose();
+    _workspaceScroll = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(_workspaceScrolled);
+  }
+
+  void _workspaceScrolled() {
+    if (_workspaceScroll.hasClients) {
+      _workspaceOffset = _workspaceScroll.offset;
+      workspaceBinding?.changed();
+    }
+  }
+
+  void _workspacePageChanged(int value) {
+    _workspacePage = value;
+    workspaceBinding?.changed();
+  }
+
+  void _resetWorkspacePosition() {
+    _workspacePage = 1;
+    _workspaceOffset = 0;
+    final old = _workspaceScroll;
+    _workspaceScroll = ScrollController()..addListener(_workspaceScrolled);
+    WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('search-result-query', _workspaceFocus);
+  }
+
   late SearchBarController controller;
 
   late String sourceKey;
@@ -59,6 +120,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
       text = _applyConfiguredLanguageFilter(text);
       setState(() {
         this.text = text!;
+        _workspaceInput = text;
+        _resetWorkspacePosition();
       });
       unawaited(_recordSearchHistory(text));
       controller.currentText = text;
@@ -75,6 +138,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
   }
 
   void onChanged(String s) {
+    _workspaceInput = s;
+    workspaceBinding?.changed();
     if (!ComicSource.find(sourceKey)!.enableTagsSuggestions) {
       return;
     }
@@ -105,6 +170,9 @@ class _SearchResultPageState extends State<SearchResultPage> {
 
   @override
   void dispose() {
+    workspaceBinding?.unregisterFocus('search-result-query', _workspaceFocus);
+    _workspaceFocus.dispose();
+    _workspaceScroll.dispose();
     Future.microtask(() {
       suggestionsController.remove();
     });
@@ -125,12 +193,14 @@ class _SearchResultPageState extends State<SearchResultPage> {
   void initState() {
     sourceKey = widget.sourceKey;
     text = _applyConfiguredLanguageFilter(widget.text);
+    _workspaceInput = text;
     controller = SearchBarController(currentText: text, onSearch: search);
     options = widget.options ?? const [];
     validateOptions();
     unawaited(_recordSearchHistory(text));
     suggestionsController = _SuggestionsController(controller, sourceKey);
     super.initState();
+    _workspaceScroll.addListener(_workspaceScrolled);
   }
 
   void validateOptions() {
@@ -152,9 +222,13 @@ class _SearchResultPageState extends State<SearchResultPage> {
     var source = ComicSource.find(sourceKey);
     return ComicList(
       key: Key(text + options.toString() + sourceKey),
+      controller: _workspaceScroll,
+      initialPage: _workspacePage,
+      onPageChanged: _workspacePageChanged,
       errorLeading: AppSearchBar(controller: controller, action: buildAction()),
       leadingSliver: SliverSearchBar(
         controller: controller,
+        focusNode: _workspaceFocus,
         onChanged: onChanged,
         action: buildAction(),
       ),
@@ -193,8 +267,9 @@ class _SearchResultPageState extends State<SearchResultPage> {
           if (!previousOptions.isEqualTo(options) ||
               previousSourceKey != sourceKey) {
             text = _applyConfiguredLanguageFilter(controller.text);
+            _workspaceInput = text;
             controller.currentText = text;
-            setState(() {});
+            setState(_resetWorkspacePosition);
           }
         },
       ),

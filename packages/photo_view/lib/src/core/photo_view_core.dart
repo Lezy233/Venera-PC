@@ -140,6 +140,7 @@ class PhotoViewCoreState extends State<PhotoViewCore>
 
   late ScaleBoundaries cachedScaleBoundaries = widget.scaleBoundaries;
 
+  bool _imageSizeInitialized = false;
   late final Size imageSize;
   late final double imageScale;
 
@@ -579,6 +580,12 @@ class PhotoViewCoreState extends State<PhotoViewCore>
 
   /// callback when loading image completely, update scale using [widget.fit] and image's size.
   void _onLoadEnd(Size size) {
+    // A Hero flight can replace the image child while retaining this core.
+    // Its replayed cached frame must not initialize the same final fields twice.
+    if (_imageSizeInitialized) {
+      return;
+    }
+    _imageSizeInitialized = true;
     imageSize = size;
     imageScale = scale;
     if (widget.hasCustomChild) {

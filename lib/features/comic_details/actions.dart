@@ -1,3 +1,4 @@
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
@@ -97,8 +98,7 @@ abstract mixin class ComicPageActions {
       id: comic.id,
       name: comic.title,
       coverPath: comic.cover,
-      author:
-          comic.findAuthor() ?? comic.subTitle ?? comic.uploader ?? '',
+      author: comic.findAuthor() ?? comic.subTitle ?? comic.uploader ?? '',
       type: comic.comicType,
       tags: tags,
     );
@@ -240,10 +240,14 @@ abstract mixin class ComicPageActions {
   ///
   /// [group] the chapter group number, start from 1
   void read([int? ep, int? page, int? group]) {
-    appNavigation.rootContext
+    final owner = WorkspacePageScope.read(context) == null
+        ? appNavigation.rootContext
+        : context;
+    final onClosed = ReaderSessionScope.onClosedOf(owner);
+    owner
         .to(
           () => Reader(
-            onClosed: ReaderSessionScope.onClosedOf(appNavigation.rootContext),
+            onClosed: onClosed,
             type: comic.comicType,
             cid: comic.id,
             name: comic.title,
@@ -414,46 +418,42 @@ abstract mixin class ComicPageActions {
 
   void showMoreActions() {
     final target = comic;
-    contextMenus.show(
-      context,
-      Offset(context.width - 16, context.padding.top),
-      [
-        MenuEntry(
-          icon: Icons.copy,
-          text: "Copy Title".tl,
-          onClick: () {
-            Clipboard.setData(ClipboardData(text: target.title));
-            context.showMessage(message: "Copied".tl);
-          },
-        ),
-        MenuEntry(
-          icon: Icons.copy_rounded,
-          text: "Copy ID".tl,
-          onClick: () {
-            Clipboard.setData(ClipboardData(text: target.id));
-            context.showMessage(message: "Copied".tl);
-          },
-        ),
-        if (target.url != null)
+    contextMenus
+        .show(context, Offset(context.width - 16, context.padding.top), [
           MenuEntry(
-            icon: Icons.link,
-            text: "Copy URL".tl,
+            icon: Icons.copy,
+            text: "Copy Title".tl,
             onClick: () {
-              Clipboard.setData(ClipboardData(text: target.url!));
+              Clipboard.setData(ClipboardData(text: target.title));
               context.showMessage(message: "Copied".tl);
             },
           ),
-        if (target.url != null)
           MenuEntry(
-            icon: Icons.open_in_browser,
-            text: "Open in Browser".tl,
+            icon: Icons.copy_rounded,
+            text: "Copy ID".tl,
             onClick: () {
-              launchUrlString(target.url!);
+              Clipboard.setData(ClipboardData(text: target.id));
+              context.showMessage(message: "Copied".tl);
             },
           ),
-      ],
-      isValid: () => isComicActive(target),
-    );
+          if (target.url != null)
+            MenuEntry(
+              icon: Icons.link,
+              text: "Copy URL".tl,
+              onClick: () {
+                Clipboard.setData(ClipboardData(text: target.url!));
+                context.showMessage(message: "Copied".tl);
+              },
+            ),
+          if (target.url != null)
+            MenuEntry(
+              icon: Icons.open_in_browser,
+              text: "Open in Browser".tl,
+              onClick: () {
+                launchUrlString(target.url!);
+              },
+            ),
+        ], isValid: () => isComicActive(target));
   }
 
   void showComments() {

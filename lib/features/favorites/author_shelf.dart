@@ -306,6 +306,7 @@ class _AuthorShelfState extends State<_AuthorShelf> {
       selected: selected,
       enabled: !dragging && !moving,
       child: ComicTile(
+        bookshelf: true,
         hoverColor: Colors.transparent,
         comic: item,
         heroID: hero,
@@ -554,6 +555,10 @@ class _AuthorShelfState extends State<_AuthorShelf> {
               builder: (context, constraints) {
                 final display = comicFavoriteDisplayState();
                 final delegate = SliverGridDelegateWithComics(
+                  bookshelf: display.isGallery,
+                  textScale:
+                      MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
+                      AppFontSize.body,
                   galleryColumns: display.isGallery
                       ? display.galleryColumns
                       : null,
@@ -677,7 +682,7 @@ class _ShelfTileSurfaceState extends State<_ShelfTileSurface> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final base = widget.selected
-        ? theme.colorScheme.secondaryContainer
+        ? theme.colorScheme.accentContainer
         : theme.colorScheme.surface;
     return MouseRegion(
       opaque: false,

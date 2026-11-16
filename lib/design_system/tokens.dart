@@ -64,6 +64,14 @@ abstract final class AppFontSize {
 
 /// Fixed shell and layout component sizes. See `design-spec.md` §2.7.
 abstract final class AppSizes {
+  static const double bookshelfWidth = 224;
+  static const double workspaceToolbarHeight = 48;
+  static const double workspaceTabWidth = 216;
+  static const double workspaceTabHeight = 44;
+  static const double bookshelfItemHeight = 44;
+  static const double comfortableCoverWidth = 184;
+  static const double compactCoverWidth = 144;
+  static const double coverAspectRatio = 0.68;
   static const double titleBarHeight = 36;
   static const double hairline = 1;
   static const double windowControlWidth = 46;

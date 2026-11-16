@@ -1,4 +1,7 @@
 import 'dart:math' as math;
+import 'package:venera_next/app_shell/workspace/workspace_navigation_scope.dart';
+import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/foundation/keyword_settings_store.dart';
@@ -191,7 +194,10 @@ class ComicTile extends StatelessWidget {
     this.heroID,
     this.displayMode,
     this.hoverColor,
+    this.bookshelf = false,
   });
+
+  final bool bookshelf;
 
   final Comic comic;
 
@@ -251,6 +257,7 @@ class ComicTile extends StatelessWidget {
   }
 
   void showMenu(Offset location, BuildContext context) {
+    final workspace = WorkspaceNavigationScope.maybeOf(context);
     ContextMenuRegion.of(context).show(context, location, [
       MenuEntry(
         icon: Icons.chrome_reader_mode_outlined,
@@ -264,6 +271,22 @@ class ComicTile extends StatelessWidget {
           );
         },
       ),
+      if (workspace != null)
+        MenuEntry(
+          icon: Icons.tab_outlined,
+          text: 'Open in background tab'.tl,
+          onClick: () => workspace.openBackground(
+            WorkspaceRouteRecord(
+              kind: WorkspacePageKind.comic,
+              arguments: {
+                'id': comic.id,
+                'sourceKey': comic.sourceKey,
+                'cover': comic.cover,
+                'title': comic.title,
+              },
+            ),
+          ),
+        ),
       MenuEntry(
         icon: Icons.copy,
         text: 'Copy Title'.tl,
@@ -638,6 +661,7 @@ class ComicTile extends StatelessWidget {
   }
 
   Widget _buildGalleryMode(BuildContext context) {
+    if (bookshelf) return _buildBookshelfMode(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 88;
@@ -680,6 +704,89 @@ class ComicTile extends StatelessWidget {
                     fontSize: compact ? 10 : 13,
                     fontWeight: FontWeight.w500,
                   ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBookshelfMode(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const titleStyle = TextStyle(
+          fontSize: AppFontSize.body,
+          fontWeight: FontWeight.w500,
+        );
+        final painter = TextPainter(
+          text: TextSpan(
+            text: comic.title.replaceAll('\n', ''),
+            style: titleStyle,
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final truncated = painter.width > constraints.maxWidth - AppSpacing.lg;
+        painter.dispose();
+        final largeText =
+            MediaQuery.textScalerOf(context).scale(AppFontSize.body) >
+            AppFontSize.body;
+        final compact =
+            GlobalPreferenceStore(
+              appdata.settings,
+            ).read(FavoritePreferences.density) ==
+            'compact';
+        Widget image = Container(
+          decoration: BoxDecoration(
+            color: context.colorScheme.contentSurfaceRaised,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: buildImage(context),
+        );
+
+        if (heroID != null) {
+          image = Hero(tag: 'cover$heroID', child: image);
+        }
+
+        return Padding(
+          padding: compact
+              ? const EdgeInsets.all(AppSpacing.xs)
+              : const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: image),
+              const SizedBox(height: AppSpacing.xs),
+              SizedBox(
+                height:
+                    MediaQuery.textScalerOf(context).scale(AppFontSize.body) *
+                    (largeText ? 2 : 1) *
+                    1.3,
+                child: Tooltip(
+                  message: truncated ? comic.title : '',
+                  triggerMode: TooltipTriggerMode.manual,
+                  child: Text(
+                    comic.title.replaceAll('\n', ''),
+                    maxLines: largeText ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: AppFontSize.body,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              Text(
+                comic.subtitle ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: AppFontSize.bodySmall,
+                  color: context.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

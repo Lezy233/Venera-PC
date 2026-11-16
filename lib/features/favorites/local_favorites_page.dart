@@ -27,6 +27,7 @@ import 'package:venera_next/components/window_selection_task.dart';
 import 'package:venera_next/features/comic_details/comic_details.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/features/favorites/author_management_dialog.dart';
 import 'package:venera_next/features/favorites/favorite_actions.dart';
 import 'package:venera_next/features/favorites/favorite_filters.dart';
@@ -88,7 +89,85 @@ class LocalFavoritesPage extends StatefulWidget {
   State<LocalFavoritesPage> createState() => _LocalFavoritesPageState();
 }
 
-class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
+class _LocalFavoritesPageState extends State<LocalFavoritesPage>
+    with WorkspaceViewState<LocalFavoritesPage> {
+  @override
+  String get workspaceViewKey => 'local-favorites';
+  void _workspaceScrollChanged() => workspaceBinding?.changed();
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': keyword,
+    'search': searchMode,
+    'readFilter': readFilterSelect,
+    'authors': authorFilters.toList(),
+    'tags': tagFilters.toList(),
+    'sort': sortMode,
+    'selection': [
+      for (final item in selectedComics.keys.whereType<FavoriteItem>())
+        {'id': item.id, 'sourceKey': item.sourceKey, 'type': item.type.value},
+    ],
+    'multiSelect': multiSelectMode,
+    'lastSelectedIndex': lastSelectedIndex,
+    'scroll': scrollController.hasClients
+        ? scrollController.offset
+        : scrollController.initialScrollOffset,
+    'filterPanelOpen': _filterPanelOpen,
+    'authorSection': _authorSectionExpanded,
+    'tagSection': _tagSectionExpanded,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    if (saved['keyword'] is String) keyword = saved['keyword'] as String;
+    searchMode = saved['search'] == true;
+    searchHasUpper = keyword.contains(RegExp(r'[A-Z]'));
+    if (saved['readFilter'] is String &&
+        readFilterList.contains(saved['readFilter'])) {
+      readFilterSelect = saved['readFilter'] as String;
+    }
+    if (saved['authors'] is List) {
+      authorFilters = (saved['authors'] as List).whereType<String>().toSet();
+    }
+    if (saved['tags'] is List) {
+      tagFilters = (saved['tags'] as List).whereType<String>().toSet();
+    }
+    if (saved['sort'] is String && _sortModes.contains(saved['sort'])) {
+      sortMode = saved['sort'] as String;
+    }
+    final selected = saved['selection'];
+    if (selected is List) {
+      final identities = {
+        for (final item in selected.whereType<Map>())
+          (item['id'], item['type']),
+      };
+      selectedComics = {
+        for (final item in manager.getAllComics())
+          if (identities.contains((item.id, item.type.value))) item: true,
+      };
+    }
+    multiSelectMode = saved['multiSelect'] == true && selectedComics.isNotEmpty;
+    lastSelectedIndex = saved['lastSelectedIndex'] is int
+        ? saved['lastSelectedIndex'] as int
+        : null;
+    final offset = saved['scroll'];
+    if (offset is num && offset.isFinite && offset >= 0) {
+      scrollController.dispose();
+      scrollController = ScrollController(
+        initialScrollOffset: offset.toDouble(),
+      );
+      scrollController.addListener(_workspaceScrollChanged);
+    }
+    if (saved['filterPanelOpen'] is bool) {
+      _filterPanelOpen = saved['filterPanelOpen'] as bool;
+    }
+    if (saved['authorSection'] is bool) {
+      _authorSectionExpanded = saved['authorSection'] as bool;
+    }
+    if (saved['tagSection'] is bool) {
+      _tagSectionExpanded = saved['tagSection'] as bool;
+    }
+  }
+
   late List<FavoriteItem> comics;
 
   String? networkSource;
@@ -850,13 +929,16 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
     }
     comics = [];
     _observedManager.addListener(updateComics);
+    scrollController.addListener(_workspaceScrollChanged);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('favorite-selection', _selectionFocusNode);
     _chrome = DesktopChromeScope.maybeRead(context);
-    _syncChrome();
+    // build already schedules the complete chrome sync after this frame.
     if (_queryOwner != null) return;
     _queryOwner = WindowSelectionTask(context);
     updateComics();
@@ -897,6 +979,10 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
   void dispose() {
     _chrome?.setRightSidebar(available: false, expanded: false);
     _chrome?.setFavoritesSearchQuery(null);
+    workspaceBinding?.unregisterFocus(
+      'favorite-selection',
+      _selectionFocusNode,
+    );
     _cancelMetadataUpdates();
     _retireUpdateFlyout();
     _observedManager.removeListener(updateComics);
@@ -1007,9 +1093,13 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final workspaceActive = WorkspacePageScope.watch(context)?.active ?? true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _syncChrome();
-      if (mounted && multiSelectMode && !_selectionFocusNode.hasFocus) {
+      if (mounted &&
+          workspaceBinding?.active != false &&
+          multiSelectMode &&
+          !_selectionFocusNode.hasFocus) {
         _selectionFocusNode.requestFocus();
       }
     });
@@ -1744,7 +1834,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
       },
       child: Focus(
         focusNode: _selectionFocusNode,
-        canRequestFocus: multiSelectMode,
+        canRequestFocus: multiSelectMode && workspaceActive,
         skipTraversal: true,
         onKeyEvent: (node, event) {
           if (consumeFavoriteSelectionEscape(
@@ -1771,7 +1861,9 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
     if (multiSelectMode) return;
     setState(() => multiSelectMode = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && multiSelectMode) _selectionFocusNode.requestFocus();
+      if (mounted && workspaceBinding?.active != false && multiSelectMode) {
+        _selectionFocusNode.requestFocus();
+      }
     });
   }
 

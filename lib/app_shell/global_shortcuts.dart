@@ -11,6 +11,16 @@ class GlobalShortcutTarget implements ShortcutTarget {
   @override
   void invokeShortcut(ShortcutCommand command, KeyEvent event) {
     switch (command) {
+      case ShortcutCommand.newTab:
+        chrome.workspaceActions?.newTab();
+      case ShortcutCommand.closeTab:
+        chrome.workspaceActions?.closeTab();
+      case ShortcutCommand.nextTab:
+        chrome.workspaceActions?.nextTab();
+      case ShortcutCommand.previousTab:
+        chrome.workspaceActions?.previousTab();
+      case ShortcutCommand.goBack:
+        chrome.workspaceActions?.back();
       case ShortcutCommand.openSettings:
         chrome.openSettingsAction();
       case ShortcutCommand.openSearch:

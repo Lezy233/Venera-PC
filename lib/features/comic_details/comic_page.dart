@@ -1,3 +1,5 @@
+import 'package:venera_next/foundation/app_page_route.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/components/file_save_task.dart';
@@ -87,7 +89,27 @@ class ComicPage extends StatefulWidget {
 }
 
 class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
-    with ComicPageActions, ContextMenuOwner {
+    with ComicPageActions, ContextMenuOwner, WorkspaceViewState<ComicPage> {
+  double _workspaceOffset = 0;
+  @override
+  String get workspaceViewKey => 'comic-details';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {'scroll': _workspaceOffset};
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    scrollController.removeListener(onScroll);
+    scrollController.dispose();
+    scrollController = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+  }
+
   @override
   Object? get contextMenuIdentity => data;
   late final _saves = ImageSaveWork(
@@ -197,6 +219,8 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   ComicDetails get comic => data!;
 
   void onScroll() {
+    _workspaceOffset = scrollController.offset;
+    workspaceBinding?.changed();
     var offset =
         scrollController.position.pixels -
         scrollController.position.minScrollExtent;
@@ -272,23 +296,27 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
         Future.microtask(() {
           if (!pageContext.mounted || scope.isCancelled) return;
           final onClosed = ReaderSessionScope.onClosedOf(pageContext);
-          replaceWithRootPage(pageContext, (_) {
-            return Reader(
-              onClosed: onClosed,
-              type: ComicType.local,
-              cid: localComic.id,
-              name: localComic.title,
-              chapters: localComic.chapters,
-              initialPage: history?.page,
-              initialChapter: history?.ep,
-              initialChapterGroup: history?.group,
-              history:
-                  history ??
-                  History.fromModel(model: localComic, ep: 0, page: 0),
-              author: localComic.subTitle ?? '',
-              tags: localComic.tags,
-            );
-          });
+          Widget buildReader(BuildContext _) => Reader(
+            onClosed: onClosed,
+            type: ComicType.local,
+            cid: localComic.id,
+            name: localComic.title,
+            chapters: localComic.chapters,
+            initialPage: history?.page,
+            initialChapter: history?.ep,
+            initialChapterGroup: history?.group,
+            history:
+                history ?? History.fromModel(model: localComic, ep: 0, page: 0),
+            author: localComic.subTitle ?? '',
+            tags: localComic.tags,
+          );
+          if (WorkspacePageScope.read(pageContext) != null) {
+            Navigator.of(
+              pageContext,
+            ).pushReplacement(AppPageRoute(builder: buildReader));
+          } else {
+            replaceWithRootPage(pageContext, buildReader);
+          }
         });
         isFirst = false;
       }

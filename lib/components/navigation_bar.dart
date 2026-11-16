@@ -14,6 +14,9 @@ import 'package:venera_next/routing/app_navigation.dart';
 
 import 'consts.dart';
 import 'gesture.dart';
+import 'package:venera_next/app_shell/bookshelf_workspace.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/foundation/translations.dart';
 
 class PaneItemEntry {
   String label;
@@ -50,6 +53,9 @@ class NaviPane extends StatefulWidget {
     required this.pageBuilder,
     this.initialPage = 0,
     this.onPageChanged,
+    this.bookshelf = false,
+    this.workspace,
+    this.onWorkspaceNavigate,
     required this.observer,
     required this.navigatorKey,
     super.key,
@@ -64,6 +70,10 @@ class NaviPane extends StatefulWidget {
   final void Function(int index)? onPageChanged;
 
   final int initialPage;
+
+  final bool bookshelf;
+  final Widget? workspace;
+  final ValueChanged<int>? onWorkspaceNavigate;
 
   final NaviObserver observer;
 
@@ -125,6 +135,12 @@ class NaviPaneState extends State<NaviPane>
   }
 
   void updatePage(int index) {
+    final navigateWorkspace = widget.onWorkspaceNavigate;
+    if (navigateWorkspace != null) {
+      setState(() => currentPage = index);
+      navigateWorkspace(index);
+      return;
+    }
     for (var listener in _naviItemTapListeners) {
       listener(index);
     }
@@ -204,6 +220,15 @@ class NaviPaneState extends State<NaviPane>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.bookshelf && App.isDesktop) {
+      return SafeArea(
+        bottom: false,
+        child: BookshelfWorkspace(
+          navigation: buildBookshelfNavigation(),
+          child: widget.workspace ?? buildMainView(),
+        ),
+      );
+    }
     onRebuild(context);
     final mq = MediaQuery.of(context);
     final sideInsets = (App.isMobile && mq.orientation == Orientation.landscape)
@@ -287,6 +312,58 @@ class NaviPaneState extends State<NaviPane>
 
   Widget buildMainViewContent() {
     return widget.pageBuilder(currentPage);
+  }
+
+  Widget buildBookshelfNavigation() {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: TextButton.icon(
+              onPressed: () =>
+                  DesktopChromeScope.maybeRead(context)?.openGlobalSearch(),
+              icon: const Icon(Icons.search),
+              label: Text('Search'.tl),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              children: [
+                for (var index = 0; index < widget.paneItems.length; index++)
+                  ListTile(
+                    selected: currentPage == index,
+                    selectedColor: Theme.of(context).colorScheme.accent,
+                    minTileHeight: AppSizes.bookshelfItemHeight,
+                    leading: Icon(
+                      currentPage == index
+                          ? widget.paneItems[index].activeIcon
+                          : widget.paneItems[index].icon,
+                    ),
+                    title: Tooltip(
+                      message: widget.paneItems[index].label,
+                      child: Text(
+                        widget.paneItems[index].label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    onTap: () => updatePage(index),
+                  ),
+              ],
+            ),
+          ),
+          for (final action in widget.paneActions)
+            ListTile(
+              leading: Icon(action.icon),
+              title: Text(action.label),
+              onTap: action.onTap,
+            ),
+        ],
+      ),
+    );
   }
 
   Widget buildTop() {
@@ -749,7 +826,9 @@ class _NaviMainViewState extends State<_NaviMainView> {
 
   @override
   Widget build(BuildContext context) {
-    var shouldShowAppBar = state.controller.value < 2;
+    var shouldShowAppBar =
+        !(state.widget.bookshelf && App.isDesktop) &&
+        state.controller.value < 2;
     return Column(
       children: [
         if (shouldShowAppBar) state.buildTop().paddingTop(context.padding.top),

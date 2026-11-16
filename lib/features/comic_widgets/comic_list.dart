@@ -22,6 +22,7 @@ import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 
 import 'comic_tile.dart';
+import 'package:venera_next/design_system/tokens.dart';
 
 class SliverGridComics extends StatefulWidget {
   const SliverGridComics({
@@ -219,26 +220,31 @@ class _SliverGridComics extends StatelessWidget {
           onBlocked: onBlocked,
           heroID: heroIDs[index],
           displayMode: favoriteDisplayMode,
+          bookshelf: favoriteDisplayMode == ComicTileDisplayMode.gallery,
         );
         if (selection == null) {
           return comic;
         }
         return AnimatedContainer(
           key: ValueKey(comics[index].id),
-          duration: const Duration(milliseconds: 150),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : AppMotion.fast,
           decoration: BoxDecoration(
             color: isSelected
-                ? Theme.of(
-                    context,
-                  ).colorScheme.secondaryContainer.toOpacity(0.72)
+                ? Theme.of(context).colorScheme.accentContainer
                 : null,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          margin: const EdgeInsets.all(4),
+          margin: const EdgeInsets.all(AppSpacing.xs),
           child: comic,
         );
       }, childCount: comics.length),
       gridDelegate: SliverGridDelegateWithComics(
+        bookshelf: favoriteDisplayMode == ComicTileDisplayMode.gallery,
+        textScale:
+            MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
+            AppFontSize.body,
         galleryColumns: galleryColumns,
         forceDetailed: favoriteDisplayMode == ComicTileDisplayMode.detailed,
       ),
@@ -272,6 +278,8 @@ class ComicList extends StatefulWidget {
     this.reloadHandlerCallback,
     this.enablePageStorage = false,
     this.useFavoriteDisplaySettings = false,
+    this.initialPage = 1,
+    this.onPageChanged,
   });
 
   final Future<Res<List<Comic>>> Function(int page)? loadPage;
@@ -296,6 +304,9 @@ class ComicList extends StatefulWidget {
 
   final bool useFavoriteDisplaySettings;
 
+  final int initialPage;
+  final ValueChanged<int>? onPageChanged;
+
   @override
   State<ComicList> createState() => ComicListState();
 }
@@ -305,7 +316,12 @@ class ComicListState extends State<ComicList> {
 
   final Map<int, List<Comic>> _data = {};
 
-  int _page = 1;
+  late int _page = widget.initialPage;
+
+  void _changePage(int value) {
+    _page = value;
+    widget.onPageChanged?.call(value);
+  }
 
   String? _error;
 
@@ -352,7 +368,7 @@ class ComicListState extends State<ComicList> {
     _generation++;
     _isReloading = false;
     _data.clear();
-    _page = 1;
+    _changePage(1);
     _maxPage = null;
     _error = null;
     _nextUrl = null;
@@ -433,7 +449,7 @@ class ComicListState extends State<ComicList> {
               ? () {
                   setState(() {
                     _error = null;
-                    _page--;
+                    _changePage(_page - 1);
                   });
                 }
               : null,
@@ -475,7 +491,7 @@ class ComicListState extends State<ComicList> {
                                     (_maxPage == null || page <= _maxPage!)) {
                                   setState(() {
                                     _error = null;
-                                    _page = page;
+                                    _changePage(page);
                                   });
                                 } else {
                                   context.showMessage(
@@ -511,7 +527,7 @@ class ComicListState extends State<ComicList> {
               ? () {
                   setState(() {
                     _error = null;
-                    _page++;
+                    _changePage(_page + 1);
                   });
                 }
               : null,

@@ -1,3 +1,4 @@
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/foundation/shortcuts/shortcut_registry.dart';
 import 'keyboard_shortcuts.dart';
 import 'package:venera_next/features/history/history_scope.dart';
@@ -135,8 +136,104 @@ class Reader extends StatefulWidget {
 }
 
 class ReaderState extends State<Reader>
-    with ReaderImagePerPageHandler, WidgetsBindingObserver
+    with
+        ReaderImagePerPageHandler,
+        WidgetsBindingObserver,
+        WorkspaceViewState<Reader>
     implements ShortcutTarget {
+  bool _workspaceActive = true;
+  WorkspacePageBinding? _workspacePage;
+  VoidCallback? _resumeWorkspaceImages;
+  final _workspaceEffectsHold = Object();
+  int? _workspaceInitialPage;
+  int _workspaceImagePage = 1;
+  @override
+  String get workspaceViewKey => 'reader';
+  @override
+  Map<String, dynamic> captureWorkspaceView() {
+    // Detach also captures during unmount, when MediaQuery is unavailable.
+    // Retain the last source-image position instead of reading layout then.
+    if (!_stateDisposed && _isInitialized && images?.isNotEmpty == true) {
+      _workspaceImagePage = (pageLayout.imageRange(page, images!.length).$1 + 1)
+          .clamp(1, images!.length);
+    }
+    return {
+      'chapter': chapter,
+      'chapterId': widget.chapters?.ids.elementAtOrNull(chapter - 1),
+      'page': _workspaceImagePage,
+    };
+  }
+
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    final id = saved['chapterId'] as String?;
+    final index = id == null
+        ? -1
+        : widget.chapters?.ids.toList().indexOf(id) ?? -1;
+    controller.restoreChapter(
+      index >= 0 ? index + 1 : saved['chapter'] as int? ?? chapter,
+    );
+    _workspaceInitialPage = saved['page'] as int?;
+    _workspaceImagePage = _workspaceInitialPage ?? 1;
+    if (_workspaceInitialPage case final value?) controller.restorePage(value);
+  }
+
+  void _bindWorkspaceActivity() {
+    bindWorkspaceView();
+    final binding = WorkspacePageScope.watch(context);
+    // ReaderWithLoading already obtained this metadata for reading. Reuse it
+    // for the retained tab; a title must never start another details request.
+    if (binding != null &&
+        widget.name.trim().isNotEmpty &&
+        binding.record.arguments['title'] != widget.name) {
+      binding.record.arguments['title'] = widget.name;
+      binding.changed();
+    }
+    final rebound = !identical(binding, _workspacePage);
+    if (rebound) {
+      _workspacePage?.unregisterFocus('reader-canvas', focusNode);
+      _workspacePage = binding;
+      binding?.registerFocus('reader-canvas', focusNode);
+    }
+    final active = binding?.active ?? true;
+    if (!rebound && active == _workspaceActive) return;
+    _workspaceActive = active;
+    // A prepared pop already holds and drains this session. Route retirement
+    // must not create another foreground revision after that final snapshot.
+    if (!active &&
+        _session.isHeld &&
+        ModalRoute.of(context)?.isActive == false) {
+      return;
+    }
+    _session.setForeground(_volumeForeground && active);
+    if (active) {
+      _resumeWorkspaceImages?.call();
+      _resumeWorkspaceImages = null;
+    } else {
+      _resumeWorkspaceImages ??= imageWork.holdForExit();
+      imageViewController?.cancelKeyboardInput();
+      _shortcuts.clear();
+    }
+    final effects = _platformEffects;
+    if (effects != null) {
+      _observeWindow(effects.handle.hold(_workspaceEffectsHold, !active));
+    }
+    final window = _windowController;
+    if (window != null) _observeWindow(window.setHeld(!active));
+    _observeVolume(_updateVolume());
+    if (binding != null && active) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_stateDisposed && _workspaceActive) {
+          binding.restoreFocus();
+          if (!focusNode.hasFocus && !shortcutTextInputFocused()) {
+            focusNode.requestFocus();
+          }
+        }
+      });
+    }
+  }
+
   final imageWork = ImageWork();
   late final imageFavorites = HistoryScope.readImages(context);
   final _targetValidity = ValueNotifier(0);
@@ -1496,11 +1593,12 @@ class ReaderState extends State<Reader>
         frame?.trackExitTask != _exitFrame?.trackExitTask) {
       unawaited(_closeSession());
     }
+    _bindWorkspaceActivity();
     _volumeRoute = ModalRoute.of(context);
     _volumeCurrent = _volumeRoute?.isCurrent ?? true;
     _observeVolume(_updateVolume());
     if (!_isInitialized) {
-      initImagesPerPage(widget.initialPage ?? 1);
+      initImagesPerPage(_workspaceInitialPage ?? widget.initialPage ?? 1);
       _isInitialized = true;
     } else {
       // For orientation changed
@@ -1559,6 +1657,7 @@ class ReaderState extends State<Reader>
   bool get _canReceiveVolume =>
       supportsVolumeKeys &&
       _volumeRequested &&
+      _workspaceActive &&
       _volumeForeground &&
       _volumeCurrent &&
       (_volumeRoute?.isCurrent ?? true) &&
@@ -1638,6 +1737,9 @@ class ReaderState extends State<Reader>
   }
 
   Future<void Function()> _prepareReaderExit() async {
+    final workspaceRoute = workspaceBinding == null
+        ? null
+        : ModalRoute.of(context);
     final effects = _platformEffects?.prepareForExit();
     void Function()? release;
     final failures =
@@ -1676,6 +1778,10 @@ class ReaderState extends State<Reader>
       throw ReaderWindowFailure(failures);
     }
     return () {
+      // Child guards release their hold before this State is disposed. Once
+      // its workspace route has left, freeze first so that release cannot
+      // restart duration/inputs between the final drain and parent teardown.
+      if (workspaceRoute?.isActive == false) unawaited(_closeSession());
       effects?.release();
       release?.call();
     };
@@ -1863,6 +1969,9 @@ class ReaderState extends State<Reader>
     disposeReaderWindow();
     _targetValidity.dispose();
     _shellChanges.dispose();
+    _workspacePage?.unregisterFocus('reader-canvas', focusNode);
+    _resumeWorkspaceImages?.call();
+    _resumeWorkspaceImages = null;
     super.dispose();
   }
 
@@ -1877,7 +1986,9 @@ class ReaderState extends State<Reader>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _volumeForeground = state == AppLifecycleState.resumed;
-    _session.setForeground(state == AppLifecycleState.resumed);
+    _session.setForeground(
+      _workspaceActive && state == AppLifecycleState.resumed,
+    );
     _observeVolume(_updateVolume());
   }
 
@@ -1931,7 +2042,7 @@ class ReaderState extends State<Reader>
   void onKeyEvent(KeyEvent event) => _dispatchShortcut(event);
 
   KeyEventResult _dispatchShortcut(KeyEvent event) {
-    if (_sessionFrozen) return KeyEventResult.ignored;
+    if (_sessionFrozen || !_workspaceActive) return KeyEventResult.ignored;
     final handled = _shortcuts.dispatch(
       event,
       overrides: appdata.settings['shortcutOverrides'],
@@ -1996,6 +2107,7 @@ class ReaderState extends State<Reader>
 
   void onPageChanged() {
     updateHistory();
+    workspaceBinding?.changed();
     if (!_stateDisposed) _targetValidity.value++;
   }
 

@@ -161,8 +161,7 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final chrome = _chrome = DesktopChromeScope.maybeRead(context);
-    if (chrome == null) return;
+    final chrome = DesktopChromeScope.maybeOf(context);
     final actions = _desktopReaderActions ??= DesktopReaderActions(
       openSettings: openSetting,
       openChapters: openChapterDrawer,
@@ -171,14 +170,27 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
       submitChapterSearch: _submitChapterSearch,
       toggleFullscreen: widget.onFullscreen,
     );
-    chrome.setReaderActions(actions);
+    if (identical(chrome, _chrome) &&
+        identical(chrome?.readerActions, actions)) {
+      return;
+    }
+    final previous = _chrome;
+    _chrome = chrome;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (previous != chrome && identical(previous?.readerActions, actions)) {
+        DesktopChromeScope.setReaderActions(previous, null);
+      }
+      if (mounted && identical(_chrome, chrome)) {
+        DesktopChromeScope.setReaderActions(chrome, actions);
+      }
+    });
   }
 
   @override
   void dispose() {
     final actions = _desktopReaderActions;
     if (actions != null && identical(_chrome?.readerActions, actions)) {
-      _chrome?.setReaderActions(null);
+      DesktopChromeScope.setReaderActions(_chrome, null);
     }
     _chapterQuery.dispose();
     _brightnessPreview.dispose();
@@ -346,10 +358,16 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
 
   void _finishThumbnailResize() => _persistThumbnailSettings();
 
+  // Loading can make a thumbnail panel available. Keep the reader subtree
+  // when it moves into that layout so the same chapter is not fetched again.
+  final _contentKey = GlobalKey();
   Widget _buildBody() {
-    final content = AbsorbPointer(
-      absorbing: widget.data.animating,
-      child: widget.child,
+    final content = KeyedSubtree(
+      key: _contentKey,
+      child: AbsorbPointer(
+        absorbing: widget.data.animating,
+        child: widget.child,
+      ),
     );
     // Thumbnail strips target wide (desktop) layouts; narrow readers keep the
     // full page area and no overlay.

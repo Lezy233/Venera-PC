@@ -13,6 +13,8 @@ import 'desktop_chrome.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import '../foundation/context.dart';
 import 'home_page.dart';
+import 'workspace/desktop_workspace.dart';
+import 'package:venera_next/foundation/app.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -64,6 +66,10 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     _observer = NaviObserver();
     _observer.addListener(_scheduleChromeContextSync);
+    if (App.isDesktop) {
+      super.initState();
+      return;
+    }
     _navigatorKey = GlobalKey();
     appNavigation.mainNavigatorKey = _navigatorKey;
     index = int.parse(
@@ -86,6 +92,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (App.isDesktop) return;
     _chrome = DesktopChromeScope.maybeRead(context);
     _scheduleChromeBinding();
     _scheduleChromeContextSync();
@@ -141,9 +148,11 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (App.isDesktop) return const DesktopWorkspace();
     _scheduleChromeBinding();
     _scheduleChromeContextSync();
     return NaviPane(
+      bookshelf: true,
       key: _naviKey,
       initialPage: index,
       observer: _observer,

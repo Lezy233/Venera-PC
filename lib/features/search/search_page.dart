@@ -1,5 +1,6 @@
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -42,7 +43,63 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage>
+    with WorkspaceViewState<SearchPage> {
+  String _workspaceKeyword = '';
+  double _workspaceOffset = 0;
+  ScrollController _workspaceScroll = ScrollController();
+  @override
+  String get workspaceViewKey => 'search';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': _workspaceKeyword,
+    'sourceKey': _selection.sourceKey,
+    'profileId': _selection.profileId,
+    'aggregated': _selection.aggregated,
+    'options': List<String>.of(options),
+    'scroll': _workspaceOffset,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    _selection = SearchSelection(
+      aggregated: saved['aggregated'] == true,
+      sourceKey: saved['sourceKey'] as String?,
+      profileId: saved['profileId'] as String?,
+    );
+    _resolveSelection();
+    if (_selection.sourceKey == searchTarget && saved['options'] is List) {
+      options = (saved['options'] as List).cast<String>().toList();
+      final configured = ComicSource.find(
+        searchTarget,
+      )?.searchPageData?.searchOptions;
+      if (configured != null && configured.length != options.length) {
+        useDefaultOptions();
+      }
+    }
+    _workspaceKeyword = saved['keyword'] as String? ?? '';
+    controller.currentText = _workspaceKeyword;
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    _workspaceScroll.dispose();
+    _workspaceScroll = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(_workspaceScrolled);
+  }
+
+  void _workspaceScrolled() {
+    if (_workspaceScroll.hasClients) {
+      _workspaceOffset = _workspaceScroll.offset;
+      workspaceBinding?.changed();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('search-query', focusNode);
+    workspaceBinding?.registerFocus('search-aggregate', _aggregateFocus);
+  }
+
   late final SearchBarController controller;
 
   late List<String> searchSources;
@@ -284,10 +341,14 @@ class _SearchPageState extends State<SearchPage> {
     appdata.settings.addListener(updateSearchSourcesIfNeeded);
     SearchProfileManager.instance.addListener(updateSearchSourcesIfNeeded);
     super.initState();
+    _workspaceScroll.addListener(_workspaceScrolled);
   }
 
   @override
   void dispose() {
+    workspaceBinding?.unregisterFocus('search-query', focusNode);
+    workspaceBinding?.unregisterFocus('search-aggregate', _aggregateFocus);
+    _workspaceScroll.dispose();
     focusNode.dispose();
     _aggregateFocus.dispose();
     appdata.settings.removeListener(updateSearchSourcesIfNeeded);
@@ -320,7 +381,7 @@ class _SearchPageState extends State<SearchPage> {
   void updateSearchSourcesIfNeeded() {
     if (!mounted || App.dataPath != _dataPath) return;
     setState(() {
-      if (!_saving) {
+      if (!_saving && workspaceBinding == null) {
         _selection = SearchSelection.read(_dataPath) ?? _initialDefault;
       }
       _resolveSelection();
@@ -373,7 +434,10 @@ class _SearchPageState extends State<SearchPage> {
       return buildEmpty();
     }
     return Scaffold(
-      body: SmoothCustomScrollView(slivers: buildSlivers().toList()),
+      body: SmoothCustomScrollView(
+        controller: _workspaceScroll,
+        slivers: buildSlivers().toList(),
+      ),
     );
   }
 
@@ -385,6 +449,7 @@ class _SearchPageState extends State<SearchPage> {
         child: SliverSearchBar(
           controller: controller,
           onChanged: (s) {
+            _workspaceKeyword = s;
             findSuggestions();
           },
           focusNode: focusNode,
@@ -655,6 +720,7 @@ class _SearchPageState extends State<SearchPage> {
         insert = type != null ? "${type.name}:$t" : t;
       }
       controller.text += "$insert ";
+      _workspaceKeyword = controller.text;
       suggestions.clear();
       update();
       focusNode.requestFocus();

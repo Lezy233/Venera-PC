@@ -1,4 +1,6 @@
 import "package:flutter/material.dart";
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import "package:venera_next/components/appbar.dart";
 import "package:venera_next/components/gesture.dart";
@@ -26,7 +28,69 @@ class AggregatedSearchPage extends StatefulWidget {
   State<AggregatedSearchPage> createState() => _AggregatedSearchPageState();
 }
 
-class _AggregatedSearchPageState extends State<AggregatedSearchPage> {
+class _AggregatedSearchPageState extends State<AggregatedSearchPage>
+    with WorkspaceViewState<AggregatedSearchPage> {
+  late List<({String sourceKey, List<String> options})> _targets;
+  ScrollController _workspaceScroll = ScrollController();
+  final _workspaceFocus = FocusNode(debugLabel: 'aggregate-query');
+  double _workspaceOffset = 0;
+  late String _workspaceInput;
+  @override
+  String get workspaceViewKey => 'aggregate-search';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': _keyword,
+    'input': _workspaceInput,
+    'profileId': widget.profileId,
+    'scroll': _workspaceOffset,
+    'sources': [
+      for (final target in _targets)
+        {'sourceKey': target.sourceKey, 'options': List.of(target.options)},
+    ],
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    _keyword = saved['keyword'] as String? ?? _keyword;
+    _workspaceInput = saved['input'] as String? ?? _keyword;
+    controller.currentText = _workspaceInput;
+    if (saved['sources'] is List) {
+      _targets = [
+        for (final raw in saved['sources'] as List)
+          (
+            sourceKey: (raw as Map)['sourceKey'] as String,
+            options: (raw['options'] as List?)?.cast<String>().toList() ?? [],
+          ),
+      ];
+    }
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    _workspaceScroll.dispose();
+    _workspaceScroll = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(_workspaceScrolled);
+  }
+
+  void _workspaceScrolled() {
+    if (_workspaceScroll.hasClients) {
+      _workspaceOffset = _workspaceScroll.offset;
+      workspaceBinding?.changed();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('aggregate-query', _workspaceFocus);
+  }
+
+  @override
+  void dispose() {
+    workspaceBinding?.unregisterFocus('aggregate-query', _workspaceFocus);
+    _workspaceFocus.dispose();
+    _workspaceScroll.dispose();
+    super.dispose();
+  }
+
   late final List<ResolvedSearchProfileSource> sources;
 
   late final SearchBarController controller;
@@ -49,34 +113,60 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage> {
             ResolvedSearchProfileSource(source: source, options: item.options),
       ];
     }
+    _targets = [
+      for (final source in sources)
+        (sourceKey: source.source.key, options: List.of(source.options)),
+    ];
     _keyword = widget.keyword;
+    _workspaceInput = widget.keyword;
     controller = SearchBarController(
       currentText: widget.keyword,
       onSearch: (text) {
         setState(() {
           _keyword = text;
+          _workspaceInput = text;
         });
       },
     );
     super.initState();
+    _workspaceScroll.addListener(_workspaceScrolled);
   }
 
   @override
   Widget build(BuildContext context) {
     return SmoothCustomScrollView(
+      controller: _workspaceScroll,
       slivers: [
-        SliverSearchBar(controller: controller),
+        SliverSearchBar(
+          controller: controller,
+          focusNode: _workspaceFocus,
+          onChanged: (value) {
+            _workspaceInput = value;
+            workspaceBinding?.changed();
+          },
+        ),
         SliverList(
           key: ValueKey(_keyword),
           delegate: SliverChildBuilderDelegate((context, index) {
-            final source = sources[index];
+            final target = _targets[index];
+            final source = ComicSource.find(target.sourceKey);
+            if (source?.searchPageData == null) {
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Search source unavailable: @source'.tlParams({
+                    'source': target.sourceKey,
+                  }),
+                ),
+              );
+            }
             return _SliverSearchResult(
-              key: ValueKey(source.source.key),
-              source: source.source,
-              options: source.options,
+              key: ValueKey(target.sourceKey),
+              source: source!,
+              options: target.options,
               keyword: _keyword,
             );
-          }, childCount: sources.length),
+          }, childCount: _targets.length),
         ),
       ],
     );

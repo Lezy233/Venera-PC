@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,15 @@ class ReaderExitGuardState extends State<ReaderExitGuard> {
   FocusNode? _previousFocus;
   bool _closing = false;
   bool _popped = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _contentFocus.traversalEdgeBehavior =
+        WorkspacePageScope.read(context) == null
+        ? TraversalEdgeBehavior.closedLoop
+        : TraversalEdgeBehavior.parentScope;
+  }
 
   bool _allowsNavigation() =>
       mounted && !_closing && NavigationAdmission.allows(context);

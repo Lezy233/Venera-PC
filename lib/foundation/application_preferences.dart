@@ -73,6 +73,19 @@ abstract final class NetworkPreferences {
   ];
 }
 
+abstract final class WorkspacePreferences {
+  static const closeTarget = ChoicePreference(
+    'workspaceCloseTarget',
+    'recent',
+    ['recent', 'right', 'left'],
+  );
+  static const startup = ChoicePreference('workspaceStartup', 'restore', [
+    'restore',
+    'fresh',
+  ]);
+  static const all = <Preference<Object>>[closeTarget, startup];
+}
+
 abstract final class AppearancePreferences {
   static const themeMode = ChoicePreference('theme_mode', 'system', [
     'system',
@@ -173,10 +186,15 @@ abstract final class KeywordPreferences {
 }
 
 abstract final class FavoritePreferences {
-  static const displayMode = ChoicePreference('favoritesDisplayMode', 'list', [
-    'list',
-    'gallery',
+  static const density = ChoicePreference('favoritesDensity', 'comfortable', [
+    'comfortable',
+    'compact',
   ]);
+  static const displayMode = ChoicePreference(
+    'favoritesDisplayMode',
+    'gallery',
+    ['list', 'gallery'],
+  );
   static const galleryColumns = AutoCountPreference(
     'favoritesGalleryColumns',
     min: 2,
@@ -210,6 +228,7 @@ abstract final class FavoritePreferences {
     'followUpdatesFolder',
   );
   static const all = <Preference<Object?>>[
+    density,
     displayMode,
     galleryColumns,
     localFavoritesFirst,
@@ -321,6 +340,7 @@ async function processImage(image, cid, eid, page, sourceKey) {
 Map<String, Object?> get applicationPreferenceDefaults => {
   for (final preference in [
     ...AppPreferences.all,
+    ...WorkspacePreferences.all,
     ...NetworkPreferences.all,
     ...AppearancePreferences.all,
     ...DiscoveryPreferences.all,
