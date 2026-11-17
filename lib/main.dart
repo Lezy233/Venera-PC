@@ -99,8 +99,8 @@ void main(List<String> args) {
             createClient: AppDio.new,
           ),
         );
-        runApp(MyApp(host: host));
         await placement?.initialize();
+        runApp(MyApp(host: host));
       },
       (error, stack) {
         Log.error("Unhandled Exception", error, stack);

@@ -20,6 +20,7 @@ import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/foundation/opencc.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import '../components/sidebar_presentation_test.dart' show settleSidebarWork;
+import '../support/comic_card_actions.dart';
 
 void main() {
   App.dataPath = App.cachePath = Directory.systemTemp.path;
@@ -146,15 +147,15 @@ void main() {
       expect(position.pixels, greaterThan(0));
       final cards = find
           .descendant(of: page, matching: find.byType(ComicTile))
-          .hitTestable();
+          .hitTestable(at: Alignment.topCenter);
       final first = tester.widget<ComicTile>(cards.at(0)).comic;
       final second = tester.widget<ComicTile>(cards.at(1)).comic;
-      await tester.longPressAt(tester.getCenter(cards.at(0)));
+      await toggleComicCheckbox(tester, cards.at(0));
       await settleWorkspace();
       final secondCard = find.byWidgetPredicate(
         (w) => w is ComicTile && w.comic.id == second.id,
       );
-      await tester.tapAt(tester.getCenter(secondCard));
+      await toggleComicCheckbox(tester, secondCard);
       await settleWorkspace();
       final ids = {first.id, second.id};
       final pixels = controller.position.pixels;
@@ -191,7 +192,7 @@ void main() {
       expect(toggle, findsOneWidget);
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
-        'local-favorites-selection',
+        'comic-card-selection',
       );
       await tester.tap(toggle);
       await settleSidebarWork(tester, () => appdata.writeImplicitData());
@@ -203,7 +204,7 @@ void main() {
       intact();
       expect(chrome.leftAvailable, isFalse);
       final returnTarget = FocusManager.instance.primaryFocus;
-      expect(returnTarget?.debugLabel, 'local-favorites-selection');
+      expect(returnTarget?.debugLabel, 'comic-card-selection');
       await tester.tap(toggle);
       await settleWorkspace();
       expect(find.byKey(const ValueKey('bookshelf-scrim')), findsOneWidget);

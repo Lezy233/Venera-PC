@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../support/comic_card_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:venera_next/components/scroll.dart';
@@ -151,22 +152,23 @@ void main() {
       );
       await settleWorkspace();
       expect(originalController.offset, closeTo(420, .01));
-      final visible = find.byType(ComicTile).hitTestable();
+      final visible = find
+          .byType(ComicTile)
+          .hitTestable(at: Alignment.topCenter);
       final first = tester.widget<ComicTile>(visible.at(0)).comic;
       final second = tester.widget<ComicTile>(visible.at(1)).comic;
-      await tester.longPressAt(tester.getCenter(visible.at(0)));
+      await toggleComicCheckbox(tester, visible.at(0));
       await settleWorkspace();
-      await tester.tapAt(
-        tester.getCenter(
-          find.byWidgetPredicate(
-            (w) => w is ComicTile && w.comic.id == second.id,
-          ),
+      await toggleComicCheckbox(
+        tester,
+        find.byWidgetPredicate(
+          (w) => w is ComicTile && w.comic.id == second.id,
         ),
       );
       await settleWorkspace();
       final selectedIds = {first.id, second.id};
       final originalFocus = FocusManager.instance.primaryFocus;
-      expect(originalFocus?.debugLabel, 'local-favorites-selection');
+      expect(originalFocus?.debugLabel, 'comic-card-selection');
       expect(
         tester
             .widget<SliverGridComics>(find.byType(SliverGridComics))

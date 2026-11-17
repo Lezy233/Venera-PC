@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../support/comic_card_actions.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -252,9 +253,44 @@ void main() {
             );
             await tester.pumpAndSettle();
             final beforeSelect = routes.pushes.length;
-            await tester.tapAt(points().first);
-            await tester.pumpAndSettle();
-            expect(routes.pushes.length, beforeSelect);
+            final selectedPoints = points();
+            for (final point in selectedPoints) {
+              final before = routes.pushes.length;
+              await tester.tapAt(point);
+              expect(routes.pushes.length, before + 1);
+              final route = routes.pushes.last as AppPageRoute;
+              final destination = route.builder(navigator.currentContext!);
+              if (preference == 'viewDetail') {
+                expect(destination, isA<ComicPage>());
+                expect(
+                  ((destination as ComicPage).id, destination.sourceKey),
+                  ('book-0', 'local'),
+                );
+              } else {
+                expect(destination, isA<ReaderWithLoading>());
+                expect(
+                  (
+                    (destination as ReaderWithLoading).id,
+                    destination.sourceKey,
+                  ),
+                  ('book-0', 'local'),
+                );
+              }
+              navigator.currentState!.removeRoute(route);
+              await tester.pumpAndSettle();
+              expect(
+                tester
+                    .widget<SliverGridComics>(find.byType(SliverGridComics))
+                    .selections!
+                    .keys
+                    .map((c) => c.id),
+                ['book-1'],
+              );
+            }
+            final firstCard = find.byWidgetPredicate(
+              (w) => w is ComicTile && w.comic.id == 'book-0',
+            );
+            await toggleComicCheckbox(tester, firstCard);
             var grid = tester.widget<SliverGridComics>(
               find.byType(SliverGridComics),
             );
@@ -262,7 +298,7 @@ void main() {
               grid.selections!.keys.map((e) => e.id),
               unorderedEquals(['book-0', 'book-1']),
             );
-            await tester.tapAt(points().last);
+            await toggleComicCheckbox(tester, firstCard);
             await tester.pumpAndSettle();
             grid = tester.widget<SliverGridComics>(
               find.byType(SliverGridComics),
@@ -276,9 +312,12 @@ void main() {
                   .selections,
               isEmpty,
             );
-            expect(routes.pushes.length, beforeSelect);
+            expect(routes.pushes.length, beforeSelect + selectedPoints.length);
             await tester.tapAt(points().first);
-            expect(routes.pushes.length, beforeSelect + 1);
+            expect(
+              routes.pushes.length,
+              beforeSelect + selectedPoints.length + 1,
+            );
             final resumedRoute = routes.pushes.last as AppPageRoute;
             final resumed = resumedRoute.builder(navigator.currentContext!);
             expect(

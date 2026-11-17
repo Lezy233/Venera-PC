@@ -382,6 +382,7 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
         children: [
           WorkspaceTabStrip(
             record: record,
+            openBackground: openBackground,
             activate: activateTab,
             close: close,
             newTab: newTab,

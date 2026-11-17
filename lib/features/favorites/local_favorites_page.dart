@@ -729,8 +729,8 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
   }
 
   Widget _buildBodyWithFilterPanel(Widget body) {
-    if (context.width <= _kFilterPanelBreakpoint) return body;
-    final open = _filterPanelOpen;
+    final available = context.width > _kFilterPanelBreakpoint;
+    final open = available && _filterPanelOpen;
     // The custom window title bar overlays the page; keep the panel and its
     // handle below it so the top bar controls never cover the panel content.
     final topInset = context.padding.top;
@@ -755,18 +755,19 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
               child: _buildFilterPanel(),
             ),
           ),
-        Positioned(
-          right: open ? _filterPanelWidth - SidebarResizeHandle.width / 2 : 0,
-          top: topInset,
-          bottom: 0,
-          width: SidebarResizeHandle.width,
-          child: SidebarResizeHandle(
-            mirror: true,
-            expanded: open,
-            onDrag: _resizeFilterPanel,
-            onDragEnd: _finishFilterPanelResize,
+        if (available)
+          Positioned(
+            right: open ? _filterPanelWidth - SidebarResizeHandle.width / 2 : 0,
+            top: topInset,
+            bottom: 0,
+            width: SidebarResizeHandle.width,
+            child: SidebarResizeHandle(
+              mirror: true,
+              expanded: open,
+              onDrag: _resizeFilterPanel,
+              onDragEnd: _finishFilterPanelResize,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -1096,12 +1097,6 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
     final workspaceActive = WorkspacePageScope.watch(context)?.active ?? true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _syncChrome();
-      if (mounted &&
-          workspaceBinding?.active != false &&
-          multiSelectMode &&
-          !_selectionFocusNode.hasFocus) {
-        _selectionFocusNode.requestFocus();
-      }
     });
     final target = widget;
     final selection = selectedComics.keys.cast<FavoriteItem>().toList();
@@ -1639,6 +1634,19 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
                     aliases: _authorAliases,
                   ),
             selections: selectedComics,
+            onSelectionChanged: (comic, selected) {
+              setState(() {
+                if (selected) {
+                  selectedComics[comic] = true;
+                  multiSelectMode = true;
+                } else {
+                  selectedComics.remove(comic);
+                  _checkExitSelectMode();
+                }
+                lastSelectedIndex = comics.indexOf(comic as FavoriteItem);
+              });
+            },
+            onClearSelection: _cancel,
             useFavoriteDisplaySettings: true,
             menuBuilder: (c) {
               final authors = favoriteAuthorValues(c);
@@ -1742,17 +1750,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
               ];
             },
             onTap: (c, heroID) {
-              if (multiSelectMode) {
-                setState(() {
-                  if (selectedComics.containsKey(c as FavoriteItem)) {
-                    selectedComics.remove(c);
-                    _checkExitSelectMode();
-                  } else {
-                    selectedComics[c] = true;
-                  }
-                  lastSelectedIndex = comics.indexOf(c);
-                });
-              } else if (GlobalPreferenceStore(
+              if (GlobalPreferenceStore(
                     appdata.settings,
                   ).read(FavoritePreferences.onClickFavorite) ==
                   "viewDetail") {

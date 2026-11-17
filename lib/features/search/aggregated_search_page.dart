@@ -201,6 +201,7 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
   static const _kLeftPadding = 16.0;
 
   List<Comic>? comics;
+  final selections = <Comic, bool>{};
 
   String? error;
 
@@ -249,6 +250,17 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
   Widget buildComic(Comic c) {
     return SimpleComicTile(
       comic: c,
+      previewGroup: comics,
+      selected: selections[c] ?? false,
+      selectedGroup: selections.keys.toList(),
+      onSelectionChanged: (selected) => setState(() {
+        if (selected) {
+          selections[c] = true;
+        } else {
+          selections.remove(c);
+        }
+      }),
+      clearSelection: () => setState(selections.clear),
       withTitle: true,
     ).paddingLeft(_kLeftPadding).paddingBottom(2);
   }

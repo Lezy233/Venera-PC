@@ -32,6 +32,9 @@ Venera-Next 是 PC 优先的 Flutter 漫画阅读器，fork 自 venera-next，**
 
 ## 4. 当前状态（规划者维护，执行前核对）
 
+- **2026-11-17 最新状态**：owner已验收UX1的1.3＋F2（4.1–4.5），授权阶段归档提交，未授权此次推送。证据见 `openspec/changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；含作者栏独立手柄保留长按排序、全局主体绑定及正常入口首帧顺序修复。独立123/0skip与作者保护60/0skip分列；启动宿主32通过/2既有Windows skip，analyze50=38+12零新增。活动change仅余5.x搜索/详情、6.x阅读器、7.x整体验收，整项UX1仍未完成，不整项archive或合入未实现delta。
+- **GUI显示教训**：`:1`为fixture虚拟显示，用命令级env隔离；owner正常启动须核对其实际桌面显示归属并清除遗留测试DISPLAY/XDG继承。IsViewable和虚拟显示截图不证明owner桌面可见；正常main须独立冷启动验证，不能仅以提前初始化窗口的harness或build成功替代。
+
 - **2026-11-16 最新状态（覆盖下方历史排期）**：owner 已授权归档、提交并推送 UX1 已完成的书架壳层与 F1 多标签阶段（tasks 2.1–2.4、3.1–3.6，含 1.1/1.2/1.4）。阶段证据归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；活动 change `ux1-bookshelf-workspace` 保留未完成的 1.3、4.x F2、5.x 搜索/详情、6.x 阅读器及 7.x 整体验收。继续该 change 时读活动四件套和 tasks；复核已验收阶段时读归档 README。整个 UX1 尚未完成，不运行整项 OpenSpec archive 或合入尚未实现的 delta spec。
 
 - 分支：`redesign-2026`（github.com/Lezy233/Venera-Next）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送此分支。

@@ -34,12 +34,16 @@ class SliverGridComics extends StatefulWidget {
     this.onTap,
     this.onLongPressed,
     this.selections,
+    this.onSelectionChanged,
+    this.onClearSelection,
     this.useFavoriteDisplaySettings = false,
   });
 
   final List<Comic> comics;
 
   final Map<Comic, bool>? selections;
+  final void Function(Comic, bool)? onSelectionChanged;
+  final VoidCallback? onClearSelection;
 
   final void Function()? onLastItemBuild;
 
@@ -58,6 +62,7 @@ class SliverGridComics extends StatefulWidget {
 }
 
 class _SliverGridComicsState extends State<SliverGridComics> {
+  final _selections = <Comic, bool>{};
   List<Comic> comics = [];
   List<int> heroIDs = [];
 
@@ -144,7 +149,22 @@ class _SliverGridComicsState extends State<SliverGridComics> {
     return _SliverGridComics(
       comics: comics,
       heroIDs: heroIDs,
-      selection: widget.selections,
+      selection: widget.selections ?? _selections,
+      onSelectionChanged:
+          widget.onSelectionChanged ??
+          (comic, selected) {
+            setState(() {
+              final selection = widget.selections ?? _selections;
+              if (selected) {
+                selection[comic] = true;
+              } else {
+                selection.remove(comic);
+              }
+            });
+          },
+      onClearSelection:
+          widget.onClearSelection ??
+          () => setState(() => (widget.selections ?? _selections).clear()),
       onLastItemBuild: widget.onLastItemBuild,
       badgeBuilder: widget.badgeBuilder,
       menuBuilder: widget.menuBuilder,
@@ -170,6 +190,8 @@ class _SliverGridComics extends StatelessWidget {
     this.onLongPressed,
     this.onBlocked,
     this.selection,
+    this.onSelectionChanged,
+    this.onClearSelection,
     this.favoriteDisplayMode,
     this.galleryColumns,
   });
@@ -179,6 +201,8 @@ class _SliverGridComics extends StatelessWidget {
   final List<int> heroIDs;
 
   final Map<Comic, bool>? selection;
+  final void Function(Comic, bool)? onSelectionChanged;
+  final VoidCallback? onClearSelection;
 
   final void Function()? onLastItemBuild;
 
@@ -209,6 +233,17 @@ class _SliverGridComics extends StatelessWidget {
             : selection![comics[index]] ?? false;
         var comic = ComicTile(
           comic: comics[index],
+          previewGroup: comics,
+          selected: isSelected,
+          selectedGroup:
+              selection?.entries
+                  .where((entry) => entry.value)
+                  .map((entry) => entry.key)
+                  .toList() ??
+              const [],
+          onSelectionChanged: (value) =>
+              onSelectionChanged?.call(comics[index], value),
+          clearSelection: onClearSelection,
           badge: badge,
           menuOptions: menuBuilder?.call(comics[index]),
           onTap: onTap != null

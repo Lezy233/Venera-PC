@@ -1,5 +1,11 @@
 {
   "zh_CN": {
+    "Drag selected comics to tabs": "将所选漫画拖至标签栏",
+    "Comic preview": "漫画预览",
+    "Reduce motion": "减少动画",
+    "Open @count in background tabs": "在后台标签打开@count部漫画",
+    "Open selected in background tabs": "在后台标签打开所选漫画",
+    "Select @title": "选择@title",
     "Temporary pages were not restored. Returned to their previous pages.": "临时页面未恢复，已返回对应的上一级页面。",
     "Author shelves": "按作者分栏",
     "Move within the same author shelf": "请在同一作者栏内移动",
@@ -1121,6 +1127,12 @@
     "Search source unavailable: @source": "搜索来源不可用：@source"
   },
   "zh_TW": {
+    "Drag selected comics to tabs": "將所選漫畫拖至分頁列",
+    "Comic preview": "漫畫預覽",
+    "Reduce motion": "減少動畫",
+    "Open @count in background tabs": "在背景分頁開啟@count部漫畫",
+    "Open selected in background tabs": "在背景分頁開啟所選漫畫",
+    "Select @title": "選擇@title",
     "Temporary pages were not restored. Returned to their previous pages.": "暫時頁面未恢復，已返回對應的上一級頁面。",
     "Author shelves": "按作者分欄",
     "Move within the same author shelf": "請在同一作者欄內移動",

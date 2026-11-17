@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'workspace_record.dart';
+import 'workspace_comic_drag.dart';
 
 String workspaceTitle(WorkspaceRouteRecord record) =>
     (record.arguments['title'] ??
@@ -28,80 +29,104 @@ class WorkspaceTabStrip extends StatelessWidget {
     required this.close,
     required this.newTab,
     required this.visited,
+    this.openBackground,
   });
   final WorkspaceRecord record;
   final ValueChanged<String> activate, close;
   final VoidCallback newTab;
   final Set<String> visited;
+  final ValueChanged<WorkspaceRouteRecord>? openBackground;
   @override
   Widget build(BuildContext context) {
     final scale =
         MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
         AppFontSize.body;
-    return Material(
-      color: Theme.of(context).colorScheme.shellSurface,
-      child: Container(
-        height: AppSizes.workspaceTabHeight * scale,
+    return DragTarget<WorkspaceComicDrag>(
+      onWillAcceptWithDetails: (details) =>
+          openBackground != null && !details.data.cancelled,
+      onAcceptWithDetails: (details) {
+        if (details.data.cancelled) return;
+        for (final route in details.data.routes) {
+          openBackground?.call(route);
+        }
+      },
+      builder: (context, candidates, rejected) => DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Theme.of(context).colorScheme.shellBorder,
-              width: AppSizes.hairline,
-            ),
+          border: Border.all(
+            width: AppSizes.hairline,
+            color: candidates.isNotEmpty
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0),
           ),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final tab in record.tabs)
-                      _Tab(
-                        key: ValueKey(tab.id),
-                        title: workspaceTitle(tab.current),
-                        active: record.activeId == tab.id,
-                        activate: () => activate(tab.id),
-                        close: () => close(tab.id),
-                        scale: scale,
-                      ),
-                  ],
+        child: Material(
+          color: Theme.of(context).colorScheme.shellSurface,
+          child: Container(
+            height: AppSizes.workspaceTabHeight * scale,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).colorScheme.shellBorder,
+                  width: AppSizes.hairline,
                 ),
               ),
             ),
-            PopupMenuButton<String>(
-              tooltip: 'All tabs'.tl,
-              onSelected: activate,
-              itemBuilder: (context) => [
-                for (final tab in record.tabs)
-                  PopupMenuItem(
-                    value: tab.id,
-                    child: ListTile(
-                      dense: true,
-                      selected: tab.id == record.activeId,
-                      leading: Icon(
-                        visited.contains(tab.id)
-                            ? Icons.tab
-                            : Icons.pending_outlined,
-                      ),
-                      title: Text(workspaceTitle(tab.current)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (final tab in record.tabs)
+                          _Tab(
+                            key: ValueKey(tab.id),
+                            title: workspaceTitle(tab.current),
+                            active: record.activeId == tab.id,
+                            activate: () => activate(tab.id),
+                            close: () => close(tab.id),
+                            scale: scale,
+                          ),
+                      ],
                     ),
                   ),
-              ],
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Text(
-                  'All @count'.tlParams({'count': record.tabs.length}),
                 ),
-              ),
+                PopupMenuButton<String>(
+                  tooltip: 'All tabs'.tl,
+                  onSelected: activate,
+                  itemBuilder: (context) => [
+                    for (final tab in record.tabs)
+                      PopupMenuItem(
+                        value: tab.id,
+                        child: ListTile(
+                          dense: true,
+                          selected: tab.id == record.activeId,
+                          leading: Icon(
+                            visited.contains(tab.id)
+                                ? Icons.tab
+                                : Icons.pending_outlined,
+                          ),
+                          title: Text(workspaceTitle(tab.current)),
+                        ),
+                      ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      'All @count'.tlParams({'count': record.tabs.length}),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'New tab'.tl,
+                  onPressed: newTab,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: 'New tab'.tl,
-              onPressed: newTab,
-              icon: const Icon(Icons.add),
-            ),
-          ],
+          ),
         ),
       ),
     );

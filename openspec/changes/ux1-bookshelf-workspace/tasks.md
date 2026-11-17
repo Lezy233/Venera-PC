@@ -1,5 +1,7 @@
 # UX1 A 书架型工作区实施任务
 
+2026-11-17 owner已验收1.3＋F2（4.1–4.5）通过并授权归档提交，未授权此次推送。包含正常main首帧顺序修复及实际显示路由排查；历史待验收/阻断记录以本次通过为最终状态。阶段快照见 `../archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；5.x/6.x/7.x仍未完成，不补勾、不整项archive。
+
 第一批已实施并记录证据；未勾项仍未完成，后续阶段须继续。每项完成后立即勾选并备注真实命令、通过/失败/skip 计数和证据；不得把探索稿检查计入生产验收。executor 不得自行修改 proposal/design/delta spec 或 design-spec，发现冲突先报告 architect。
 
 2026-11-16 owner 已验收并授权归档、提交、推送书架壳层与 F1 阶段；归档 `../archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`。活动 tasks 保留全部未完成项，继续执行时以此为准；阶段快照不作为后续任务的编辑位置。
@@ -10,10 +12,11 @@
   - 2026-11-07：HEAD 6f1f1bc01ce69be91e62b9474a0b95f83a752d73 / redesign-2026，初始工作区干净。最小工件已读，入口与冻结清单见 batch-1-baseline.sha256 和 delivery-batch-1.md。
 - [x] 1.2 核对 design-spec §1/3/4/7.1/7.3/7.4 已容纳 A 书架、多标签与普通阅读标签；为新增书架侧栏、标签和控件补齐 AppSizes/AppSpacing 等 token，禁止裸断点、硬编码颜色与第二套窗口框架。
   - 2026-11-07：v0.2 §1/3/4/7.1/7.3/7.4 已核；补 AppSizes 书架宽度/工具栏/导航项/舒适与紧凑封面宽度/比例 token，复用既有 breakpoint 与语义角色；analyze 暂测仍 50 项，最终具体集合复验待本批结束。
-- [ ] 1.3 以真实生产控件建立当前缺少多栈、预览、统一主体点击和单进度等行为的红灯；分别记录既有 analyze 50 项与测试基线，不把初始化异常当产品红灯。
+- [x] 1.3 以真实生产控件建立当前缺少多栈、预览、统一主体点击和单进度等行为的红灯；分别记录既有 analyze 50 项与测试基线，不把初始化异常当产品红灯。
   - 2026-11-07：部分：174项真实现状基线、壳层开关红灯(/tmp/ux1-shell-red.log)、密度不变红灯(/tmp/ux1-density-red.log)、键盘Escape红灯(旧matrix红灯日志已被后续宿主修复日志覆盖；8项失败为已观察历史事实，现无原始日志可独立重放，详见delivery局限)已取得。多栈/预览/统一主体/单进度尚未实施和建立完整生产红灯，留后续阶段，不勾整项。
   - 2026-11-16：复核当前生产入口：`ComicTile` 仅有主体打开/Details/后台打开菜单，没有 Space 临时预览入口；现有 `workspace_search_results_test.dart` 与 `workspace_tabs_test.dart` 的多栈、筛选、滚动、焦点和返回为局部绿，不能覆盖“所有列表统一主体点击”或 D8 单进度。尝试重跑真实控件集合时 Flutter 初始化在 `/home/_Le/fvm/versions/3.47.7/bin/cache/engine.stamp.tmp.*` 受只读环境阻断，已单列为初始化异常，未冒称产品红灯；1.3 仍未勾。
   - 2026-11-16：在权限升级后复跑既有真实生产控件对照：收藏主体/菜单/选择 `bookshelf_hit_target_test.dart` **4通过0失败0skip**；独立多栈 `workspace_tabs_test.dart` **1/0/0**；Reader slider `slider_navigation_test.dart` **2/0/0**；Reader 真实 tap 卸载保护 **1/0/0**；Reader `Space`/页进度场景 `progress dispatches image endpoints in galleryLeftToRight` **1/0/0**，合计对照 **9通过0失败0skip**。搜索结果真实场景命令在初始化后停于 `+0`、无新输出，已停止且无残留，计数不纳入通过/失败。上述绿灯证明已有局部行为，不覆盖缺失 Space 卡片预览、所有列表统一主体设置或 D8 唯一进度/漫画区域单击与独立控件不冒泡的完整场景；未改测试制造红灯，1.3 仍未勾。
+  - 2026-11-16 第三批1.3闭合：生产卡片Tab→Space缺预览红0/1/0；hover复选框缺失红1/1/0（含Space绿对照）；真实两卡420px→标签栏drop缺后台标签红0/1/0，Escape拖动层缺失另红0/1/0。5.1真实单源/聚合read偏好点击得到ComicPage失配红0/2/0；6.2真实Reader两次漫画单击后隐藏进度缺失、边缘漫画单击翻页失配红1/2/0（独立亮度按钮不冒泡1绿）。后两组只在/tmp执行，完整源码/差异/命令/准确断言存batch-3-baseline-diagnostics.md，未实现5/6、不混常规suite或skip。多栈沿已验收归档delivery-batch-2开篇tabs-red真实缺New tab红→生产接入绿，本轮真实工作区预览/后台/返回/选择现场与拖放合跑37通过0失败0skip，未人为改坏已实现F1。analyze初跑52=既有50+本批两条括号lint，已修待具体集合复验；初始化/半卡裁切定位及IO等待探索均单列，不计产品红灯。日志与保护边界详delivery-batch-3。
 - [x] 1.4 明确工作区快照的版本、稳定标签/实体身份、数据目录归属和可靠保存接口；用真实磁盘故障建立损坏、旧回调覆盖、写入失败与恢复红灯，不另造全局存储服务。
   - 2026-11-07：部分：复用Appdata.updateImplicit/updateSettings+SettingsSaveState，dataPath归属检查；真实implicitData.json.tmp目录阻断写入、失败可见/新意图覆盖/磁盘重载通过。标签快照v1稳定身份、损坏恢复、跨目录旧回调尚需3.x真实生命周期落实，不以书架布尔偏好冒称工作区快照契约完成。
   - 2026-11-16：已核对生产契约入口：`WorkspaceRecord.version == 1`、稳定 tab/route/entity identity、directory 校验、`WorkspaceStore.assignment` 的 Appdata 写入归属与过期 owner 防护、`SettingsSaveState` Retry 均存在。权限升级后真实命令 `/tmp/ux1-13-14-storage-protection.log` **10通过0失败0skip**：版本/稳定身份与 malformed/duplicate/foreign-directory 拒绝、真实 `.tmp` 目录写入故障、Retry 最新快照、旧 assignment 与新目录 owner 覆盖防护、A→B→A 目录生命周期、坏 view/unknown route 一次回退及实体保留均通过。日志中的 `FileSystemException` 是测试主动建立的磁盘故障红灯，随后恢复断言通过；新 PID 重启仍属 3.5 范围，不在本项冒称已证。
@@ -51,11 +54,21 @@
 
 ## 4. F2 临时预览与多选拖放
 
-- [ ] 4.1 实现 Space 临时预览、概览/目录/详情、左右切换及 Space/Escape 关闭；预览不创建标签，关闭后焦点回到原卡片，滚动与多选保持。
-- [ ] 4.2 实现预览 Enter 当前标签打开、Cmd/Ctrl+Enter 后台新标签；与漫画主体打开共用历史规则，关闭预览不误触底层卡片。
-- [ ] 4.3 实现平铺卡片右上角复选框的悬停/焦点显现、选中常驻、图形与语义状态及 Escape 清空；复选框只选择，主体仍遵循全局点击设置。
-- [ ] 4.4 实现多选拖入标签栏、拖动 Escape 取消及按钮/菜单/键盘等价入口；每部形成后台详情标签，不改变收藏身份、作者顺序或来源配置。
-- [ ] 4.5 完成预览与拖放的键盘、焦点、窄窗、大文字、浅深主题、减少动画及后台请求计数验证；浮层可滚动且关闭入口始终可用。
+- [x] 4.1 实现 Space 临时预览、概览/目录/详情、左右切换及 Space/Escape 关闭；预览不创建标签，关闭后焦点回到原卡片，滚动与多选保持。
+  - 2026-11-16 第三批：真实卡片Tab→Space缺入口红0/1/0，生产最小预览与同组目标接入后，`/tmp/ux1-b3-preview-matrix.log` 28通过0失败0skip（24个600/1000/1400×浅深×简繁×150%×减少动画组合、同ID跨来源乱序/卸载晚回调、独立选择、基础左右/Escape和真实MainPage两卡/420px/原焦点/同实例）。预览无新标签/栈/历史，仅按当前目标加载必要详情；Space不吞输入框。GUI归4.5仍待，非整批已验收。
+- [x] 4.2 实现预览 Enter 当前标签打开、Cmd/Ctrl+Enter 后台新标签；与漫画主体打开共用历史规则，关闭预览不误触底层卡片。
+  - 2026-11-16：同`workspace_preview_test.dart`真实MainPage生产控件（包含上项28绿，不重复累加）：Ctrl+Enter准确新建后台实体/sourceKey，当前选集/420px/焦点不抢占、后台详情0提前请求；Enter在原标签只push一次详情，Alt+Left返回原现场且标签数不减，预览关闭未透到底层。Meta平台与GUI增量归4.5补；旧Enter实现不存在于HEAD，首个Space入口红灯是整条预览提升入口的前置缺口。
+- [x] 4.3 实现平铺卡片右上角复选框的悬停/焦点显现、选中常驻、图形与语义状态及 Escape 清空；复选框只选择，主体仍遵循全局点击设置。
+  - 2026-11-17：hover/focus显现、离开后选中常驻、真实Tab→Checkbox Space与checked语义、Escape均通过；`checkbox-semantics-green`1/0/0。搜索/聚合复选框Enter隔离`result-checkbox-enter-green`34/0/0；B4主体原全部真实文本行/封面/read与detail/一次路由/实体断言保留迁移，选集不令另一主体变为选择。F1原现场保护24/0/0，continuity单项1/0/0；F10/F11仅旧建场迁移为独立checkbox，80/1历史后F11定向1/0/0。非收藏主体全局设置统一仍属5.1，其现状失配保留1.3诊断，不在本批扩5.x。GUI两卡/滚动/原FocusNode及简繁150%见delivery。
+  - 2026-11-17 architect复核：上条仅证明checkbox/收藏行为，单源/聚合read偏好仍打开ComicPage，4.3主体契约尚未闭合，撤销整项勾选。原5.1诊断红灯完整保留；待architect裁定F2卡片沿用既有onClickFavorite的必要最小依赖，不扩搜索布局/详情/设置/阅读工具。
+  - 2026-11-17 必要依赖获architect批准并闭合：ComicTile/SimpleComicTile默认主体及普通Enter复用既有onClickFavorite，typed reader builder在原runtime注入；自定义onTap优先，显式Details/预览提升/后台详情保持详情。原真实主体0/2红保留；新路由标题4绿4红后仅补可选已知title及workspace透传，8/0/0；主体/独立控件/B4合跑19/0/0，read偏好预览提升1/0/0，Reader标签/通用B4保护93/0/0，architect独立相关123/0/0。GUI PID836728真实设置read→单源搜索→checkbox选中→标题点击→已解码Reader page1→AltLeft回原选集/焦点/滚动实例，详情/章节各一次且搜索不重发。具体证据见delivery末段；不勾5.1，不改搜索布局或设置文案，不扩6.x。
+- [x] 4.4 实现多选拖入标签栏、拖动 Escape 取消及按钮/菜单/键盘等价入口；每部形成后台详情标签，不改变收藏身份、作者顺序或来源配置。
+  - 2026-11-17：普通网格真实拖放/释放前Escape取消、菜单和Ctrl/Meta+Enter等价入口通过；当前`workspace-final-green`7/0/0含三宽150%/两来源身份、原两卡420px/同实例/焦点、零后台提前请求。GUI真实drop两后台及取消无新增亦成立；作者栏既有长按重排与选集拖出手势划分仍等待owner，未改该手势，不勾整项。
+  - 2026-11-17 owner裁定独立手柄后：作者标题区44px手柄与卡片长按/checkbox物理分离；真实坐标红灯0/1/0（预期3标签实际1）后最小实现。`author-handle-protection.log`58/0/0含原F10/F11；最终`author-handle-final.log`3/0/0覆盖折叠600深繁150%、正常1000浅简150%、展开1400浅英文、手动/系统减少动画条件、跨作者同实体/同ID不同来源、空选集禁拖、点击隔离、Escape取消零新增、drop准确两后台零提前请求、同页/焦点/滚动/成员保持，以及选中卡片原长按只重排Beta、Alpha不变。真实Tab到手柄Ctrl+Enter等价入口通过，原菜单/Meta入口证据保留不重复；本增量GUI/最终分析构建归4.5与delivery待闭合。
+- [x] 4.5 完成预览与拖放的键盘、焦点、窄窗、大文字、浅深主题、减少动画及后台请求计数验证；浮层可滚动且关闭入口始终可用。
+  - 2026-11-17：预览/普通网格已覆盖三宽、浅深、简繁150%、手动OR系统Reduce motion、真实拖放/菜单/Ctrl与Meta等价入口和请求计数；GUI对应F6实际scale/system值、滚动/实体/焦点、完整Flutter帧与宿主帧分列。普通网格compact拖放保存等待已闭环，混来源拖放1/0/0；作者栏手势仍待owner，故本项及4.4暂不整项勾选，不宣称完整F2。
+  - 2026-11-17 作者栏续派闭合：最终作者手柄三宽/三态/简繁150%/手动与系统减少动画条件真实控件3/0/0，含Tab焦点/Ctrl+Enter/取消/长按独立排序，原预览完整矩阵不重复。architect独立相关60/0/0；GUI PID1102014正常1000×700完整X11/Flutter帧，实际checkbox选择book0/book1，标题手柄Escape取消3标签不变、drop3→5准确两后台，F6-1/2/3的页面/选集/原焦点668761396/全部scrollState与offset/active/recent保持，details/chapter均0；三稳定图及JSON已独立抽查。GUI仅受控单作者单来源、offset0，本项跨作者/来源及非零滚动保护见生产控件测试和既有GUI分列，不冒称本图覆盖。analyze新源码raw/unique50=38+12逐条零增减；正常关闭exit0、宿主PID/X11无残留，main恢复构建及最终清单见delivery。
+  - 2026-11-17 owner正常启动退回后闭环：未包装main精确复现right15×2/bottom15×1及native900×600等待1×1，trace首帧1×1定位到window_manager原生resize边缘。architect授权仅将既有placement.initialize await移至runApp前；同目录及全新四XDG正常main实际900×600画面均绿，trace首帧900×600。独立启动宿主32通过0失败2既有Windows专属skip，非0skip；analyze50逐条零增减，正常main kernel4100dcba…/入口匹配，五自有诊断PID清理且owner同名窗口保留。当前19生产/31测试/139证据全部独立MATCH，main非零diff仅本次授权顺序两行。完整命令/creator/假设与工具局限见batch-3-startup-diagnostics.md；architect最终启动修复符合，等待owner重试验收，未提交归档push。
 
 ## 5. 搜索、详情与设置一致性
 

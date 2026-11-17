@@ -21,6 +21,7 @@ import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/foundation/res.dart';
 import 'package:venera_next/foundation/translations.dart';
 import '../../support/comic_source_fixture.dart';
+import '../../support/comic_card_actions.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/favorites/favorites_page.dart';
@@ -388,12 +389,18 @@ void main() {
           .take(2)
           .toList();
       final expectedSelection = firstTwo.map((c) => c.id).toSet();
-      await tester.longPressAt(
-        tester.getCenter(find.text(firstTwo.first.title).first),
+      await toggleComicCheckbox(
+        tester,
+        find.byWidgetPredicate(
+          (w) => w is ComicTile && w.comic.id == firstTwo.first.id,
+        ),
       );
       await tester.pumpAndSettle();
-      await tester.tapAt(
-        tester.getCenter(find.text(firstTwo.last.title).first),
+      await toggleComicCheckbox(
+        tester,
+        find.byWidgetPredicate(
+          (w) => w is ComicTile && w.comic.id == firstTwo.last.id,
+        ),
       );
       await tester.pumpAndSettle();
       Set<String> selection() => tester

@@ -2,6 +2,7 @@ import 'package:venera_next/components/appbar.dart';
 import 'dart:convert';
 import 'package:venera_next/app_shell/workspace/workspace_store.dart';
 import 'dart:io';
+import '../support/comic_card_actions.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/features/comic_details/comic_details.dart';
 import 'package:venera_next/foundation/res.dart';
@@ -231,22 +232,23 @@ void main() {
         );
         await settleWorkspace();
         expect(originalController.offset, closeTo(420, .01));
-        final visible = find.byType(ComicTile).hitTestable();
+        final visible = find
+            .byType(ComicTile)
+            .hitTestable(at: Alignment.topCenter);
         final first = tester.widget<ComicTile>(visible.at(0)).comic;
         final second = tester.widget<ComicTile>(visible.at(1)).comic;
-        await tester.longPressAt(tester.getCenter(visible.at(0)));
+        await toggleComicCheckbox(tester, visible.at(0));
         await settleWorkspace();
-        await tester.tapAt(
-          tester.getCenter(
-            find.byWidgetPredicate(
-              (w) => w is ComicTile && w.comic.id == second.id,
-            ),
+        await toggleComicCheckbox(
+          tester,
+          find.byWidgetPredicate(
+            (w) => w is ComicTile && w.comic.id == second.id,
           ),
         );
         await settleWorkspace();
         final selectedIds = {first.id, second.id};
         final originalFocus = FocusManager.instance.primaryFocus;
-        expect(originalFocus?.debugLabel, 'local-favorites-selection');
+        expect(originalFocus?.debugLabel, 'comic-card-selection');
         expect(
           tester
               .widget<SliverGridComics>(find.byType(SliverGridComics))

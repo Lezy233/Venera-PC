@@ -25,6 +25,8 @@ import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 
 import 'rating.dart';
+import 'comic_preview.dart';
+import 'comic_selection_drag.dart';
 
 typedef ComicPageBuilder =
     Widget Function({
@@ -33,6 +35,13 @@ typedef ComicPageBuilder =
       String? cover,
       String? title,
       int? heroID,
+    });
+
+typedef ComicReaderBuilder =
+    Widget Function({
+      required String id,
+      required String sourceKey,
+      String? title,
     });
 
 typedef AddComicFavoriteHandler =
@@ -76,6 +85,7 @@ class ComicFavoriteDisplayState {
 }
 
 ComicPageBuilder? _comicPageBuilder;
+ComicReaderBuilder? _comicReaderBuilder;
 
 AddComicFavoriteHandler? _addComicFavoriteHandler;
 ComicTileStateResolver? _comicTileStateResolver;
@@ -86,6 +96,7 @@ ComicFavoriteDisplayStateResolver? _comicFavoriteDisplayStateResolver;
 
 void configureComicWidgets({
   ComicPageBuilder? comicPageBuilder,
+  ComicReaderBuilder? comicReaderBuilder,
   AddComicFavoriteHandler? addFavorite,
   ComicTileStateResolver? tileStateResolver,
   ComicTileImageProviderResolver? tileImageProviderResolver,
@@ -94,6 +105,7 @@ void configureComicWidgets({
   ComicFavoriteDisplayStateResolver? favoriteDisplayStateResolver,
 }) {
   _comicPageBuilder = comicPageBuilder;
+  _comicReaderBuilder = comicReaderBuilder;
   _addComicFavoriteHandler = addFavorite;
   _comicTileStateResolver = tileStateResolver;
   _comicTileImageProviderResolver = tileImageProviderResolver;
@@ -155,6 +167,32 @@ void _openComicPage({
   );
 }
 
+void _openComicBody(Comic comic, {BuildContext? context, int? heroID}) {
+  if (GlobalPreferenceStore(
+        appdata.settings,
+      ).read(FavoritePreferences.onClickFavorite) ==
+      'read') {
+    final builder =
+        _comicReaderBuilder ??
+        (throw StateError('Comic reader builder is not configured.'));
+    final targetContext =
+        context ?? appNavigation.mainNavigatorKey?.currentContext;
+    targetContext?.to(
+      () =>
+          builder(id: comic.id, sourceKey: comic.sourceKey, title: comic.title),
+    );
+    return;
+  }
+  _openComicPage(
+    context: context,
+    id: comic.id,
+    sourceKey: comic.sourceKey,
+    cover: comic.cover,
+    title: comic.title,
+    heroID: heroID,
+  );
+}
+
 Future<void> _addComicToFavorites(BuildContext context, List<Comic> comics) {
   final handler =
       _addComicFavoriteHandler ??
@@ -195,9 +233,35 @@ class ComicTile extends StatelessWidget {
     this.displayMode,
     this.hoverColor,
     this.bookshelf = false,
+    this.previewGroup,
+    this.selected = false,
+    this.onSelectionChanged,
+    this.clearSelection,
+    this.selectedGroup = const [],
+    this.enableSelectionDrag = true,
+    this.compactContent,
   });
 
   final bool bookshelf;
+  final List<Comic>? previewGroup;
+  final bool selected;
+  final ValueChanged<bool>? onSelectionChanged;
+  final VoidCallback? clearSelection;
+  final List<Comic> selectedGroup;
+  final bool enableSelectionDrag;
+
+  /// Keeps an existing compact surface while sharing card input behavior.
+  final Widget? compactContent;
+
+  WorkspaceRouteRecord _backgroundRoute(Comic target) => WorkspaceRouteRecord(
+    kind: WorkspacePageKind.comic,
+    arguments: {
+      'id': target.id,
+      'sourceKey': target.sourceKey,
+      'cover': target.cover,
+      'title': target.title,
+    },
+  );
 
   final Comic comic;
 
@@ -226,13 +290,7 @@ class ComicTile extends StatelessWidget {
       onTap!();
       return;
     }
-    _openComicPage(
-      id: comic.id,
-      sourceKey: comic.sourceKey,
-      cover: comic.cover,
-      title: comic.title,
-      heroID: heroID,
-    );
+    _openComicBody(comic, heroID: heroID);
   }
 
   void _onLongPressed(BuildContext context) {
@@ -259,6 +317,16 @@ class ComicTile extends StatelessWidget {
   void showMenu(Offset location, BuildContext context) {
     final workspace = WorkspaceNavigationScope.maybeOf(context);
     ContextMenuRegion.of(context).show(context, location, [
+      if (workspace != null && selectedGroup.isNotEmpty)
+        MenuEntry(
+          icon: Icons.tab_outlined,
+          text: 'Open selected in background tabs'.tl,
+          onClick: () {
+            for (final target in selectedGroup) {
+              workspace.openBackground(_backgroundRoute(target));
+            }
+          },
+        ),
       MenuEntry(
         icon: Icons.chrome_reader_mode_outlined,
         text: 'Details'.tl,
@@ -312,12 +380,93 @@ class ComicTile extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ContextMenuRegion(
-    identity: comic,
-    builder: (context, _) => _build(context),
+  Widget build(BuildContext context) => ComicSelectionDrag(
+    routes:
+        selected &&
+            enableSelectionDrag &&
+            WorkspaceNavigationScope.maybeOf(context) != null
+        ? (selectedGroup.isEmpty ? [comic] : selectedGroup)
+              .map(_backgroundRoute)
+              .toList()
+        : const [],
+    child: Focus(
+      skipTraversal: compactContent == null,
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final background = WorkspaceNavigationScope.maybeOf(
+          context,
+        )?.openBackground;
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            (HardwareKeyboard.instance.isControlPressed ||
+                HardwareKeyboard.instance.isMetaPressed) &&
+            background != null) {
+          for (final target
+              in selectedGroup.isEmpty ? [comic] : selectedGroup) {
+            background(_backgroundRoute(target));
+          }
+          return KeyEventResult.handled;
+        }
+        if (FocusManager.instance.primaryFocus?.context
+                ?.findAncestorWidgetOfExactType<Checkbox>() !=
+            null) {
+          return KeyEventResult.ignored;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            compactContent != null) {
+          _onTap();
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey != LogicalKeyboardKey.space) {
+          return KeyEventResult.ignored;
+        }
+        showComicPreview(
+          context: context,
+          comic: comic,
+          group: previewGroup ?? [comic],
+          imageProvider: _findImageProvider,
+          openCurrent: (target) => _openComicPage(
+            context: context,
+            id: target.id,
+            sourceKey: target.sourceKey,
+            cover: target.cover,
+            title: target.title,
+          ),
+          openBackground: background == null
+              ? null
+              : (target) => background(
+                  WorkspaceRouteRecord(
+                    kind: WorkspacePageKind.comic,
+                    arguments: {
+                      'id': target.id,
+                      'sourceKey': target.sourceKey,
+                      'cover': target.cover,
+                      'title': target.title,
+                    },
+                  ),
+                ),
+        );
+        return KeyEventResult.handled;
+      },
+      child: _ComicSelectionControl(
+        title: comic.title,
+        selected: selected,
+        onChanged: onSelectionChanged,
+        clear: clearSelection,
+        child: ContextMenuRegion(
+          identity: comic,
+          builder: (context, _) => _build(context),
+        ),
+      ),
+    ),
   );
 
   Widget _build(BuildContext context) {
+    if (compactContent != null) {
+      return GestureDetector(
+        onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
+        child: compactContent,
+      );
+    }
     final state = _tileState(comic);
     final type = switch (displayMode) {
       ComicTileDisplayMode.detailed => 'detailed',
@@ -879,6 +1028,95 @@ class ComicTile extends StatelessWidget {
   }
 }
 
+class _ComicSelectionControl extends StatefulWidget {
+  const _ComicSelectionControl({
+    required this.title,
+    required this.selected,
+    required this.onChanged,
+    required this.clear,
+    required this.child,
+  });
+  final String title;
+  final bool selected;
+  final ValueChanged<bool>? onChanged;
+  final VoidCallback? clear;
+  final Widget child;
+  @override
+  State<_ComicSelectionControl> createState() => _ComicSelectionControlState();
+}
+
+class _ComicSelectionControlState extends State<_ComicSelectionControl> {
+  bool hovered = false, focused = false;
+  final focus = FocusNode(debugLabel: 'comic-card-selection');
+  @override
+  void dispose() {
+    focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onChanged == null) return widget.child;
+    final visible = hovered || focused || widget.selected;
+    return Focus(
+      focusNode: focus,
+      skipTraversal: true,
+      onFocusChange: (value) {
+        setState(() => focused = value);
+      },
+      onKeyEvent: (_, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            widget.clear != null) {
+          widget.clear!();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: widget.selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0),
+              width: AppSizes.hairline,
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              widget.child,
+              if (visible)
+                Positioned(
+                  top: AppSpacing.xs,
+                  right: AppSpacing.xs,
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: Checkbox(
+                      semanticLabel: 'Select @title'.tlParams({
+                        'title': widget.title,
+                      }),
+                      value: widget.selected,
+                      onChanged: (value) {
+                        focus.requestFocus();
+                        widget.onChanged!(value ?? false);
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BlockComicDialog extends StatefulWidget {
   const _BlockComicDialog({
     required this.words,
@@ -1265,6 +1503,11 @@ class SimpleComicTile extends StatelessWidget {
     this.withTitle = false,
     this.heroID,
     this.gaplessPlayback = false,
+    this.previewGroup,
+    this.selected = false,
+    this.onSelectionChanged,
+    this.clearSelection,
+    this.selectedGroup = const [],
   });
 
   final Comic comic;
@@ -1276,6 +1519,11 @@ class SimpleComicTile extends StatelessWidget {
   final int? heroID;
 
   final bool gaplessPlayback;
+  final List<Comic>? previewGroup;
+  final bool selected;
+  final ValueChanged<bool>? onSelectionChanged;
+  final VoidCallback? clearSelection;
+  final List<Comic> selectedGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -1361,18 +1609,22 @@ class SimpleComicTile extends StatelessWidget {
       onTap:
           onTap ??
           () {
-            _openComicPage(
-              context: context,
-              id: comic.id,
-              sourceKey: comic.sourceKey,
-              cover: comic.cover,
-              title: comic.title,
-              heroID: heroID,
-            );
+            _openComicBody(comic, context: context, heroID: heroID);
           },
       child: child,
     );
 
-    return child;
+    return ComicTile(
+      comic: comic,
+      onTap: onTap,
+      heroID: heroID,
+      enableLongPressed: false,
+      compactContent: child,
+      previewGroup: previewGroup,
+      selected: selected,
+      onSelectionChanged: onSelectionChanged,
+      clearSelection: clearSelection,
+      selectedGroup: selectedGroup,
+    );
   }
 }

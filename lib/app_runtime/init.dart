@@ -8,6 +8,7 @@ import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/features/comic_details/comic_details.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
+import 'package:venera_next/features/reader/reader.dart';
 import 'package:venera_next/features/favorites/favorites.dart';
 import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/features/local_comics/local_comics.dart';
@@ -23,6 +24,8 @@ import 'core_bootstrap.dart';
 Future<void> init(CoreBootstrap core) async {
   await core.start();
   configureComicWidgets(
+    comicReaderBuilder: ({required id, required sourceKey, title}) =>
+        ReaderWithLoading(id: id, sourceKey: sourceKey, title: title),
     comicPageBuilder:
         ({
           required String id,

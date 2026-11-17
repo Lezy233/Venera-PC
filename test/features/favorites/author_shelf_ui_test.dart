@@ -20,6 +20,7 @@ import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import '../../support/creator_search_source.dart';
+import '../../support/comic_card_actions.dart';
 import '../../components/sidebar_presentation_test.dart' show settleSidebarWork;
 
 class _History extends Fake implements HistoryManager {
@@ -202,9 +203,15 @@ void main() {
     await tester.tap(find.text('Select').last);
     await settle();
     expect(find.text('Selected 1 comics'), findsOneWidget);
-    // The second UI instance toggles the same business identity, rather than
-    // creating a second selection or opening a comic.
-    await tester.tap(find.text('Shared work').last);
+    // The independent checkbox in the second shelf toggles the same business
+    // identity. Its body retains the normal open behavior under UX1 D4.
+    await toggleComicCheckbox(
+      tester,
+      find.ancestor(
+        of: find.text('Shared work').last,
+        matching: find.byType(ComicTile),
+      ),
+    );
     await settle();
     expect(find.text('Selected 1 comics'), findsNothing);
     expect(routes.pushes.where((route) => route is! PopupRoute).length, 1);

@@ -87,6 +87,7 @@ abstract final class WorkspacePreferences {
 }
 
 abstract final class AppearancePreferences {
+  static const reduceMotion = BoolPreference('reduceMotion', false);
   static const themeMode = ChoicePreference('theme_mode', 'system', [
     'system',
     'light',
@@ -105,7 +106,7 @@ abstract final class AppearancePreferences {
     'yellow',
     'cyan',
   ]);
-  static const all = <Preference<Object>>[themeMode, color];
+  static const all = <Preference<Object>>[themeMode, color, reduceMotion];
 }
 
 abstract final class DiscoveryPreferences {

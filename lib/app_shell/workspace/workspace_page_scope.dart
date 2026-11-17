@@ -63,6 +63,12 @@ class WorkspacePageBinding extends ChangeNotifier {
   void rememberFocus() {
     final node = FocusManager.instance.primaryFocus;
     if (node == null) return;
+    // A shell popup may activate a tab before its own route releases focus.
+    // Keep the last content target instead of remembering that transient menu.
+    final context = node.context;
+    if (context == null || !identical(WorkspacePageScope.read(context), this)) {
+      return;
+    }
     returnFocus = node;
     for (final entry in _focusTargets.entries) {
       if (entry.value.hasFocus) record.view['focus'] = entry.key;

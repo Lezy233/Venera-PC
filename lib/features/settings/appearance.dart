@@ -21,6 +21,10 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
     return SmoothCustomScrollView(
       slivers: [
         SliverAppbar(title: Text("Appearance".tl)),
+        SwitchSetting.preference(
+          title: 'Reduce motion'.tl,
+          preference: AppearancePreferences.reduceMotion,
+        ).toSliver(),
         SelectSetting.preference(
           title: "Theme Mode".tl,
           preference: AppearancePreferences.themeMode,

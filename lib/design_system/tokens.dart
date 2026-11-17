@@ -64,6 +64,9 @@ abstract final class AppFontSize {
 
 /// Fixed shell and layout component sizes. See `design-spec.md` §2.7.
 abstract final class AppSizes {
+  static const double comicPreviewWidth = 640;
+  static const double comicSelectionHandleSize = 44;
+  static const double comicPreviewCoverHeight = 200;
   static const double bookshelfWidth = 224;
   static const double workspaceToolbarHeight = 48;
   static const double workspaceTabWidth = 216;

@@ -6,6 +6,8 @@
 
 ## 执行顺序（依赖关系）
 
+**2026-11-17 最新状态（覆盖下方历史）**：owner验收1.3＋F2（4.1–4.5）通过并授权阶段归档提交，未授权此次推送。证据见 `changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；书架/F1此前已归档推送。活动UX1仅余5.x搜索/详情 → 6.x阅读器 → 7.x整体验收，继续保留，不整项archive或合入未实现delta。
+
 **2026-11-16 当前状态**：UX1 书架壳层与 F1 多标签阶段已经 owner 验收并授权归档、提交、推送；阶段证据见 `changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`。活动 `ux1-bookshelf-workspace` 继续保留，余项按 1.3 对应阶段红灯 → 4.x F2 预览/多选拖放 → 5.x 搜索/详情一致性 → 6.x 阅读器交互 → 7.x 整体验收推进。下方旧的“生产未启动/待排期”为历史；尚未完成全部任务，不合并整个 delta spec。
 
 功能愿望与新功能规划见 `openspec/BACKLOG.md`（愿景 + 候选清单 + 批次建议）。
@@ -34,7 +36,7 @@
 | 15 | **reader-double-page-letterbox-fix**（B5）✅已归档 | 修正双面错误窗口尺寸覆盖，保护原图比例/完整性与既有阅读语义 | 2026-11-06 owner验收通过，实现49ea8a9；tasks1.x 4/4、独立148通过0skip/analyze50零新增，GUI/正常构建/清理/SHA通过；2026-11-07随F11推送 |
 
 | 16 | **favorites-sidebar-section-collapse**（F11）✅已归档 | 本地/系列/网络独立折叠、状态记忆、当前条目摘要及键盘/菜单隔离 | 2026-11-07 owner验收，实现4a886a6；tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 |
-| 17 | **ux1-bookshelf-workspace**（UX1，书架/F1阶段已验收） | 书架壳层及多内容栈已完成；预览、搜索/详情和阅读器一致交互待继续 | 2026-11-16 owner授权阶段归档提交推送；活动任务保留，下一阶段 F2 |
+| 17 | **ux1-bookshelf-workspace**（UX1，书架/F1/F2阶段已验收） | 书架、多栈、临时预览与多选拖放已完成；搜索/详情和阅读器待继续 | 2026-11-17 owner授权F2阶段归档提交；活动任务保留，下一阶段5.x，此次不推送 |
 
 当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；F1/F2纳入其分阶段实施，当前仅完成规划，生产实现未启动。
 

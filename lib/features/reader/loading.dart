@@ -14,6 +14,7 @@ class ReaderWithLoading extends StatefulWidget {
     super.key,
     required this.id,
     required this.sourceKey,
+    this.title,
     this.initialEp,
     this.initialPage,
   });
@@ -21,6 +22,9 @@ class ReaderWithLoading extends StatefulWidget {
   final String id;
 
   final String sourceKey;
+
+  /// Already-known card metadata for the workspace label while loading.
+  final String? title;
 
   final int? initialEp;
 

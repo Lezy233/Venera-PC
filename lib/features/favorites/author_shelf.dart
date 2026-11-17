@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
+import 'package:venera_next/app_shell/workspace/workspace_navigation_scope.dart';
+import 'package:venera_next/app_shell/workspace/workspace_record.dart';
 import 'package:venera_next/components/layout.dart';
 import 'package:venera_next/components/menu.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
+import 'package:venera_next/features/comic_widgets/comic_selection_drag.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
@@ -43,6 +46,8 @@ class FavoriteFolderComics extends StatelessWidget {
     required this.aliases,
     required this.isCurrent,
     this.selections,
+    this.onSelectionChanged,
+    this.onClearSelection,
     this.menuBuilder,
     this.onTap,
     this.onLongPressed,
@@ -55,6 +60,8 @@ class FavoriteFolderComics extends StatelessWidget {
   final Map<String, String> aliases;
   final bool Function() isCurrent;
   final Map<Comic, bool>? selections;
+  final void Function(Comic, bool)? onSelectionChanged;
+  final VoidCallback? onClearSelection;
   final List<MenuEntry> Function(Comic)? menuBuilder;
   final void Function(Comic, int)? onTap;
   final void Function(Comic, int)? onLongPressed;
@@ -66,6 +73,8 @@ class FavoriteFolderComics extends StatelessWidget {
       return SliverGridComics(
         comics: comics,
         selections: selections,
+        onSelectionChanged: onSelectionChanged,
+        onClearSelection: onClearSelection,
         menuBuilder: menuBuilder,
         onTap: onTap,
         onLongPressed: onLongPressed,
@@ -92,6 +101,8 @@ class FavoriteFolderComics extends StatelessWidget {
             group: group,
             isCurrent: isCurrent,
             selections: selections,
+            onSelectionChanged: onSelectionChanged,
+            onClearSelection: onClearSelection,
             menuBuilder: menuBuilder,
             onTap: onTap,
           ),
@@ -107,6 +118,8 @@ class _AuthorShelf extends StatefulWidget {
     required this.group,
     required this.isCurrent,
     this.selections,
+    this.onSelectionChanged,
+    this.onClearSelection,
     this.menuBuilder,
     this.onTap,
   });
@@ -114,6 +127,8 @@ class _AuthorShelf extends StatefulWidget {
   final AuthorShelfGroup group;
   final bool Function() isCurrent;
   final Map<Comic, bool>? selections;
+  final void Function(Comic, bool)? onSelectionChanged;
+  final VoidCallback? onClearSelection;
   final List<MenuEntry> Function(Comic)? menuBuilder;
   final void Function(Comic, int)? onTap;
   @override
@@ -133,6 +148,9 @@ class _AuthorShelfState extends State<_AuthorShelf> {
   AuthorShelfState? retry;
   bool failed = false;
   final dragFocus = FocusNode();
+  final selectionHandleFocus = FocusNode(debugLabel: 'author-selection-handle');
+  bool handleHovered = false;
+  bool handleFocused = false;
   FocusNode? previousFocus;
   int? pointer;
   bool dragging = false;
@@ -187,6 +205,7 @@ class _AuthorShelfState extends State<_AuthorShelf> {
   void dispose() {
     _cancelDrag();
     dragFocus.dispose();
+    selectionHandleFocus.dispose();
     horizontal.dispose();
     binding.manager.removeListener(_reload);
     removeComicWidgetStateListener(_reload);
@@ -309,6 +328,19 @@ class _AuthorShelfState extends State<_AuthorShelf> {
         bookshelf: true,
         hoverColor: Colors.transparent,
         comic: item,
+        previewGroup: widget.group.items,
+        selected: selected,
+        enableSelectionDrag: false,
+        selectedGroup:
+            widget.selections?.entries
+                .where((entry) => entry.value)
+                .map((entry) => entry.key)
+                .toList() ??
+            const [],
+        onSelectionChanged: widget.onSelectionChanged == null
+            ? null
+            : (value) => widget.onSelectionChanged!(item, value),
+        clearSelection: widget.onClearSelection,
         heroID: hero,
         displayMode: comicFavoriteDisplayState().isGallery
             ? ComicTileDisplayMode.gallery
@@ -437,6 +469,89 @@ class _AuthorShelfState extends State<_AuthorShelf> {
     );
   }
 
+  Widget _selectionHandle(BuildContext context) {
+    final workspace = WorkspaceNavigationScope.maybeOf(context);
+    final seen = <(String, String)>{};
+    final routes = <WorkspaceRouteRecord>[
+      if (current && !moving && !dragging && workspace != null)
+        for (final entry
+            in widget.selections?.entries ?? <MapEntry<Comic, bool>>[])
+          if (entry.value && seen.add((entry.key.id, entry.key.sourceKey)))
+            WorkspaceRouteRecord(
+              kind: WorkspacePageKind.comic,
+              arguments: {
+                'id': entry.key.id,
+                'sourceKey': entry.key.sourceKey,
+                'title': entry.key.title,
+                'cover': entry.key.cover,
+              },
+            ),
+    ];
+    final enabled = routes.isNotEmpty;
+    final colors = Theme.of(context).colorScheme;
+    return ComicSelectionDrag(
+      routes: routes,
+      child: Focus(
+        focusNode: selectionHandleFocus,
+        skipTraversal: !enabled,
+        onFocusChange: (value) => setState(() => handleFocused = value),
+        onKeyEvent: (_, event) {
+          if (enabled &&
+              event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.enter &&
+              (HardwareKeyboard.instance.isControlPressed ||
+                  HardwareKeyboard.instance.isMetaPressed)) {
+            for (final route in routes) {
+              workspace!.openBackground(route);
+            }
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: MouseRegion(
+          cursor: enabled ? SystemMouseCursors.grab : SystemMouseCursors.basic,
+          onEnter: (_) => setState(() => handleHovered = true),
+          onExit: (_) => setState(() => handleHovered = false),
+          child: Tooltip(
+            message: 'Drag selected comics to tabs'.tl,
+            child: Semantics(
+              label: 'Drag selected comics to tabs'.tl,
+              enabled: enabled,
+              child: SizedBox.square(
+                key: ValueKey((
+                  'author-selection-handle',
+                  widget.folder,
+                  widget.group.author,
+                )),
+                dimension: AppSizes.comicSelectionHandleSize,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: enabled && handleHovered
+                        ? colors.surfaceContainerHighest
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(
+                      width: AppSizes.hairline,
+                      color: enabled && handleFocused
+                          ? colors.primary
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.drag_indicator,
+                    color: enabled
+                        ? colors.onSurface
+                        : colors.onSurface.withValues(alpha: 0.38),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = widget.group.author ?? 'Unnamed author'.tl;
@@ -489,6 +604,7 @@ class _AuthorShelfState extends State<_AuthorShelf> {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Text('${widget.group.items.length}'),
               ),
+              _selectionHandle(context),
               IconButton(
                 tooltip:
                     (state == AuthorShelfState.normal

@@ -80,6 +80,7 @@ WorkspaceRouteRecord? describeWorkspacePage(Widget page) {
       arguments: {
         'id': page.id,
         'sourceKey': page.sourceKey,
+        'title': page.title,
         'chapter': page.initialEp,
         'page': page.initialPage,
       },
@@ -115,6 +116,7 @@ Widget buildWorkspacePage(WorkspaceRouteRecord record) {
     WorkspacePageKind.reader => ReaderWithLoading(
       id: args['id'] as String,
       sourceKey: args['sourceKey'] as String,
+      title: args['title'] as String?,
       initialEp: args['chapter'] as int?,
       initialPage: args['page'] as int?,
     ),
