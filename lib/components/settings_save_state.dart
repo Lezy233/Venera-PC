@@ -349,6 +349,16 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
     child: child,
   );
 
+  /// Home/workspace shells persist automatically but keep success and pending
+  /// feedback out of the page chrome. Failures remain actionable via Retry.
+  Widget withSettingsSaveFailureFeedback(Widget child) => _SettingsSaveFeedback(
+    saving: false,
+    failed: hasSettingsSaveError,
+    completedSaves: 0,
+    status: settingsSaveStatus,
+    child: child,
+  );
+
   Widget protectSettings(Widget child) => ExcludeFocus(
     excluding: !acceptsSettingsChanges,
     child: AbsorbPointer(absorbing: !acceptsSettingsChanges, child: child),

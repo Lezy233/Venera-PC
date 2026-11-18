@@ -143,7 +143,7 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
         }
         return KeyEventResult.ignored;
       },
-      child: withSettingsSaveFeedback(
+      child: withSettingsSaveFailureFeedback(
         Stack(
           children: [
             Positioned.fill(

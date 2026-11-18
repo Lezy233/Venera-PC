@@ -13,6 +13,10 @@ import "package:venera_next/foundation/widget_utils.dart";
 
 import "search_result_page.dart";
 import 'search_profile.dart';
+import 'package:venera_next/features/favorites/favorites_display.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/foundation/appdata.dart';
 
 class AggregatedSearchPage extends StatefulWidget {
   const AggregatedSearchPage({
@@ -85,6 +89,7 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage>
 
   @override
   void dispose() {
+    appdata.settings.removeListener(_settingsChanged);
     workspaceBinding?.unregisterFocus('aggregate-query', _workspaceFocus);
     _workspaceFocus.dispose();
     _workspaceScroll.dispose();
@@ -99,6 +104,7 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage>
 
   @override
   void initState() {
+    appdata.settings.addListener(_settingsChanged);
     // null explicitly means legacy global settings. The search entry resolves
     // the default once when initialized; a user's Global choice stays global.
     final selected = widget.profileId == null
@@ -132,6 +138,10 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage>
     _workspaceScroll.addListener(_workspaceScrolled);
   }
 
+  void _settingsChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return SmoothCustomScrollView(
@@ -140,6 +150,11 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage>
         SliverSearchBar(
           controller: controller,
           focusNode: _workspaceFocus,
+          action: const FavoriteDisplayButton(
+            preference: DiscoveryPreferences.searchDisplayMode,
+            tooltip: 'Search display mode',
+            includeColumns: false,
+          ),
           onChanged: (value) {
             _workspaceInput = value;
             workspaceBinding?.changed();
@@ -165,6 +180,11 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage>
               source: source!,
               options: target.options,
               keyword: _keyword,
+              listMode:
+                  GlobalPreferenceStore(
+                    appdata.settings,
+                  ).read(DiscoveryPreferences.searchDisplayMode) ==
+                  'list',
             );
           }, childCount: _targets.length),
         ),
@@ -178,6 +198,7 @@ class _SliverSearchResult extends StatefulWidget {
     required this.source,
     required this.options,
     required this.keyword,
+    required this.listMode,
     super.key,
   });
 
@@ -185,6 +206,7 @@ class _SliverSearchResult extends StatefulWidget {
   final List<String> options;
 
   final String keyword;
+  final bool listMode;
 
   @override
   State<_SliverSearchResult> createState() => _SliverSearchResultState();
@@ -245,24 +267,6 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
         borderRadius: BorderRadius.circular(8),
       ),
     );
-  }
-
-  Widget buildComic(Comic c) {
-    return SimpleComicTile(
-      comic: c,
-      previewGroup: comics,
-      selected: selections[c] ?? false,
-      selectedGroup: selections.keys.toList(),
-      onSelectionChanged: (selected) => setState(() {
-        if (selected) {
-          selections[c] = true;
-        } else {
-          selections.remove(c);
-        }
-      }),
-      clearSelection: () => setState(selections.clear),
-      withTitle: true,
-    ).paddingLeft(_kLeftPadding).paddingBottom(2);
   }
 
   @override
@@ -338,12 +342,19 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
               ).paddingHorizontal(16),
             )
           else
-            SizedBox(
-              height: _kComicHeight,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [for (var c in comics!) buildComic(c)],
-              ),
+            CustomScrollView(
+              shrinkWrap: true,
+              primary: false,
+              physics: const NeverScrollableScrollPhysics(),
+              slivers: [
+                SliverGridComics(
+                  comics: comics!,
+                  selections: selections,
+                  displayMode: widget.listMode
+                      ? ComicTileDisplayMode.detailed
+                      : ComicTileDisplayMode.gallery,
+                ),
+              ],
             ),
         ],
       ).paddingBottom(16),

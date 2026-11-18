@@ -1,5 +1,9 @@
 # UX1 A 书架型工作区实施任务
 
+2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
+
+本阶段batch-4–10交付/复核/SHA/派工记录已移入上述归档；以下历史备注中的同名文件在那里查阅。
+
 2026-11-17 owner已验收1.3＋F2（4.1–4.5）通过并授权归档提交，未授权此次推送。包含正常main首帧顺序修复及实际显示路由排查；历史待验收/阻断记录以本次通过为最终状态。阶段快照见 `../archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；5.x/6.x/7.x仍未完成，不补勾、不整项archive。
 
 第一批已实施并记录证据；未勾项仍未完成，后续阶段须继续。每项完成后立即勾选并备注真实命令、通过/失败/skip 计数和证据；不得把探索稿检查计入生产验收。executor 不得自行修改 proposal/design/delta spec 或 design-spec，发现冲突先报告 architect。
@@ -72,13 +76,36 @@
 
 ## 5. 搜索、详情与设置一致性
 
-- [ ] 5.1 将搜索默认结果改为封面平铺，并把现有「点击收藏」设置扩展为所有漫画列表的统一主体行为；独立控件不误触，直接阅读和进入详情均保持正确历史。
-- [ ] 5.2 实现详情信息优先默认与阅读优先可选；两版保留标题、作者、来源、分类、状态、继续阅读、收藏、简介和章节，阅读优先作品详情默认收起且可展开。
-- [ ] 5.3 实现收藏密度、详情层级、关闭跳转和启动策略的设置入口、可靠保存与重进/重启一致；设置作用范围清晰，不互相覆盖或改写业务数据。
-- [ ] 5.4 实现首次加载骨架、更新中旧结果、无结果恢复和更新失败旧结果/打开/重试；提示靠近上下文且不循环 toast，关键词、筛选和选择保持。
+- [x] 5.1 将搜索默认结果改为封面平铺，并把现有「点击收藏」设置扩展为所有漫画列表的统一主体行为；独立控件不误触，直接阅读和进入详情均保持正确历史。
+  - 2026-11-18：真实SearchResultPage单源结果改为显式gallery平铺；聚合SimpleComicTile封面路径保留。F2主体/返回/选择回归11通过0失败0skip（/tmp/ux1-5x-search-existing.log）；此前1.3主体失配红灯保留为历史。
+- [x] 5.2 实现详情信息优先默认与阅读优先可选；两版保留标题、作者、来源、分类、状态、继续阅读、收藏、简介和章节，阅读优先作品详情默认收起且可展开。
+  - 2026-11-18 architect批准最小契约实现：DiscoveryPreferences.comicDetailMode（information默认/reading），Explore现有设置入口与双中文文案；ComicPage阅读优先默认收起“作品详情与来源”，可在原页展开，信息优先直接展示，未改收藏/阅读/章节业务。详情页/主体回归10通过0失败0skip（/tmp/ux1-5x-detail-green.log）；现有ComicDetails页面测试未覆盖完整展开文本逐字段断言，作为独立复核局限保留。
+- [x] 5.3 实现收藏密度、详情层级、关闭跳转和启动策略的设置入口、可靠保存与重进/重启一致；设置作用范围清晰，不互相覆盖或改写业务数据。
+  - 2026-11-18：现有Preference/WorkspaceStore真实持久化回归25通过0失败0skip（/tmp/ux1-5x-234-regression.log）；详情层级由5.2的comicDetailMode实现覆盖，保存/重进仍沿现有SettingsSaveState与WorkspaceStore边界。
+- [x] 5.4 实现首次加载骨架、更新中旧结果、无结果恢复和更新失败旧结果/打开/重试；提示靠近上下文且不循环 toast，关键词、筛选和选择保持。
+  - 2026-11-18：真实ComicList/SearchResultPage loading/error/empty/retry/过滤/关键词现场回归25通过0失败0skip（/tmp/ux1-5x-234-regression.log）。
 - [ ] 5.5 完成搜索/详情真实控件、状态反馈、收藏切换、层级/标签现场保持及 F6/F7/F8 搜索身份回归；所有新文案 `.tl` + zh_CN/zh_TW。
+  - 2026-11-18：搜索身份/方案/过滤/键盘焦点/状态反馈及B4/F8相关回归50通过0失败0skip（/tmp/ux1-5x-55-regression.log），与25/11集合不相加；自动化已绿，但本阶段真实正常main GUI尚未取证，故不勾整项。
+- [x] 5.6 修复搜索及其他平铺列表的漫画封面比例，完整显示原始封面内容并保持现有列数、密度、标题与交互命中区；覆盖不同宽高比、响应式宽度和大文字场景，避免以裁切或横向固定卡片掩盖问题。
+  - 2026-11-18：真实生产 `ComicTile` 以 2×1 与 1×2 受控封面建立红灯：旧 `AnimatedImage` 忽略显式 fit 且平铺调用 `cover`，实际断言 `fit == contain` 失败；最小修复让 `AnimatedImage` 尊重调用方 fit，并使 `ComicTile` gallery/brief 平铺使用 `BoxFit.contain`。`search_cover_ratio_and_single_drag_test.dart` 2/0/0 绿，受影响保护合跑 `/tmp/ux1-5x-567-protection.log` 16/0/0；保留现有列数/标题/主体与独立控件命中。测试覆盖两个纵横比，响应式/150% 仍依赖既有生产矩阵与 GUI 环境，未冒称本轮 GUI。
+- [x] 5.7 支持未选择单张漫画主体直接拖到标签栏后台打开；一次仅创建该漫画详情标签，保持当前页、选择、焦点、滚动、来源身份与请求现场，且不冒泡为单击、复选框切换或作者栏排序；保留既有多选拖放、菜单、键盘、Escape取消和正确 id/sourceKey/hero。
+  - 2026-11-18：真实生产 `ComicTile`→`WorkspaceTabStrip` 坐标指针拖动旧红灯：未选择时 `ComicSelectionDrag` 没有 routes，标签栏不产生后台路由；最小修复允许无选择主体生成单一 `WorkspaceComicDrag`，多选仍优先使用 selectedGroup。新增生产控件测试 2/0/0，保护合跑 `/tmp/ux1-5x-567-protection.log` 16/0/0；断言单一 comic route、id/sourceKey，未触发主体 tap。已有多选/菜单/键盘/Escape/作者手柄保护分列保留。
+- [x] 5.8 修复收藏界面单张未选择漫画拖到标签栏无效的问题；覆盖收藏主网格、网络收藏和作者栏实际入口，保持多选拖放、作者栏独立手柄/长按排序、复选框、菜单、主体点击和正确实体身份不冲突。
+  - 2026-11-18：四假设核对：①作者 shelf 的 `ComicTile(enableSelectionDrag: false)` 确认为独立长按排序入口，选集拖出只走独立手柄；② `DesktopWorkspace` 确实提供 `WorkspaceNavigationScope`，主收藏/网络收藏共用 `SliverGridComics → ComicTile`；③ `WorkspaceTabStrip` 已注册 `DragTarget<WorkspaceComicDrag>`；④作者栏长按竞争未改动，F10/F11 保护保留。主/网络共用生产网格真实坐标红灯见 `/tmp/ux1-5x-58-red.log`，未选择时旧 selected gate 无后台路由；沿5.7最小修复后的生产回归 `favorites_single_drag_test.dart` 1/0/0 绿，实体 `favorite-1/network-a`、一次路由、未选中断言保留。相关保护合跑 `/tmp/ux1-5x-58-protection.log` 33/0/0；作者栏单卡主体不作为选集拖出入口，独立手柄/长按排序由既有 F10/F11 测试覆盖，入口边界已记录。
+- [x] 5.9 移除普通收藏/网络收藏及其他网格卡片主体旧长按选中与范围选中；统一使用 4.3 复选框、菜单和键盘选择，保留作者栏独立手柄、栏内排序和详情页必要长按行为。
+  - 2026-11-18：移除 `local_favorites_page.dart` 与 `local_comics_page.dart` 传给 `SliverGridComics` 的主体 `onLongPressed` 选择/范围选择回调；ComicTile 默认长按菜单、作者栏独立手柄/栏内排序、ComicPage quickFavorite 未改。生产网格长按回归 `/tmp/ux1-5x-59-green.log` 1/0/0，B4 收藏命中 `/tmp/ux1-5x-59-hit-target.log` 4/0/0；ownership 迁移后的 transfer 34/34、confirmation 目标用例 1/1 通过。旧回调路径的红灯由 owner 缺陷现场和本轮前置实现对照确认，最终真实控件断言 selected 集合不变；checkbox、多选菜单/键盘/Escape 与 F10/F11 保护分列保留。
+- [x] 5.10 移除工作区首页切换/自动快照保存时的圆形保存进度和“已保存”成功浮层；自动保存继续执行，保存失败提示与重试能力保留，设置页及必要的显式保存反馈不受影响。
+  - 2026-11-18：`SettingsSaveState.withSettingsSaveFailureFeedback` 新增失败专用壳层；`BookshelfWorkspace`/`DesktopWorkspace` 自动保存只保留失败 Retry，不显示 pending spinner 或成功 Saved。真实首页 toggle + 阻塞 AppDataOperations 的回归 `/tmp/ux1-5x-510-green.log` 1/0/0；旧 `withSettingsSaveFeedback` 回放红灯 `/tmp/ux1-5x-510-red.log` 可见 CircularProgressIndicator。设置页 `settings_save_feedback_test.dart` 及保存失败/Retry保护保持。
+- [x] 5.11 统一桌面卡片交互：漫画卡片主体长按不再触发移动端遗留的上下文菜单，真实 secondary pointer/button 仍可触发；复核 4.4/5.7 单卡与多选后台拖放、5.10 自动保存反馈在搜索、收藏、本地漫画、历史和作者栏入口的一致性，保留作者栏独立排序/选集手柄。
+  - 2026-11-18：根因是 `ComicTile._onLongPressed` 在无自定义回调时无平台分支，桌面主体长按仍调用默认 `showMenu`；`onSecondaryTapDown` 已走同一 `showMenu`。最小修复在 `lib/features/comic_widgets/comic_tile.dart` 仅对桌面默认主体长按返回，保留移动端默认长按菜单、secondary pointer 菜单及自定义 `ComicPage.quickFavorite`。真实生产网格红灯 `/tmp/ux1-5x-511-red.log`（修复前主体长按可见 Details，secondary 同菜单），绿灯 `/tmp/ux1-5x-511-green.log` 1/0/0（主体长按无菜单、secondary 仍可见 Details）。F2/F5/F8/F10/F11/B4/5.10 有界保护 `/tmp/ux1-5x-511-protection.log` 91/0/0；作者 shelf 独立手柄/栏内长按排序未改，历史入口 `onLongPressed:null` 与详情页专用长按保持。搜索、网络/本地收藏、历史均复用 `ComicTile` 默认路径；作者 shelf 使用独立拖动语义。GUI 仍受当前 Wayland/X11 输入访问限制，未冒称桌面 GUI 证据。
+- [x] 5.12 为搜索结果增加与收藏一致的“画廊/列表”切换；默认画廊，保持关键词、筛选、滚动、选择、标签身份和主体/复选框/拖放语义，复用既有显示控件、持久化和翻译，不重建卡片视觉系统。
+  - 2026-11-18：单源/聚合真实入口缺失红灯 `/tmp/ux1-512-entry-red.log`、`/tmp/ux1-512-aggregate-red.log` 各0/1/0；复用参数化 FavoriteDisplayButton 和独立 DiscoveryPreferences.searchDisplayMode（默认gallery），不改 FavoritePreferences.displayMode.key/列数。聚合保留来源分组和进入单源入口，gallery沿原SimpleComicTile、list复用detailed SliverGridComics。真实菜单/checkbox/双向切换、两来源请求、同State/控制器/120px选集、磁盘保存/重载List和MainPage同tab/420px/筛选/返回合跑 `/tmp/ux1-512-state-green.log` 2/0/0；搜索/F2/F8/B4/F10/F11保护 `/tmp/ux1-512-protection.log` 111/0/0（重叠不累加）。analyze `/tmp/ux1-512-analyze.log` raw/unique50=38+12具体集合added=[]removed=[]；正常main构建、diffcheck、OpenSpec通过。当前5生产/2测试SHA与全部命令见delivery-batch-9.md；GUI输入访问局限保留，5.5仍未勾，不冒称GUI或新PID证据。
+
+- [x] 5.13 修复搜索画廊大片留白，严格复用收藏普通画廊的自动列数、卡片/纵向封面槽位、标题、行列间距与外边距；单源及聚合分组均适用，同可用宽度/文字缩放/密度下几何一致，保留完整封面、独立模式记忆及搜索现场。
+  - 2026-11-18：真实生产搜索/收藏600/1000/1400×100%/150%×comfortable/compact几何红灯 `/tmp/ux1-513-geometry-red.log` 0/12/0。根因是显式gallery的renderer已为bookshelf，但galleryColumns=null令委托走横向列表布局；600舒适下搜索1列592×144/槽位576×88.8，收藏4列142×264.59/槽位126×209.39。仅为显式gallery传自动列数0后单源12组一致，聚合仍红；聚合gallery复用原SliverGridComics后两者与收藏同几何。最终 `/tmp/ux1-513-geometry-final.log` 14/0/0，含12组实际rect/列数/标题/间距边距、68×100和160×60真实解码四边像素完整性及5.12偏好隔离/磁盘/现场；具体原始值见batch-10-geometry.json。保护 `/tmp/ux1-513-protection.log` 128/0/0（含前14，重叠不累加），保留同State/controller/tab/scroll/selection/请求及F2/B4/F8/F10/F11。analyze50/50=38+12 added=[]removed=[]，正常main构建/diffcheck/OpenSpec/SHA通过；2生产/2测试与命令见delivery-batch-10.md。无新GUI/fixture，5.5仍未勾，未提交归档push。
 
 ## 6. 阅读器与全局可访问性
+
 
 - [ ] 6.1 实现普通阅读保留标签、沉浸阅读隐藏标签及模式切换现场保持；保护阅读方案绑定、翻页与 B3/F9/B5 行为。
 - [ ] 6.2 移除闲置 2 秒自动隐藏，接入漫画任意位置单击切换工具；独立按钮、菜单、章节与文本控件不冒泡，底部始终只有一条进度组件，隐藏工具时为精简形态。

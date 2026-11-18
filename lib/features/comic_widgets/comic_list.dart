@@ -37,6 +37,7 @@ class SliverGridComics extends StatefulWidget {
     this.onSelectionChanged,
     this.onClearSelection,
     this.useFavoriteDisplaySettings = false,
+    this.displayMode,
   });
 
   final List<Comic> comics;
@@ -56,6 +57,7 @@ class SliverGridComics extends StatefulWidget {
   final void Function(Comic, int heroID)? onLongPressed;
 
   final bool useFavoriteDisplaySettings;
+  final ComicTileDisplayMode? displayMode;
 
   @override
   State<SliverGridComics> createState() => _SliverGridComicsState();
@@ -172,7 +174,13 @@ class _SliverGridComicsState extends State<SliverGridComics> {
       onLongPressed: widget.onLongPressed,
       onBlocked: update,
       favoriteDisplayMode: favoriteDisplayMode,
-      galleryColumns: favoriteDisplayMode == ComicTileDisplayMode.gallery
+      fixedDisplayMode: widget.displayMode,
+      // An explicit gallery uses the same automatic bookshelf geometry as
+      // favorites, without inheriting its independently saved display mode
+      // or fixed column preference. Null selects the legacy list geometry.
+      galleryColumns: widget.displayMode == ComicTileDisplayMode.gallery
+          ? 0
+          : favoriteDisplayMode == ComicTileDisplayMode.gallery
           ? favoriteDisplayState.galleryColumns
           : null,
     );
@@ -194,6 +202,7 @@ class _SliverGridComics extends StatelessWidget {
     this.onClearSelection,
     this.favoriteDisplayMode,
     this.galleryColumns,
+    this.fixedDisplayMode,
   });
 
   final List<Comic> comics;
@@ -219,6 +228,7 @@ class _SliverGridComics extends StatelessWidget {
   final ComicTileDisplayMode? favoriteDisplayMode;
 
   final int? galleryColumns;
+  final ComicTileDisplayMode? fixedDisplayMode;
 
   @override
   Widget build(BuildContext context) {
@@ -254,8 +264,10 @@ class _SliverGridComics extends StatelessWidget {
               : null,
           onBlocked: onBlocked,
           heroID: heroIDs[index],
-          displayMode: favoriteDisplayMode,
-          bookshelf: favoriteDisplayMode == ComicTileDisplayMode.gallery,
+          displayMode: fixedDisplayMode ?? favoriteDisplayMode,
+          bookshelf:
+              (fixedDisplayMode ?? favoriteDisplayMode) ==
+              ComicTileDisplayMode.gallery,
         );
         if (selection == null) {
           return comic;
@@ -276,12 +288,16 @@ class _SliverGridComics extends StatelessWidget {
         );
       }, childCount: comics.length),
       gridDelegate: SliverGridDelegateWithComics(
-        bookshelf: favoriteDisplayMode == ComicTileDisplayMode.gallery,
+        bookshelf:
+            (fixedDisplayMode ?? favoriteDisplayMode) ==
+            ComicTileDisplayMode.gallery,
         textScale:
             MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
             AppFontSize.body,
         galleryColumns: galleryColumns,
-        forceDetailed: favoriteDisplayMode == ComicTileDisplayMode.detailed,
+        forceDetailed:
+            (fixedDisplayMode ?? favoriteDisplayMode) ==
+            ComicTileDisplayMode.detailed,
       ),
     );
   }
@@ -313,6 +329,7 @@ class ComicList extends StatefulWidget {
     this.reloadHandlerCallback,
     this.enablePageStorage = false,
     this.useFavoriteDisplaySettings = false,
+    this.displayMode,
     this.initialPage = 1,
     this.onPageChanged,
   });
@@ -338,6 +355,7 @@ class ComicList extends StatefulWidget {
   final bool enablePageStorage;
 
   final bool useFavoriteDisplaySettings;
+  final ComicTileDisplayMode? displayMode;
 
   final int initialPage;
   final ValueChanged<int>? onPageChanged;
@@ -696,6 +714,7 @@ class ComicListState extends State<ComicList> {
           comics: _data[_page] ?? const [],
           menuBuilder: widget.menuBuilder,
           useFavoriteDisplaySettings: widget.useFavoriteDisplaySettings,
+          displayMode: widget.displayMode,
         ),
         if (_data[_page]!.length > 6 && _maxPage != 1)
           _buildSliverPageSelector(),
@@ -742,6 +761,7 @@ class ComicListState extends State<ComicList> {
           comics: _data.values.expand((element) => element).toList(),
           menuBuilder: widget.menuBuilder,
           useFavoriteDisplaySettings: widget.useFavoriteDisplaySettings,
+          displayMode: widget.displayMode,
           onLastItemBuild: () {
             if (_error == null &&
                 (_maxPage == null || _data.length < _maxPage!)) {

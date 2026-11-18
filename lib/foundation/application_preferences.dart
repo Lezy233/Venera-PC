@@ -110,10 +110,20 @@ abstract final class AppearancePreferences {
 }
 
 abstract final class DiscoveryPreferences {
+  static const comicDetailMode = ChoicePreference(
+    'comicDetailMode',
+    'information',
+    ['information', 'reading'],
+  );
   static const comicDisplayMode = ChoicePreference(
     'comicDisplayMode',
     'detailed',
     ['detailed', 'brief'],
+  );
+  static const searchDisplayMode = ChoicePreference(
+    'searchDisplayMode',
+    'gallery',
+    ['gallery', 'list'],
   );
   static const comicTileScale = NumericPreference(
     'comicTileScale',
@@ -163,7 +173,9 @@ abstract final class DiscoveryPreferences {
     'defaultSearchTarget',
   );
   static const all = <Preference<Object?>>[
+    comicDetailMode,
     comicDisplayMode,
+    searchDisplayMode,
     comicTileScale,
     showFavoriteStatusOnTile,
     showHistoryStatusOnTile,

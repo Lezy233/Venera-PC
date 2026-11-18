@@ -112,6 +112,14 @@ class _ExploreSettingsState extends State<ExploreSettings> {
             "Continuous": "Continuous".tl,
           },
         ).toSliver(),
+        SelectSetting.preference(
+          title: "Comic detail mode".tl,
+          preference: DiscoveryPreferences.comicDetailMode,
+          optionTranslation: {
+            'information': "Information first".tl,
+            'reading': "Reading first".tl,
+          },
+        ).toSliver(),
       ],
     );
   }

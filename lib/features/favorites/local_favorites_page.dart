@@ -1769,40 +1769,6 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
                 );
               }
             },
-            onLongPressed: (c, heroID) {
-              setState(() {
-                if (!multiSelectMode) {
-                  multiSelectMode = true;
-                  if (!selectedComics.containsKey(c as FavoriteItem)) {
-                    selectedComics[c] = true;
-                  }
-                  lastSelectedIndex = comics.indexOf(c);
-                } else {
-                  if (lastSelectedIndex != null) {
-                    int start = lastSelectedIndex!;
-                    int end = comics.indexOf(c as FavoriteItem);
-                    if (start > end) {
-                      int temp = start;
-                      start = end;
-                      end = temp;
-                    }
-
-                    for (int i = start; i <= end; i++) {
-                      if (i == lastSelectedIndex) continue;
-
-                      var comic = comics[i];
-                      if (selectedComics.containsKey(comic)) {
-                        selectedComics.remove(comic);
-                      } else {
-                        selectedComics[comic] = true;
-                      }
-                    }
-                  }
-                  lastSelectedIndex = comics.indexOf(c as FavoriteItem);
-                }
-                _checkExitSelectMode();
-              });
-            },
           ),
       ],
     );

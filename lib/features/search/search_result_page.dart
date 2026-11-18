@@ -8,6 +8,7 @@ import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/message.dart';
 import 'package:venera_next/components/select.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
+import 'package:venera_next/features/favorites/favorites_display.dart';
 import 'package:venera_next/foundation/app_locale.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/context.dart';
@@ -170,6 +171,7 @@ class _SearchResultPageState extends State<SearchResultPage>
 
   @override
   void dispose() {
+    appdata.settings.removeListener(_settingsChanged);
     workspaceBinding?.unregisterFocus('search-result-query', _workspaceFocus);
     _workspaceFocus.dispose();
     _workspaceScroll.dispose();
@@ -199,8 +201,13 @@ class _SearchResultPageState extends State<SearchResultPage>
     validateOptions();
     unawaited(_recordSearchHistory(text));
     suggestionsController = _SuggestionsController(controller, sourceKey);
+    appdata.settings.addListener(_settingsChanged);
     super.initState();
     _workspaceScroll.addListener(_workspaceScrolled);
+  }
+
+  void _settingsChanged() {
+    if (mounted) setState(() {});
   }
 
   void validateOptions() {
@@ -242,37 +249,52 @@ class _SearchResultPageState extends State<SearchResultPage>
           : (i) {
               return source.searchPageData!.loadNext!(text, i, options);
             },
+      displayMode:
+          GlobalPreferenceStore(
+                appdata.settings,
+              ).read(DiscoveryPreferences.searchDisplayMode) ==
+              'list'
+          ? ComicTileDisplayMode.detailed
+          : ComicTileDisplayMode.gallery,
     );
   }
 
   Widget buildAction() {
-    return Tooltip(
-      message: "Settings".tl,
-      child: IconButton(
-        icon: const Icon(Icons.tune),
-        onPressed: () async {
-          if (suggestionOverlay != null) {
-            suggestionsController.remove();
-          }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FavoriteDisplayButton(
+          preference: DiscoveryPreferences.searchDisplayMode,
+          tooltip: 'Search display mode',
+          includeColumns: false,
+        ),
+        IconButton(
+          tooltip: 'Settings'.tl,
+          icon: const Icon(Icons.tune),
+          onPressed: () async {
+            if (suggestionOverlay != null) {
+              suggestionsController.remove();
+            }
 
-          var previousOptions = List<String>.from(options);
-          var previousSourceKey = sourceKey;
-          await showDialog(
-            context: context,
-            useRootNavigator: true,
-            builder: (context) {
-              return _SearchSettingsDialog(state: this);
-            },
-          );
-          if (!previousOptions.isEqualTo(options) ||
-              previousSourceKey != sourceKey) {
-            text = _applyConfiguredLanguageFilter(controller.text);
-            _workspaceInput = text;
-            controller.currentText = text;
-            setState(_resetWorkspacePosition);
-          }
-        },
-      ),
+            var previousOptions = List<String>.from(options);
+            var previousSourceKey = sourceKey;
+            await showDialog(
+              context: context,
+              useRootNavigator: true,
+              builder: (context) {
+                return _SearchSettingsDialog(state: this);
+              },
+            );
+            if (!previousOptions.isEqualTo(options) ||
+                previousSourceKey != sourceKey) {
+              text = _applyConfiguredLanguageFilter(controller.text);
+              _workspaceInput = text;
+              controller.currentText = text;
+              setState(_resetWorkspacePosition);
+            }
+          },
+        ),
+      ],
     );
   }
 }

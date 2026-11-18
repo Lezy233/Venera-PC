@@ -26,6 +26,9 @@ import 'package:venera_next/features/comic_details/comments_preview.dart';
 import 'package:venera_next/features/comic_details/cover_viewer.dart';
 import 'package:venera_next/features/comic_details/thumbnails.dart';
 import 'package:venera_next/foundation/app_locale.dart';
+import 'package:venera_next/foundation/appdata.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/design_system/breakpoints.dart';
@@ -246,9 +249,15 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   }
 
   var isFirst = true;
+  bool _detailsExpanded = false;
 
   @override
   Widget buildContent(BuildContext context, ComicDetails data) {
+    final readingFirst =
+        GlobalPreferenceStore(
+          appdata.settings,
+        ).read(DiscoveryPreferences.comicDetailMode) ==
+        'reading';
     return Scaffold(
       floatingActionButton: showFAB
           ? FloatingActionButton(
@@ -267,8 +276,17 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
         slivers: [
           ...buildTitle(),
           buildActions(),
-          buildDescription(),
-          buildInfo(),
+          if (!readingFirst || _detailsExpanded) ...[
+            buildDescription(),
+            buildInfo(),
+          ] else
+            SliverToBoxAdapter(
+              child: ListTile(
+                title: Text("Works details and sources".tl),
+                trailing: const Icon(Icons.expand_more),
+                onTap: () => setState(() => _detailsExpanded = true),
+              ),
+            ),
           buildChapters(),
           buildComments(),
           buildThumbnails(),

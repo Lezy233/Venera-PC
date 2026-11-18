@@ -6,6 +6,8 @@
 
 ## 执行顺序（依赖关系）
 
+2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
+
 **2026-11-17 最新状态（覆盖下方历史）**：owner验收1.3＋F2（4.1–4.5）通过并授权阶段归档提交，未授权此次推送。证据见 `changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；书架/F1此前已归档推送。活动UX1仅余5.x搜索/详情 → 6.x阅读器 → 7.x整体验收，继续保留，不整项archive或合入未实现delta。
 
 **2026-11-16 当前状态**：UX1 书架壳层与 F1 多标签阶段已经 owner 验收并授权归档、提交、推送；阶段证据见 `changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`。活动 `ux1-bookshelf-workspace` 继续保留，余项按 1.3 对应阶段红灯 → 4.x F2 预览/多选拖放 → 5.x 搜索/详情一致性 → 6.x 阅读器交互 → 7.x 整体验收推进。下方旧的“生产未启动/待排期”为历史；尚未完成全部任务，不合并整个 delta spec。

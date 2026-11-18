@@ -16,6 +16,8 @@
 
 ## 功能候选清单
 
+2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
+
 **2026-11-17 最新状态（覆盖下方历史）**：owner验收UX1的1.3＋F2（4.1–4.5）通过，授权阶段归档提交，未授权此次推送。归档 `openspec/changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；整个UX1仍活动，剩余5.x搜索/详情、6.x阅读器、7.x整体验收。
 
 **2026-11-16 最新状态**：F1 多内容栈和 UX1 书架壳层已验收，owner 授权阶段归档、提交和推送。阶段归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；整个 UX1 仍活动，剩余 1.3 阶段红灯、4.x F2 预览/多选拖放、5.x 搜索/详情一致性、6.x 阅读器及 7.x 整体验收。后文“生产未启动/待排期”保留为历史，以此及活动 tasks 为准。

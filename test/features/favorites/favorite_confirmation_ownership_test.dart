@@ -318,7 +318,8 @@ class _Host {
       final grid = tester.widget<SliverGridComics>(
         find.byType(SliverGridComics),
       );
-      grid.onLongPressed!(grid.comics.first, 0);
+      grid.onSelectionChanged!(grid.comics.first, true);
+      await pumpSidebar(tester);
       await pumpSidebar(tester);
     }
   }
@@ -639,7 +640,12 @@ void main() {
     final confirming = _confirm(tester);
     await pumpSidebar(tester);
     originalGrid.onTap!(originalGrid.comics.first, 0);
-    originalGrid.onLongPressed!(originalGrid.comics.last, 0);
+    final currentGrid = tester.widget<SliverGridComics>(
+      find.byType(SliverGridComics),
+    );
+    currentGrid.onSelectionChanged!(currentGrid.comics.first, false);
+    currentGrid.onSelectionChanged!(currentGrid.comics.last, true);
+    await pumpSidebar(tester);
     await pumpSidebar(tester);
     pending.complete();
     await settleSidebarWork(tester, () => confirming);
@@ -658,7 +664,8 @@ void main() {
     final trigger = host.trigger();
     final grid = tester.widget<SliverGridComics>(find.byType(SliverGridComics));
     grid.onTap!(grid.comics.first, 0);
-    grid.onLongPressed!(grid.comics.last, 0);
+    grid.onSelectionChanged!(grid.comics.last, true);
+    await pumpSidebar(tester);
     await pumpSidebar(tester);
     trigger();
     await pumpSidebar(tester);

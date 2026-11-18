@@ -18,6 +18,7 @@ import 'package:venera_next/components/select.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import 'package:venera_next/foundation/app_locale.dart';
+import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/extensions.dart';
@@ -298,6 +299,10 @@ class ComicTile extends StatelessWidget {
       onLongPressed!();
       return;
     }
+    // Desktop cards use the secondary pointer for their context menu. Keep
+    // the mobile long-press affordance, while avoiding the legacy mobile menu
+    // on a desktop primary-pointer hold.
+    if (App.isDesktop) return;
     onLongPress(context);
   }
 
@@ -382,9 +387,7 @@ class ComicTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ComicSelectionDrag(
     routes:
-        selected &&
-            enableSelectionDrag &&
-            WorkspaceNavigationScope.maybeOf(context) != null
+        enableSelectionDrag && WorkspaceNavigationScope.maybeOf(context) != null
         ? (selectedGroup.isEmpty ? [comic] : selectedGroup)
               .map(_backgroundRoute)
               .toList()
@@ -619,7 +622,7 @@ class ComicTile extends StatelessWidget {
     }
     return AnimatedImage(
       image: image,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
     );
@@ -1535,7 +1538,7 @@ class SimpleComicTile extends StatelessWidget {
             image: image,
             width: double.infinity,
             height: double.infinity,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             filterQuality: FilterQuality.medium,
             gaplessPlayback: gaplessPlayback,
           );

@@ -229,7 +229,8 @@ class _Host {
     }
     await tester.pumpWidget(app());
     await pumpSidebar(tester);
-    grid.onLongPressed!(grid.comics.first, 0);
+    grid.onSelectionChanged!(grid.comics.first, true);
+    await pumpSidebar(tester);
     await pumpSidebar(tester);
   }
 

@@ -1,0 +1,5 @@
+你是 executor，继续 UX1 change，仅实施5.13：owner退回搜索画廊留白过多，要求严格仿照收藏画廊布局。先读AGENTS、活动四件套、design-spec相关段、delivery-batch-9。HEAD及既有脏改保留，禁止提交归档push，禁止改proposal/design/spec/design-spec/正式spec/pubspec/lock。
+先以生产 SearchResultPage 与收藏普通 SliverGridComics/useFavoriteDisplaySettings 路径在相同可用内容宽度/scale/密度下建立几何红灯，列出自动列数、实际卡片rect/封面槽位rect/标题高度/间距/边距差异。要证明owner的实际大留白，不能只assert fit或widget名，不能改坏测试制造红灯。至少600/1000/1400内容宽度、100%/150%文字、comfortable/compact受影响组合。先记录3个可证伪根因假设再单变量验证。
+最小修复复用收藏普通画廊网格几何，搜索显式gallery必须驱动同一bookshelf布局、尺寸/密度/auto columns规则，避免固定横向大槽位。聚合搜索保留来源分组但gallery分组内同样改为收藏网格，不能继续横向SimpleComicTile的另一套尺寸。列表模式保持。搜索mode与收藏mode独立记忆；共享布局/密度token不等于改写收藏mode。不得通过crop掩盖留白，完整封面与纵向槽位保留；非标准宽封面容纳时必要letterbox不作为故障。
+保持原State/controller/selection/keyword/options/sourceKey/tab/scroll/request计数、checkbox/right click/preview/单卡多选drag/Escape。回归5.12/F2/B4/F8与收藏/F10/F11，不删弱断言。新增几何对照红绿测试，并对不同纵横比封面显示作实际布局或像素证明；如能安全GUI只操作本轮隔离程序，截图/tmp，禁止用旧:1冒称owner桌面。GUI不可用明确单列，5.5仍未勾。
+每项完成立即勾tasks写命令与计数。交付根因/红绿/变更文件/保护回归/analyze50=38+12具体集合/正常main构建/SHA/diffcheck/OpenSpec，等待architect复核，不提交。

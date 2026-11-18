@@ -503,7 +503,7 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
           ),
         ],
         pageBuilder: (_) => const SizedBox(),
-        workspace: withSettingsSaveFeedback(content),
+        workspace: withSettingsSaveFailureFeedback(content),
       ),
     );
   }

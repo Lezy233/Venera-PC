@@ -1,0 +1,8 @@
+你是 executor，继续当前 UX1 change `ux1-bookshelf-workspace`。owner报告新缺陷：在「收藏」界面未选择单张漫画时，鼠标拖动漫画到标签栏不能后台打开。本轮只处理 tasks 5.8，工件以当前 HEAD/工作区为准；不得提交、归档或 push。
+
+先读 AGENTS.md、proposal/design/spec/tasks、delivery-batch-5.md。建立真实生产控件红灯，分别检查：收藏主网格/ComicList、网络收藏 ComicList、作者 shelf/三态（如该入口实际可见）。红灯必须使用实际坐标/指针拖动到 WorkspaceTabStrip 并断言后台路由恰好一次、id/sourceKey/title/hero、当前页/选择/焦点/滚动/请求现场保持；不能只调用回调。记录以下排序假设的验证结果：
+1) author_shelf.dart 显式 enableSelectionDrag=false；2) 收藏卡片上下文缺 WorkspaceNavigationScope；3) 收藏路径未注册标签栏 DragTarget；4) 作者栏长按排序竞争抢占拖动。
+
+按真实根因做最小修复。若涉及作者栏，必须保持：独立作者手柄的选集拖出、卡片长按仅作者内排序、复选框/菜单/主体点击独立命中；用拖动目的地区分标签栏后台打开与作者栏排序，不能删除或弱化 F10/F11 语义。主网格/网络收藏不得回归多选拖放、菜单、Ctrl/Meta+Enter、Escape取消、选择状态或 sourceKey。补充一个真实收藏生产控件测试，红→绿闭环；覆盖至少主收藏入口和作者栏或明确记录该入口不可用的证据。
+
+每完成本任务立即在 tasks.md 勾选并写根因、命令、通过/失败/skip、证据路径。跑相关保护回归、analyze raw/unique 与基线比较、git diff --check、OpenSpec validate、正常构建。禁止改 proposal/design/spec/design-spec、pubspec.lock、正式 openspec/specs；不要动无关既有脏改。回传改动文件、红绿证据、保护结果、analyze、GUI/环境局限；等待 architect 独立复核。

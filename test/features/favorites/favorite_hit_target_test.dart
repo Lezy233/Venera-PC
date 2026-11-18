@@ -224,10 +224,6 @@ void main() {
           expect((detail.id, detail.sourceKey), ('book-0', 'local'));
           navigator.currentState!.removeRoute(route);
           await tester.pumpAndSettle();
-          await tester.longPressAt(
-            tester.getCenter(find.text('Neighbor favorite')),
-          );
-          await tester.pumpAndSettle();
           final beforeSelect = routes.pushes.length;
           final selectedPoints = points();
           for (final point in selectedPoints) {
@@ -257,7 +253,7 @@ void main() {
                   .selections!
                   .keys
                   .map((c) => c.id),
-              ['book-1'],
+              isEmpty,
             );
           }
           final firstCard = find.byWidgetPredicate(
@@ -269,12 +265,12 @@ void main() {
           );
           expect(
             grid.selections!.keys.map((e) => e.id),
-            unorderedEquals(['book-0', 'book-1']),
+            unorderedEquals(['book-0']),
           );
           await toggleComicCheckbox(tester, firstCard);
           await tester.pumpAndSettle();
           grid = tester.widget<SliverGridComics>(find.byType(SliverGridComics));
-          expect(grid.selections!.keys.map((e) => e.id), ['book-1']);
+          expect(grid.selections!.keys.map((e) => e.id), isEmpty);
           await tester.sendKeyEvent(LogicalKeyboardKey.escape);
           await tester.pumpAndSettle();
           expect(

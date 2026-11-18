@@ -536,6 +536,28 @@ void main() {
       expect(savedResult['sourceKey'], 'a');
       expect(savedResult['options'], ['other']);
       expect(savedResult['keyword'], 'Alpha');
+      // Switching the real display menu must retain the live workspace tab,
+      // page/cache, controller, selected entities and current filter state.
+      final resultTab = host.record.active!;
+      final modeGrid = tester.state(find.byType(SliverGridComics));
+      for (final mode in ['List', 'Gallery']) {
+        await tester.tap(find.byTooltip('Search display mode'));
+        await settleWorkspace();
+        await tester.tap(find.text(mode));
+        await settleWorkspace();
+        expect(host.record.active, same(resultTab));
+        expect(tester.state(find.byType(SearchResultPage)), same(resultsState));
+        expect(tester.state(find.byType(SliverGridComics)), same(modeGrid));
+        expect(resultsController.offset, closeTo(420, .01));
+        expect(
+          tester
+              .widget<ComicTile>(find.byType(ComicTile).hitTestable().first)
+              .displayMode,
+          mode == 'List'
+              ? ComicTileDisplayMode.detailed
+              : ComicTileDisplayMode.gallery,
+        );
+      }
       await tester.tap(
         find.descendant(
           of: find.byType(WorkspaceTabStrip),
