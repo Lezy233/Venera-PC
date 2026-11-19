@@ -411,18 +411,6 @@ class ReaderGestureDetectorState extends State<ReaderGestureDetector>
       return;
     }
     if (request.onCommentsPage) return;
-    if (request.preferences.enableTapToTurnPages) {
-      final size = (context.findRenderObject()! as RenderBox).size;
-      final coordinate = request.vertical ? local.dy : local.dx;
-      final extent = request.vertical ? size.height : size.width;
-      if (coordinate < extent * 0.3 || coordinate > extent * 0.7) {
-        var forward = coordinate > extent * 0.7;
-        if (request.reversed) forward = !forward;
-        if (request.preferences.reverseTapToTurnPages) forward = !forward;
-        request.turnPage(forward);
-        return;
-      }
-    }
     widget.toggleMenu();
   }
 

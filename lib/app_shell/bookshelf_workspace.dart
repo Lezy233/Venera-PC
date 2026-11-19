@@ -124,6 +124,7 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
         ? TraversalEdgeBehavior.closedLoop
         : TraversalEdgeBehavior.parentScope;
     final scheme = Theme.of(context).colorScheme;
+    final immersive = chrome?.readerActions?.immersive == true;
     final scale =
         MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
         AppFontSize.body;
@@ -147,50 +148,54 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
         Stack(
           children: [
             Positioned.fill(
-              left: !compact && expanded ? width : 0,
+              left: !immersive && !compact && expanded ? width : 0,
               child: ExcludeFocus(
                 excluding: compact && overlay,
                 child: Column(
                   children: [
-                    Material(
-                      color: scheme.shellSurface,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          minHeight: AppSizes.workspaceToolbarHeight * scale,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: scheme.shellBorder,
-                              width: AppSizes.hairline,
+                    Visibility(
+                      visible: !immersive,
+                      maintainState: true,
+                      child: Material(
+                        color: scheme.shellSurface,
+                        child: Container(
+                          constraints: BoxConstraints(
+                            minHeight: AppSizes.workspaceToolbarHeight * scale,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: scheme.shellBorder,
+                                width: AppSizes.hairline,
+                              ),
                             ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Semantics(
-                              toggled: compact ? overlay : expanded,
-                              child: IconButton(
-                                tooltip: 'Toggle bookshelf'.tl,
-                                onPressed: _toggle,
-                                icon: const Icon(Icons.view_sidebar_outlined),
+                          child: Row(
+                            children: [
+                              Semantics(
+                                toggled: compact ? overlay : expanded,
+                                child: IconButton(
+                                  tooltip: 'Toggle bookshelf'.tl,
+                                  onPressed: _toggle,
+                                  icon: const Icon(Icons.view_sidebar_outlined),
+                                ),
                               ),
-                            ),
-                            if (chrome != null)
-                              IconButton(
-                                tooltip: 'Back'.tl,
-                                onPressed: chrome!.goBack,
-                                icon: const Icon(Icons.arrow_back),
+                              if (chrome != null)
+                                IconButton(
+                                  tooltip: 'Back'.tl,
+                                  onPressed: chrome!.goBack,
+                                  icon: const Icon(Icons.arrow_back),
+                                ),
+                              const Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: DesktopSearchBox(),
+                                ),
                               ),
-                            const Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: DesktopSearchBox(),
-                              ),
-                            ),
-                            if (chrome?.favoritesActive == true)
-                              const DesktopLayoutControls(),
-                          ],
+                              if (chrome?.favoritesActive == true)
+                                const DesktopLayoutControls(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -199,7 +204,7 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
                 ),
               ),
             ),
-            if (compact && overlay)
+            if (!immersive && compact && overlay)
               Positioned.fill(
                 child: ModalBarrier(
                   key: const ValueKey('bookshelf-scrim'),
@@ -211,7 +216,7 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
                   semanticsLabel: 'Close bookshelf'.tl,
                 ),
               ),
-            if ((!compact && expanded) || (compact && overlay))
+            if (!immersive && ((!compact && expanded) || (compact && overlay)))
               Positioned(
                 left: 0,
                 top: 0,

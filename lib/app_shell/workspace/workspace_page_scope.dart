@@ -13,14 +13,20 @@ class WorkspacePageBinding extends ChangeNotifier {
   final _captures = <String, Map<String, dynamic> Function()>{};
   final _focusTargets = <String, FocusNode>{};
   bool _active = false;
+  bool _presentationActive = false;
   bool _acceptsChanges = false;
   bool _disposed = false;
   bool get active => _active;
+  /// The foreground page may retain its chrome beneath a popup while its
+  /// input and background work remain inactive.
+  bool get presentationActive => _presentationActive;
   FocusNode? returnFocus;
 
-  void setActive(bool value) {
-    if (_active == value) return;
+  void setActive(bool value, {bool? presentationActive}) {
+    final presentation = presentationActive ?? value;
+    if (_active == value && _presentationActive == presentation) return;
     _active = value;
+    _presentationActive = presentation;
     notifyListeners();
   }
 

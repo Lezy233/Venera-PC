@@ -1,5 +1,7 @@
 # UX1 A 书架型工作区实施任务
 
+2026-11-19 owner 澄清 `explorations/ux1-directions` A 草稿是布局、信息层级、控件组合与顶栏行数基线，并确认普通阅读工具隐藏时顶部一行、显示工具时两行，不保留独立标题栏形成第三行。当前 6.x 暂停，先完成 5A 草稿视觉对齐审计与纠偏批次确认；既有阶段功能验收和证据保留，但不自动视为视觉对齐通过。本项仅更新契约与计划，未改生产代码，未勾任何实现任务。
+
 2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
 
 本阶段batch-4–10交付/复核/SHA/派工记录已移入上述归档；以下历史备注中的同名文件在那里查阅。
@@ -104,14 +106,27 @@
 - [x] 5.13 修复搜索画廊大片留白，严格复用收藏普通画廊的自动列数、卡片/纵向封面槽位、标题、行列间距与外边距；单源及聚合分组均适用，同可用宽度/文字缩放/密度下几何一致，保留完整封面、独立模式记忆及搜索现场。
   - 2026-11-18：真实生产搜索/收藏600/1000/1400×100%/150%×comfortable/compact几何红灯 `/tmp/ux1-513-geometry-red.log` 0/12/0。根因是显式gallery的renderer已为bookshelf，但galleryColumns=null令委托走横向列表布局；600舒适下搜索1列592×144/槽位576×88.8，收藏4列142×264.59/槽位126×209.39。仅为显式gallery传自动列数0后单源12组一致，聚合仍红；聚合gallery复用原SliverGridComics后两者与收藏同几何。最终 `/tmp/ux1-513-geometry-final.log` 14/0/0，含12组实际rect/列数/标题/间距边距、68×100和160×60真实解码四边像素完整性及5.12偏好隔离/磁盘/现场；具体原始值见batch-10-geometry.json。保护 `/tmp/ux1-513-protection.log` 128/0/0（含前14，重叠不累加），保留同State/controller/tab/scroll/selection/请求及F2/B4/F8/F10/F11。analyze50/50=38+12 added=[]removed=[]，正常main构建/diffcheck/OpenSpec/SHA通过；2生产/2测试与命令见delivery-batch-10.md。无新GUI/fixture，5.5仍未勾，未提交归档push。
 
+## 5A. 草稿视觉基线对齐（2026-11-19 新增）
+
+- [ ] 5A.1 对照 `explorations/ux1-directions` A 草稿与正常生产 main，审计壳层、收藏、搜索、详情、临时预览和阅读器的布局、信息层级、控件组合及顶栏行数；覆盖 expanded/medium/compact，以及普通阅读工具隐藏／显示和沉浸阅读，保留真实 GUI 差异证据，不在审计中修改生产代码。
+- [ ] 5A.2 architect 将差异按保留、调整、重构分类，提出逐页、单会话可完成的纠偏批次和对应验收场景；owner 确认后方可实施或继续 6.x。既有功能验收记录不得改写为视觉对齐通过，本项勾选只代表纠偏计划已获确认，不代表视觉纠偏已完成。
+
 ## 6. 阅读器与全局可访问性
 
+- [ ] 6.6 修复快捷设置中阅读方案选择无法持久化的问题；沿用现有 ReaderPresetStore/ReaderPreferenceStore 绑定和失败恢复，覆盖关闭面板、切换章节、重新进入 Reader 与 B3/F9 方案排序/继承保护。
+  - 2026-11-18：owner新增缺陷，待 executor 建立真实方案选择红灯并验证磁盘/绑定恢复。
+- [ ] 6.7 调整精简工具形态：仅保留一条不浮在漫画上方的窄横向进度线，精简形态移除上一章/下一章按钮；完整工具形态保留原进度与章节操作，覆盖主题、150%、减少动画和键盘语义。
+  - 2026-11-18：用户复验发现上一版仍以 Stack overlay 覆盖漫画；已取消勾选并保留 `/tmp/ux1-reader-67-layout-red.log`（workspace场景在自动阅读恢复处 timeout）。当前生产修复把精简 `ReaderBottomBar` 放入 scaffold body 的 `Column(Expanded(content), compactBar)`，保留完整/精简相同105px布局基准；精简轨道视觉3px、命中区48px，移除 BlurEffect/背景/边框和章节按钮。独立 A 几何/无模糊测试 `/tmp/ux1-reader-67-ab-green.log` 1/0/0；真实 workspace B 对照 `/tmp/ux1-reader-67-ab-workspace.log` 仍 timeout，故不勾。
 
-- [ ] 6.1 实现普通阅读保留标签、沉浸阅读隐藏标签及模式切换现场保持；保护阅读方案绑定、翻页与 B3/F9/B5 行为。
+
+- [ ] 6.1 实现普通阅读保留合并工作区标签行、沉浸阅读隐藏标签及模式切换现场保持；普通阅读工具隐藏时顶部一行、显示工具时两行，不叠加独立标题栏，单击只切换阅读器工具行；保护阅读方案绑定、翻页与 B3/F9/B5 行为。
+  - 2026-11-18 当前实现已由真实 workspace Reader 红→绿 `/tmp/ux1-reader-61-green-loop-2.log`、最终联查 `/tmp/ux1-reader-61-63-final-loop.log`（各1/0/0）证明沉浸入口、标签/书架 chrome 隐藏、Escape恢复、同Reader/标签/章节页码/请求及后台休眠现场；完整 reader_exit 保护仍有未迁移断言，故不勾。
 - [ ] 6.2 移除闲置 2 秒自动隐藏，接入漫画任意位置单击切换工具；独立按钮、菜单、章节与文本控件不冒泡，底部始终只有一条进度组件，隐藏工具时为精简形态。
+  - 2026-11-18 真实边缘 tap 红灯页码2→3 `/tmp/ux1-reader-62-edge-red.log`；改为任意漫画 tap 只切工具、同一 `ReaderProgressSlider` 保留并可命中、3秒不自动隐藏。workspace 联查 `/tmp/ux1-reader-61-63-final-loop.log` 1/0/0；旧 reader_exit 方向断言迁移仍需独立复核。
 - [ ] 6.3 实现章节右侧覆盖浮层和 Escape 顺序：先浮层、再沉浸、普通模式可找回工具；不改变漫画尺寸，不一次按键跨越两级。
+  - 2026-11-18 章节真实按钮/浮层/画布 rect/两次 Escape 现场已在 `/tmp/ux1-reader-63-green-loop-2.log` 通过；另完成 `_workspacePresentationActive` 边界修复与窗口恢复单项 `/tmp/ux1-reader-window-recovery-loop.log` 1/0/0，完整 reader_exit 仍待迁移保护复核，故不勾。
 - [ ] 6.4 核对浅深主题无阅读器深色例外、动态强调色不染封面/整片内容；手动与系统减少动画、150% 大文字、键盘焦点和语义在全部新页面一致可用。
-- [ ] 6.5 完成阅读器真实坐标/键盘测试和 GUI：连续单击、工具内点击、单进度、章节 Escape、普通/沉浸标签、后台休眠与页码恢复，逐图核对无 overflow。
+- [ ] 6.5 完成阅读器真实坐标/键盘测试和 GUI：连续单击、工具内点击、普通阅读一行／两行顶栏与沉浸单行工具、单进度、章节 Escape、普通/沉浸标签、后台休眠与页码恢复，逐图核对无第三行独立标题栏或 overflow。
 
 ## 7. 整体验收与交付
 

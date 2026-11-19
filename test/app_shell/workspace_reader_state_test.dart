@@ -2,6 +2,8 @@ import 'package:venera_next/features/reader/loading.dart';
 import 'dart:convert';
 import 'package:venera_next/app_shell/workspace/workspace_store.dart';
 import 'package:venera_next/features/reader/gallery_view.dart';
+import 'package:venera_next/features/reader/scaffold.dart';
+import 'package:venera_next/features/reader/progress_bar.dart';
 import 'package:venera_next/features/reader/auto_reading.dart';
 import 'package:venera_next/features/reader/reader_session_scope.dart';
 import 'package:image/image.dart' as img;
@@ -381,13 +383,113 @@ void main() {
       );
       expect(readerView['page'], 2);
       expect(readerView['chapter'], 1);
+      // D8: a real reader control changes chrome, not the retained tab/reader.
+      final modeViewport = tester.state(find.byType(ReaderGalleryView));
+      final modeTab = host.record.active!;
+      final modeTabs = host.record.tabs.map((tab) => tab.id).toList();
+      await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
+      await settleWorkspace();
+      final enterImmersive = find
+          .byTooltip('Enter immersive reading')
+          .hitTestable();
+      expect(enterImmersive, findsOneWidget);
+      await tester.tap(enterImmersive);
+      await settleWorkspace();
+      expect(find.byType(WorkspaceTabStrip).hitTestable(), findsNothing);
+      expect(find.byTooltip('Toggle bookshelf').hitTestable(), findsNothing);
+      expect(tester.state<ReaderState>(find.byType(Reader)), same(reader));
+      expect(tester.state(find.byType(ReaderGalleryView)), same(modeViewport));
+      expect(host.record.active, same(modeTab));
+      expect(host.record.tabs.map((tab) => tab.id), modeTabs);
+      expect((reader.chapter, reader.page), (1, 2));
+      expect(source.chapterRequests, [(first.id, 'ep-1')]);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleWorkspace();
+      expect(find.byType(WorkspaceTabStrip).hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Toggle bookshelf').hitTestable(), findsWidgets);
+      expect(tester.state(find.byType(ReaderGalleryView)), same(modeViewport));
+      expect((reader.chapter, reader.page), (1, 2));
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isTrue,
+      );
+      await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
+      await settleWorkspace();
+      final canvas = tester.getRect(find.byType(ReaderGalleryView));
+      final edge = Offset(canvas.right - 20, canvas.center.dy);
+      await tester.tapAt(edge);
+      await settleWorkspace();
+      expect(reader.page, 2, reason: 'comic edge tap toggles tools only');
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isTrue,
+      );
+      await tester.pump(const Duration(seconds: 3));
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isTrue,
+        reason: 'idle time must not hide tools',
+      );
+      await tester.tapAt(edge);
+      await settleWorkspace();
+      expect(reader.page, 2);
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isFalse,
+      );
+      expect(find.byType(ReaderProgressSlider).hitTestable(), findsOneWidget);
+      expect(find.byType(ReaderProgressSlider), findsOneWidget);
+      final compactContent = tester.getRect(find.byType(ReaderGalleryView));
+      final compactBar = tester.getRect(find.byType(ReaderBottomBar));
+      expect(compactContent.bottom, lessThanOrEqualTo(compactBar.top));
+      expect(compactBar.top, greaterThanOrEqualTo(compactContent.bottom));
+      expect(find.byIcon(Icons.first_page), findsNothing);
+      expect(find.byIcon(Icons.last_page), findsNothing);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleWorkspace();
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isTrue,
+        reason: 'ordinary Escape recovers hidden tools without leaving Reader',
+      );
+      await tester.tap(find.byTooltip('Enter immersive reading').hitTestable());
+      await settleWorkspace();
+      final immersiveRect = tester.getRect(find.byType(ReaderGalleryView));
+      await tester.tap(find.byTooltip('Chapters').hitTestable());
+      await settleWorkspace();
+      expect(find.text('Chapters').hitTestable(), findsOneWidget);
+      expect(
+        tester.getRect(find.byType(ReaderGalleryView)),
+        immersiveRect,
+        reason: 'chapter overlay must not shrink the comic viewport',
+      );
+      expect(
+        tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
+        isTrue,
+        reason: 'chapter button must not bubble into the comic toggle',
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleWorkspace();
+      expect(find.text('Chapters').hitTestable(), findsNothing);
+      expect(
+        find.byType(WorkspaceTabStrip).hitTestable(),
+        findsNothing,
+        reason: 'first Escape only closes the overlay',
+      );
+      expect((reader.chapter, reader.page), (1, 2));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleWorkspace();
+      expect(find.byType(WorkspaceTabStrip).hitTestable(), findsOneWidget);
+      expect((reader.chapter, reader.page), (1, 2));
+      await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
+      await settleWorkspace();
       final viewportState = tester.state(find.byType(ReaderGalleryView));
       await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
       await settleWorkspace();
       await tester.tap(
         find.byTooltip('Start or stop automatic reading').hitTestable(),
       );
-      await settleWorkspace(automaticReading: true);
+      await settleWorkspace();
       expect(reader.autoReading.isActive, isTrue);
       expect(reader.autoReading.status, isNot(AutoReadingStatus.paused));
       final otherId = host.record.tabs.firstWhere((t) => t.id != originalId).id;
@@ -437,7 +539,7 @@ void main() {
       );
       // Reopen the existing tools, then stop through the real control.
       await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
-      await settleWorkspace(automaticReading: true);
+      await settleWorkspace();
       await tester.tap(
         find.byTooltip('Start or stop automatic reading').hitTestable(),
       );

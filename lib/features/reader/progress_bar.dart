@@ -5,6 +5,7 @@ import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 import 'information_text.dart';
+import 'package:venera_next/design_system/tokens.dart';
 
 /// Presentation for progress and actions. The content owner supplies commands.
 class ReaderBottomBar extends StatelessWidget {
@@ -42,81 +43,100 @@ class ReaderBottomBar extends StatelessWidget {
       height: height,
       child: Column(
         children: [
-          const SizedBox(height: 8),
+          if (isOpen) const SizedBox(height: 8),
+          if (!isOpen) const SizedBox(height: ReaderBottomBar.height - 48),
           Row(
             children: [
               const SizedBox(width: 8),
-              IconButton.filledTonal(
-                tooltip:
-                    previousTooltip ??
-                    MaterialLocalizations.of(context).previousPageTooltip,
-                onPressed: onPrevious,
-                icon: const Icon(Icons.first_page),
-              ),
+              if (isOpen)
+                IconButton.filledTonal(
+                  tooltip:
+                      previousTooltip ??
+                      MaterialLocalizations.of(context).previousPageTooltip,
+                  onPressed: onPrevious,
+                  icon: const Icon(Icons.first_page),
+                ),
               Expanded(
                 child: ReaderProgressSlider(
-                  key: ValueKey((progressIdentity, isOpen)),
+                  key: ValueKey(progressIdentity),
                   page: page,
                   maxPage: maxPage,
                   reversed: reversed,
-                  enabled: isOpen,
+                  compact: !isOpen,
                   onChanged: onPageChanged,
                 ),
               ),
-              IconButton.filledTonal(
-                tooltip:
-                    nextTooltip ??
-                    MaterialLocalizations.of(context).nextPageTooltip,
-                onPressed: onNext,
-                icon: const Icon(Icons.last_page),
-              ),
+              if (isOpen)
+                IconButton.filledTonal(
+                  tooltip:
+                      nextTooltip ??
+                      MaterialLocalizations.of(context).nextPageTooltip,
+                  onPressed: onNext,
+                  icon: const Icon(Icons.last_page),
+                ),
               const SizedBox(width: 8),
             ],
           ),
-          LayoutBuilder(
-            builder: (context, constrains) {
-              final labelSize = TextPainter(
-                text: TextSpan(
-                  text: label,
-                  style: DefaultTextStyle.of(context).style,
-                ),
-                textDirection: Directionality.of(context),
-                textScaler: MediaQuery.textScalerOf(context),
-                maxLines: 1,
-              )..layout();
-              // Keep the existing 24px badge and 48px actions. When scaled
-              // text cannot fit, use the same actions-only layout as phones.
-              final small =
-                  labelSize.height > 20 ||
-                  constrains.maxWidth <
-                      actions.length * 56 + labelSize.width + 32;
-              labelSize.dispose();
-              return Row(
-                children: [
-                  if (!small) ...[
-                    Container(
-                      height: 24,
-                      padding: const EdgeInsets.fromLTRB(6, 2, 6, 0),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(child: Text(label)),
-                    ).paddingLeft(16),
-                    const Spacer(),
-                    for (var button in actions) button.paddingHorizontal(4),
-                    const SizedBox(width: 4),
-                  ] else
-                    for (var button in actions)
-                      Expanded(child: Center(child: button)),
-                ],
-              );
-            },
+          Visibility(
+            visible: isOpen,
+            maintainState: true,
+            child: LayoutBuilder(
+              builder: (context, constrains) {
+                final labelSize = TextPainter(
+                  text: TextSpan(
+                    text: label,
+                    style: DefaultTextStyle.of(context).style,
+                  ),
+                  textDirection: Directionality.of(context),
+                  textScaler: MediaQuery.textScalerOf(context),
+                  maxLines: 1,
+                )..layout();
+                // Keep the existing 24px badge and 48px actions. When scaled
+                // text cannot fit, use the same actions-only layout as phones.
+                final small =
+                    labelSize.height > 20 ||
+                    constrains.maxWidth <
+                        actions.length * 56 + labelSize.width + 32;
+                labelSize.dispose();
+                return Row(
+                  children: [
+                    if (!small) ...[
+                      Container(
+                        height: 24,
+                        padding: const EdgeInsets.fromLTRB(6, 2, 6, 0),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(child: Text(label)),
+                      ).paddingLeft(16),
+                      const Spacer(),
+                      for (var button in actions) button.paddingHorizontal(4),
+                      const SizedBox(width: 4),
+                    ] else
+                      for (var button in actions)
+                        Expanded(child: Center(child: button)),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
     );
 
+    if (!isOpen) {
+      return Padding(
+        padding: EdgeInsets.only(
+          left: context.padding.left,
+          right: context.padding.right,
+          bottom: context.padding.bottom,
+        ),
+        child: child,
+      );
+    }
     return BlurEffect(
       child: Container(
         decoration: BoxDecoration(
@@ -150,12 +170,14 @@ class ReaderProgressSlider extends StatelessWidget {
     required this.maxPage,
     required this.reversed,
     required this.onChanged,
+    this.compact = false,
     this.enabled = true,
   });
   final int page;
   final int maxPage;
   final bool reversed;
   final ValueChanged<int> onChanged;
+  final bool compact;
   final bool enabled;
 
   @override
@@ -182,7 +204,7 @@ class ReaderProgressSlider extends StatelessWidget {
               height: 48,
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: 6,
+                  trackHeight: compact ? 3 : 6,
                   trackShape: const RoundedRectSliderTrackShape(),
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 11,

@@ -204,7 +204,7 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
     chrome.setFavoritesSearchQuery(tab == null ? null : _queryCurrent);
     DesktopChromeScope.setReaderActions(
       chrome,
-      tab?.activeRouteRecord == null ? null : local?.readerActions,
+      tab?.presentationRouteRecord == null ? null : local?.readerActions,
     );
     if (tab != null) appNavigation.mainNavigatorKey = tab.navigator;
   }
@@ -380,16 +380,20 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
       color: Theme.of(context).colorScheme.shellSurface,
       child: Column(
         children: [
-          WorkspaceTabStrip(
-            record: record,
-            openBackground: openBackground,
-            activate: activateTab,
-            close: close,
-            newTab: newTab,
-            visited: {
-              for (final tab in _tabs.values)
-                if (tab.mountedOnce) tab.record.id,
-            },
+          Visibility(
+            visible: _chrome?.readerActions?.immersive != true,
+            maintainState: true,
+            child: WorkspaceTabStrip(
+              record: record,
+              openBackground: openBackground,
+              activate: activateTab,
+              close: close,
+              newTab: newTab,
+              visited: {
+                for (final tab in _tabs.values)
+                  if (tab.mountedOnce) tab.record.id,
+              },
+            ),
           ),
           if (recoveryMessage != null)
             Row(
@@ -549,6 +553,8 @@ class _RuntimeTab {
   final auxiliaryRoutes = <Route<dynamic>>{};
   WorkspaceRouteRecord? get activeRouteRecord =>
       liveRoutes.isEmpty ? null : tracked[liveRoutes.last];
+  WorkspaceRouteRecord? get presentationRouteRecord =>
+      tracked[liveRoutes.whereType<PageRoute<dynamic>>().lastOrNull];
   late final _WorkspaceObserver observer;
   bool mountedOnce = false, closing = false;
   WorkspacePageBinding binding(WorkspaceRouteRecord record) =>
@@ -565,7 +571,10 @@ class _RuntimeTab {
     record.restoreParent =
         liveRoutes.isNotEmpty && auxiliaryRoutes.contains(liveRoutes.last);
     for (final entry in bindings.entries) {
-      entry.value.setActive(active && entry.key == current?.id);
+      entry.value.setActive(
+        active && entry.key == current?.id,
+        presentationActive: active && entry.key == presentationRouteRecord?.id,
+      );
     }
   }
 

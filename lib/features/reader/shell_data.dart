@@ -16,11 +16,13 @@ class ReaderShellData {
     required this.swipeToCollect,
     required this.preferences,
     required this.automaticReading,
+    this.immersive = false,
   });
   final String comicId, sourceKey, title;
   final String? chapterTitle;
   final bool hasChapters, vertical, gallery, animating, onCommentsPage;
   final bool swipeToCollect;
+  final bool immersive;
   final ReaderSettings preferences;
   final AutoReadingStatus automaticReading;
   bool get automaticReadingActive =>

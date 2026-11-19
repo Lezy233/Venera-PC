@@ -13,6 +13,7 @@ class DesktopReaderActions {
     this.filterChapters,
     this.submitChapterSearch,
     this.toggleFullscreen,
+    this.immersive = false,
   });
 
   final VoidCallback openSettings;
@@ -21,6 +22,7 @@ class DesktopReaderActions {
   final ValueChanged<String>? filterChapters;
   final ValueChanged<String>? submitChapterSearch;
   final VoidCallback? toggleFullscreen;
+  final bool immersive;
 }
 
 class DesktopWorkspaceActions {

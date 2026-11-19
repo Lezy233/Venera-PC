@@ -142,6 +142,7 @@ class ReaderState extends State<Reader>
         WorkspaceViewState<Reader>
     implements ShortcutTarget {
   bool _workspaceActive = true;
+  bool _workspacePresentationActive = true;
   WorkspacePageBinding? _workspacePage;
   VoidCallback? _resumeWorkspaceImages;
   final _workspaceEffectsHold = Object();
@@ -197,6 +198,14 @@ class ReaderState extends State<Reader>
       binding?.registerFocus('reader-canvas', focusNode);
     }
     final active = binding?.active ?? true;
+    final presentationActive = binding?.presentationActive ?? true;
+    if (rebound || presentationActive != _workspacePresentationActive) {
+      _workspacePresentationActive = presentationActive;
+      final window = _windowController;
+      if (window != null) {
+        _observeWindow(window.setHeld(!presentationActive));
+      }
+    }
     if (!rebound && active == _workspaceActive) return;
     _workspaceActive = active;
     // A prepared pop already holds and drains this session. Route retirement
@@ -219,8 +228,6 @@ class ReaderState extends State<Reader>
     if (effects != null) {
       _observeWindow(effects.handle.hold(_workspaceEffectsHold, !active));
     }
-    final window = _windowController;
-    if (window != null) _observeWindow(window.setHeld(!active));
     _observeVolume(_updateVolume());
     if (binding != null && active) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1798,6 +1805,7 @@ class ReaderState extends State<Reader>
 
   void updateSystemUi(bool menuOpen) {
     if (_sessionFrozen) return;
+    if (!menuOpen && _workspaceActive) focusNode.requestFocus();
     _platformEffects?.setSystemBarsVisible(
       menuOpen || preferences.showSystemStatusBar,
     );
@@ -1921,8 +1929,25 @@ class ReaderState extends State<Reader>
       ? _closeReaderWindow()
       : _windowController?.setHeld(true) ?? Future.value();
 
+  bool immersive = false;
+  final scaffoldKey = GlobalKey<ReaderScaffoldState>();
+
+  void _escapeReader() {
+    if (_sessionFrozen ||
+        !_workspaceActive ||
+        ModalRoute.of(context)?.isCurrent != true)
+      return;
+    if (immersive) {
+      fullscreen();
+    } else if (scaffoldKey.currentState?.isOpen == false) {
+      scaffoldKey.currentState?.openOrClose();
+    }
+  }
+
   void fullscreen() {
     if (_sessionFrozen) return;
+    immersive = !immersive;
+    updateShell();
     final window = _windowController;
     if (window != null) _observeWindow(window.toggle());
   }
@@ -2017,18 +2042,25 @@ class ReaderState extends State<Reader>
         excluding: _sessionFrozen,
         child: AbsorbPointer(
           absorbing: _sessionFrozen,
-          child: Focus(
-            focusNode: focusNode,
-            autofocus: true,
-            onKeyEvent: (_, event) => _dispatchShortcut(event),
-            child: Overlay.wrap(
-              child: ReaderShellHost(
-                reader: this,
-                child: ReaderGestureHost(
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): _escapeReader,
+            },
+            child: Focus(
+              focusNode: focusNode,
+              autofocus: true,
+              onKeyEvent: (_, event) => _dispatchShortcut(event),
+              child: Overlay.wrap(
+                child: ReaderShellHost(
                   reader: this,
-                  child: ReaderImagesHost(
+                  child: ReaderGestureHost(
                     reader: this,
-                    key: Key(mode.isWaterfall ? mode.key : chapter.toString()),
+                    child: ReaderImagesHost(
+                      reader: this,
+                      key: Key(
+                        mode.isWaterfall ? mode.key : chapter.toString(),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2043,6 +2075,14 @@ class ReaderState extends State<Reader>
 
   KeyEventResult _dispatchShortcut(KeyEvent event) {
     if (_sessionFrozen || !_workspaceActive) return KeyEventResult.ignored;
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        !shortcutTextInputFocused() &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        immersive) {
+      fullscreen();
+      return KeyEventResult.handled;
+    }
     final handled = _shortcuts.dispatch(
       event,
       overrides: appdata.settings['shortcutOverrides'],

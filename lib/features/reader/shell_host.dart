@@ -17,6 +17,7 @@ class ReaderShellHost extends StatelessWidget {
     listenable: reader.shellChanges,
     child: child,
     builder: (context, child) => ReaderScaffold(
+      key: reader.scaffoldKey,
       data: ReaderShellData(
         comicId: reader.cid,
         sourceKey: reader.type.sourceKey,
@@ -33,6 +34,7 @@ class ReaderShellHost extends StatelessWidget {
             appdata.settings.globalReaderSettings.quickCollectImage == 'Swipe',
         preferences: reader.preferences,
         automaticReading: reader.autoReading.status,
+        immersive: reader.immersive,
       ),
       progress: reader.createProgressRequest(),
       onExit: reader.requestExit,

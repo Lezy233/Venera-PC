@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 
 import 'package:venera_next/app_shell/desktop_chrome.dart';
@@ -161,6 +162,10 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncDesktopActions();
+  }
+
+  void _syncDesktopActions() {
     final chrome = DesktopChromeScope.maybeOf(context);
     final actions = _desktopReaderActions ??= DesktopReaderActions(
       openSettings: openSetting,
@@ -169,6 +174,7 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
       filterChapters: _filterChapters,
       submitChapterSearch: _submitChapterSearch,
       toggleFullscreen: widget.onFullscreen,
+      immersive: widget.data.immersive,
     );
     if (identical(chrome, _chrome) &&
         identical(chrome?.readerActions, actions)) {
@@ -209,6 +215,10 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   @override
   void didUpdateWidget(ReaderScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.immersive != widget.data.immersive) {
+      _desktopReaderActions = null;
+      _syncDesktopActions();
+    }
     if (!identical(oldWidget.favoriteChanges, widget.favoriteChanges)) {
       oldWidget.favoriteChanges.removeListener(_imageFavoritesChanged);
       widget.favoriteChanges.addListener(_imageFavoritesChanged);
@@ -532,7 +542,12 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   Widget build(BuildContext context) {
     final isOnChapterCommentsPage = widget.data.onCommentsPage;
     final brightnessPanelVisible = _isOpen && _brightnessPanelOpen;
-    final menuDuration = MediaQuery.disableAnimationsOf(context)
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        GlobalPreferenceStore(
+          appdata.settings,
+        ).read(AppearancePreferences.reduceMotion);
+    final menuDuration = reduceMotion
         ? Duration.zero
         : const Duration(milliseconds: 180);
     final scaler = MediaQuery.textScalerOf(context);
@@ -540,14 +555,21 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
         .map((size) => scaler.scale(size) / size)
         .fold(1.0, (largest, scale) => scale > largest ? scale : largest);
     final topBarHeight = kTopBarHeight * titleScale;
+    final body = App.isDesktop ? SafeArea(child: _buildBody()) : _buildBody();
+    final compactBody = _isOpen
+        ? body
+        : Column(
+            children: [
+              Expanded(child: body),
+              buildBottom(),
+            ],
+          );
     return Stack(
       children: [
         // WindowFrame exposes its title strip as MediaQuery padding rather
         // than reducing the route's constraints. Reserve it for the image
         // viewport; reader controls already consume their own insets.
-        Positioned.fill(
-          child: App.isDesktop ? SafeArea(child: _buildBody()) : _buildBody(),
-        ),
+        Positioned.fill(child: compactBody),
         if (!isOnChapterCommentsPage)
           Positioned.fill(
             child: ReaderBrightnessOverlay(
@@ -561,28 +583,27 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
           ),
         if (!isOnChapterCommentsPage) _buildInformation(),
         ReaderChapterNavigationButton(action: widget.chapterNavigation),
-        AnimatedPositioned(
-          duration: menuDuration,
-          top: _isOpen ? 0 : -(topBarHeight + context.padding.top),
-          left: 0,
-          right: 0,
-          // Insets change immediately when the native/custom frame changes.
-          // Keep content height in sync; animate only its entrance position.
-          child: SizedBox(
-            height: topBarHeight + context.padding.top,
-            child: _menuRegion(visible: _isOpen, child: buildTop()),
+        if (_isOpen)
+          AnimatedPositioned(
+            duration: menuDuration,
+            top: _isOpen ? 0 : -(topBarHeight + context.padding.top),
+            left: 0,
+            right: 0,
+            // Insets change immediately when the native/custom frame changes.
+            // Keep content height in sync; animate only its entrance position.
+            child: SizedBox(
+              height: topBarHeight + context.padding.top,
+              child: _menuRegion(visible: _isOpen, child: buildTop()),
+            ),
           ),
-        ),
-        AnimatedPositioned(
-          duration: menuDuration,
-          bottom: _isOpen
-              ? 0
-              : -(ReaderBottomBar.height +
-                    MediaQuery.of(context).padding.bottom),
-          left: 0,
-          right: 0,
-          child: _menuRegion(visible: _isOpen, child: buildBottom()),
-        ),
+        if (_isOpen)
+          AnimatedPositioned(
+            duration: menuDuration,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: buildBottom(),
+          ),
         AnimatedPositioned(
           duration: menuDuration,
           curve: Curves.easeOut,
@@ -616,6 +637,18 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
     chapterTitle: widget.data.chapterTitle,
     onBack: () => unawaited(widget.onExit()),
     actions: [
+      if (widget.onFullscreen != null)
+        IconButton(
+          tooltip:
+              (widget.data.immersive
+                      ? 'Exit immersive reading'
+                      : 'Enter immersive reading')
+                  .tl,
+          onPressed: widget.onFullscreen,
+          icon: Icon(
+            widget.data.immersive ? Icons.fullscreen_exit : Icons.fullscreen,
+          ),
+        ),
       if (shouldShowChapterComments())
         Tooltip(
           message: "Chapter Comments".tl,

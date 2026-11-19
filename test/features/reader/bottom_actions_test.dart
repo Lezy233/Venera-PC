@@ -9,9 +9,41 @@ import 'package:venera_next/features/reader/bottom_actions.dart';
 import 'package:venera_next/features/reader/image_favorite_controller.dart';
 import 'package:venera_next/features/reader/platform_effects_controller.dart';
 import 'package:venera_next/features/reader/progress_bar.dart';
+import 'package:venera_next/components/effects.dart';
 
 void main() {
-  testWidgets('closing bottom controls cancels an in-flight progress drag', (
+  testWidgets(
+    'compact progress is a single narrow line without chapter buttons',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReaderBottomBar(
+              label: 'P3',
+              actions: const [],
+              page: 3,
+              maxPage: 10,
+              reversed: false,
+              isOpen: false,
+              progressIdentity: 'book',
+              onPageChanged: (_) {},
+              onPrevious: () {},
+              onNext: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(ReaderProgressSlider), findsOneWidget);
+      expect(find.byIcon(Icons.first_page), findsNothing);
+      expect(find.byIcon(Icons.last_page), findsNothing);
+      expect(find.byType(BlurEffect), findsNothing);
+      expect(tester.getRect(find.byType(ReaderBottomBar)).height, 105);
+      expect(tester.getRect(find.byType(ReaderProgressSlider)).height, 48);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('compact progress cancels an in-flight drag on close', (
     tester,
   ) async {
     var open = true;

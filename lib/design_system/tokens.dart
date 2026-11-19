@@ -64,6 +64,7 @@ abstract final class AppFontSize {
 
 /// Fixed shell and layout component sizes. See `design-spec.md` §2.7.
 abstract final class AppSizes {
+  static const double readerCompactProgressHeight = 56;
   static const double comicPreviewWidth = 640;
   static const double comicSelectionHandleSize = 44;
   static const double comicPreviewCoverHeight = 200;

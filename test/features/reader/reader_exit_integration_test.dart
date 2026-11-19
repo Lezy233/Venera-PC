@@ -1040,20 +1040,19 @@ void main() {
         final reverse =
             mode == ReaderMode.galleryRightToLeft ||
             mode == ReaderMode.continuousRightToLeft;
-        await tester.tapAt(
-          mode.isTopToBottom
-              ? Offset(bounds.center.dx, bounds.top + bounds.height * 0.85)
-              : Offset(
-                  bounds.left + bounds.width * (reverse ? 0.15 : 0.85),
-                  bounds.center.dy,
-                ),
-        );
+        Focus.of(tester.element(find.byIcon(Icons.first_page))).requestFocus();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        await tester.sendKeyEvent(reverse
+            ? LogicalKeyboardKey.arrowLeft
+            : LogicalKeyboardKey.arrowRight);
         await tester.pump();
         expect(reader.page, 2);
         final shell = tester.state<ReaderScaffoldState>(
           find.byType(ReaderScaffold),
         );
-        shell.openOrClose();
+        await tester.tapAt(bounds.center);
         await tester.pumpAndSettle();
         Focus.of(tester.element(find.byIcon(Icons.first_page))).requestFocus();
         await tester.pump();
@@ -2258,6 +2257,8 @@ void main() {
             (_, _) => release.future,
           );
           _imageOwner!.notifyChanges();
+          await tester.tapAt(tester.getCenter(find.byType(ReaderImagesHost)));
+          await tester.pump(const Duration(milliseconds: 300));
           await tester.pump();
           expect(find.byTooltip('Loading image collection'), findsOneWidget);
           if (detach) await tester.pumpWidget(const SizedBox());
@@ -2332,6 +2333,9 @@ void main() {
         final reader = fixture.readerKey.currentState!;
         expect(reader.pageLayout.imageRange(1, 3), (0, 2));
         expect(await reader.createImageFavoriteQuery()!.read(), isNull);
+        await tester.tapAt(tester.getCenter(find.byType(ReaderImagesHost)));
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
         expect(find.byTooltip('Select an image to collect'), findsOneWidget);
         await _imageOwner!.toggle(
           ImageFavoriteInput(

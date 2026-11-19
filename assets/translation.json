@@ -1,5 +1,7 @@
 {
   "zh_CN": {
+    "Enter immersive reading": "进入沉浸阅读",
+    "Exit immersive reading": "退出沉浸阅读",
     "Drag selected comics to tabs": "将所选漫画拖至标签栏",
     "Comic preview": "漫画预览",
     "Reduce motion": "减少动画",
@@ -1132,6 +1134,8 @@
     "Search source unavailable: @source": "搜索来源不可用：@source"
   },
   "zh_TW": {
+    "Enter immersive reading": "進入沉浸閱讀",
+    "Exit immersive reading": "退出沉浸閱讀",
     "Drag selected comics to tabs": "將所選漫畫拖至分頁列",
     "Comic preview": "漫畫預覽",
     "Reduce motion": "減少動畫",
