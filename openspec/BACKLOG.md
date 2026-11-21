@@ -16,6 +16,8 @@
 
 ## 功能候选清单
 
+2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`openspec/changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
+
 2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
 
 **2026-11-17 最新状态（覆盖下方历史）**：owner验收UX1的1.3＋F2（4.1–4.5）通过，授权阶段归档提交，未授权此次推送。归档 `openspec/changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；整个UX1仍活动，剩余5.x搜索/详情、6.x阅读器、7.x整体验收。
@@ -47,7 +49,7 @@
 | F9 | P2 | 阅读模式方案手动排序 | owner验收通过并归档2026-11-04-reader-preset-ordering，实现bc3f82a；525测试0skip/analyze50/GUI通过，2026-11-06随F10推送 | 管理页可拖动排序，并提供上移/下移等非拖动操作；重进与重启后顺序保留；设置下拉与阅读器面板使用相同顺序；移动不改变方案身份、内容或应用状态 |
 | F10 | P2 | 文件夹作者分栏、三态折叠、栏内独立排序与平台名称搜索 | 2026-11-06 owner验收通过并归档2026-11-06-favorite-author-manual-order，实现cdce3e6；独立204通过0失败0skip、analyze50零新增、GUI/正常构建/清理/23SHA通过，tasks4.x 3/3，本次授权推送 | 每栏独立顺序/三态及绑定源搜索保持；卡片主区域悬停背景变化、移出恢复，邻卡/跨栏实例隔离，浅深及两布局可用，不回退点击/拖动 |
 | F11 | P2 | 收藏侧栏大分类折叠 | 2026-11-07 owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6；tasks5/5、独立140通过0skip、analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 | 「本地」「系列」「网络」各自可展开/折叠，沿用创作者/标签的交互；标题行和键盘均可操作；记住各组折叠状态；折叠不清除当前内容或多选状态；当前项所在分组有明确选中提示 |
-| UX1 | 书架/F1/F2阶段已验收，其余待继续 | A书架型工作区与一致交互 | 2026-11-17 F2阶段归档提交；活动change保留5.x–7.x，下一阶段搜索/详情 | 完整delta仍待搜索、详情、阅读器及整体验收，阶段通过不等于整个change完成 |
+| UX1 | 5A基本工作已归档，其余待继续 | A书架型工作区与一致交互 | 2026-11-21 5A基本工作阶段归档提交；活动change保留5A后续、5.5及6.x–7.x | 完整delta仍待剩余视觉纠偏、阅读器及整体验收，阶段归档不等于整个change完成 |
 
 B2 历史及替换状态（2026-11-02）：旧入口虽通过76项受控测试与50项analyze，owner实际搜索无结果。owner已批准移除旧作者聚合链路，以新F7「创作者的平台名称」替换；新F7与保留的F6已实现；2026-11-03 architect重新独立复跑113项测试全通过、0skip，analyze保持50=38+12且受保护文件零diff。旧/tmp证据清理后已重新留存并独立抽查F6/F7生产控件GUI（含方案编辑/切换、平台名称维护/分页/返回及窄屏）；正常生产构建已恢复。2026-11-03 owner验收通过，已提交实现c5429bb并归档至 `openspec/changes/archive/2026-11-03-search-profiles-author/`；受控来源验证不等同真实平台内容命中。
 

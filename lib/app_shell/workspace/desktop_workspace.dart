@@ -44,6 +44,21 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
   late final VoidCallback _backCallback = back;
   late final VoidCallback _openSettings = _showSettings;
   late final VoidCallback _openSearch = _showSearch;
+  late final WidgetBuilder _workspaceTabsBuilder = _buildWorkspaceTabs;
+  Widget _buildWorkspaceTabs(BuildContext _) => WorkspaceTabStrip(
+    record: record,
+    openBackground: openBackground,
+    openBackgroundAt: openBackgroundAt,
+    activate: activateTab,
+    close: close,
+    newTab: newTab,
+    visited: {
+      for (final tab in _tabs.values)
+        if (tab.mountedOnce) tab.record.id,
+    },
+    reorder: reorderTab,
+    inline: true,
+  );
   void _showSettings() =>
       openCurrent(WorkspaceRouteRecord(kind: WorkspacePageKind.settings));
   void _showSearch() =>
@@ -202,6 +217,10 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
       toggle: local?.toggleRightSidebar,
     );
     chrome.setFavoritesSearchQuery(tab == null ? null : _queryCurrent);
+    chrome.setWorkspaceTabs(
+      visible: chrome.readerActions?.immersive != true,
+      builder: _workspaceTabsBuilder,
+    );
     DesktopChromeScope.setReaderActions(
       chrome,
       tab?.presentationRouteRecord == null ? null : local?.readerActions,
@@ -229,6 +248,7 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
 
   void _changed() {
     if (!mounted) return;
+    _chrome?.refreshWorkspaceTabs();
     _scheduleSync();
     _saveTimer?.cancel();
     final revision = ++_saveRevision;
@@ -295,6 +315,12 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
     WorkspaceRouteRecord(kind: WorkspacePageKind.favorites),
     activateNow: true,
   );
+  void reorderTab(int oldIndex, int newIndex) {
+    record.reorder(oldIndex, newIndex);
+    _changed();
+    setState(() {});
+  }
+
   void openBackground(WorkspaceRouteRecord page, {bool activateNow = false}) {
     if (!acceptsSettingsChanges) return;
     final tab = WorkspaceTabRecord(routes: [page]);
@@ -305,6 +331,15 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
     } else {
       _changed();
     }
+  }
+
+  void openBackgroundAt(int index, WorkspaceRouteRecord page) {
+    final before = record.tabs.length;
+    openBackground(page);
+    if (record.tabs.length == before) return;
+    record.reorder(record.tabs.length - 1, index);
+    _changed();
+    setState(() {});
   }
 
   void openCurrent(WorkspaceRouteRecord page) {
@@ -380,21 +415,6 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
       color: Theme.of(context).colorScheme.shellSurface,
       child: Column(
         children: [
-          Visibility(
-            visible: _chrome?.readerActions?.immersive != true,
-            maintainState: true,
-            child: WorkspaceTabStrip(
-              record: record,
-              openBackground: openBackground,
-              activate: activateTab,
-              close: close,
-              newTab: newTab,
-              visited: {
-                for (final tab in _tabs.values)
-                  if (tab.mountedOnce) tab.record.id,
-              },
-            ),
-          ),
           if (recoveryMessage != null)
             Row(
               children: [
@@ -524,6 +544,7 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
     _chrome?.setLeftSidebar(available: false, expanded: true);
     _chrome?.setRightSidebar(available: false, expanded: false);
     _chrome?.setFavoritesSearchQuery(null);
+    _chrome?.setWorkspaceTabs(builder: null, visible: false);
     DesktopChromeScope.setReaderActions(_chrome, null);
     _chrome?.setWorkspaceActions(null);
     _chrome?.clearGlobalActions();

@@ -53,6 +53,7 @@ import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/design_system/breakpoints.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/opencc.dart';
 import 'package:venera_next/foundation/translations.dart';
@@ -1082,6 +1083,49 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
     chrome.setFavoritesSearchQuery(_searchQueryCallback);
   }
 
+  bool get _hasFilterSummary =>
+      readFilterSelect != readFilterList[0] ||
+      authorFilters.isNotEmpty ||
+      tagFilters.isNotEmpty;
+
+  Widget _buildFilterSummary() {
+    final chips = <Widget>[];
+    if (readFilterSelect != readFilterList[0]) {
+      chips.add(Chip(label: Text(readFilterSelect.tl)));
+    }
+    for (final author in authorFilters) {
+      chips.add(
+        Chip(
+          avatar: const Icon(Icons.person_outline, size: 16),
+          label: Text(author),
+        ),
+      );
+    }
+    for (final tag in tagFilters) {
+      chips.add(
+        Chip(
+          avatar: const Icon(Icons.label_outline, size: 16),
+          label: Text(tag),
+        ),
+      );
+    }
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.xs,
+          AppSpacing.lg,
+          AppSpacing.sm,
+        ),
+        child: Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: chips,
+        ),
+      ),
+    );
+  }
+
   void _applySearchQuery(String query) {
     if (!mounted) return;
     setState(() {
@@ -1585,6 +1629,8 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage>
                     },
                   ).paddingBottom(8).paddingRight(8),
           ),
+        if (!searchMode && !multiSelectMode && _hasFilterSummary)
+          _buildFilterSummary(),
         if (_loadError != null)
           SliverToBoxAdapter(
             child: Column(

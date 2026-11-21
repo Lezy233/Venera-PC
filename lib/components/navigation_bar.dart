@@ -225,6 +225,7 @@ class NaviPaneState extends State<NaviPane>
         bottom: false,
         child: BookshelfWorkspace(
           navigation: buildBookshelfNavigation(),
+          showToolbar: false,
           child: widget.workspace ?? buildMainView(),
         ),
       );

@@ -144,6 +144,15 @@ class WorkspaceRecord {
     if (!background) activate(tab.id);
   }
 
+  void reorder(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= tabs.length) return;
+    if (newIndex < 0 || newIndex > tabs.length) return;
+    if (oldIndex < newIndex) newIndex -= 1;
+    if (oldIndex == newIndex) return;
+    final tab = tabs.removeAt(oldIndex);
+    tabs.insert(newIndex.clamp(0, tabs.length), tab);
+  }
+
   void close(String id, {String target = 'recent'}) {
     final index = tabs.indexWhere((t) => t.id == id);
     if (index < 0) return;

@@ -42,6 +42,8 @@
 
 ## Status
 
+2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段证据见 `../archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
+
 2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
 
 **2026-11-17 最新状态**：owner验收1.3＋F2（4.1–4.5）通过，授权阶段归档提交，未授权此次推送。证据见 `../archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；书架/F1此前已归档推送。活动任务只余5.x/6.x/7.x，不运行整项archive、不合入未实现delta。下段为此前阶段历史。

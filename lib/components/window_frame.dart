@@ -10,6 +10,7 @@ import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/app_shell/desktop_top_bar.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
 import 'package:venera_next/components/overlay_host.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -372,6 +373,7 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
     if (App.isMobile) return widget.child;
 
     final scheme = Theme.of(context).colorScheme;
+    final chrome = DesktopChromeScope.maybeOf(context);
     Widget body = Stack(
       children: [
         Positioned.fill(
@@ -417,9 +419,22 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
                             if (App.isMacOS)
                               const SizedBox(width: AppSpacing.md),
                             const DesktopBookshelfToggle(),
-                            const Expanded(
-                              child: DragToMoveArea(child: SizedBox.expand()),
-                            ),
+                            if (chrome != null)
+                              IconButton(
+                                tooltip: 'Back'.tl,
+                                onPressed: chrome.goBack,
+                                icon: const Icon(Icons.arrow_back),
+                              ),
+                            if (chrome?.favoritesActive == true)
+                              const DesktopLayoutControls(),
+                            if (chrome?.workspaceTabsBuilder != null)
+                              Expanded(
+                                child: chrome!.workspaceTabsBuilder!(context),
+                              )
+                            else
+                              const Expanded(
+                                child: DragToMoveArea(child: SizedBox.expand()),
+                              ),
                             if (kDebugMode && widget.debugAction != null)
                               TextButton(
                                 onPressed: widget.debugAction,

@@ -56,6 +56,7 @@ void main() {
                     close: (_) {},
                     newTab: () {},
                     visited: {tab.id},
+                    reorder: (_, _) {},
                     openBackground: opened.add,
                   ),
                   Expanded(

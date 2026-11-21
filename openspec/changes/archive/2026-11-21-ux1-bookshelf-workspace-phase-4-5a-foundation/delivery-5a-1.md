@@ -1,7 +1,7 @@
 # 5A.1 草稿视觉基线审计
 
-- 日期：2026-11-19；基线 HEAD：`bccedcb2534b625b6413be8060a234a2929d8e1e`。
-- 本轮仅新增本文件。工作区已有未提交 6.x 改动未清理、覆盖或提交；未勾 `tasks.md`，未修改契约、生产代码、测试或依赖。
+- 初始审计日期：2026-11-19；初始基线 HEAD：`bccedcb2534b625b6413be8060a234a2929d8e1e`。
+- 2026-11-20 复核基线：当前分支 HEAD 为 `d25642aff96ecd866df6f9ee67f938e7f6b52104`（已包含此前 reader chrome checkpoint）；本轮仍只更新审计记录，不修改生产代码、测试、契约或依赖。`tasks.md` 仍未勾选 5A.1。
 
 ## 证据与限制
 
@@ -12,6 +12,12 @@
 - 生产关键定位：`lib/components/window_frame.dart:374-429`、`lib/app_shell/bookshelf_workspace.dart:127-203`、`lib/app_shell/workspace/desktop_workspace.dart:375-397`、`lib/app_shell/workspace/workspace_tab_strip.dart:62-129`、`lib/features/reader/scaffold.dart:541-668,715-788`、`lib/features/reader/top_bar.dart:6-75`、`lib/features/reader/reader_page.dart:1932-1953,2021-2085`。
 
 尝试启动探索稿服务时得到 `listen EPERM 127.0.0.1:7100`；CUA 浏览器宿主返回 `The browser access host is unavailable`。尝试正常生产 bundle（隔离 `/tmp/ux1-5a-*` XDG）后，`:1` 不可用：`xwininfo: unable to open display ":1"`，且没有可核验的生产窗口。因此本轮 **0 张截图、0 个 DOM/布局快照**；没有把 fixture/helper、静态推测或构建成功冒充 GUI 证据。正常 GUI 仍受限，停止等待并将限制保留在本报告。
+
+2026-11-20 复核时通过 CUA 拉起已安装的 `VeneraNext-Dev`，观察到真实窗口的壳层截图，但内容区全黑且无可访问页面/路由；该截图只能证明窗口已创建，不能证明任一页面的布局、行数或控件组合，故不计入 GUI 对照证据。探索稿服务在 7101 端口重试仍返回 `listen EPERM`。
+
+2026-11-20 按 owner 指定改用 ego lite。原始探索稿以 `file://` 打开时 ES module 被浏览器策略阻止，页面只显示静态占位；随后将仓库内 `index.html` 与 `src/main.js` 原样合并为 `/tmp/ux1-5a-1-exploration-inline.html`（未改仓库文件），在 ego lite 中成功取得页面级 DOM 与截图。DOM 快照已保存为 `evidence-5a-1-draft-dom.json`；截图留在 `/tmp/ux1-5a-1-draft-*.png`，覆盖 A 方案收藏首页的 expanded/medium/compact、作者 shelf、快速预览、普通阅读工具显示/隐藏和沉浸阅读。代表性 DOM 可见 A 方案工作区包含书架导航、工作区顶栏、收藏摘要、作者分栏与封面网格；阅读器状态分别暴露 `data-reader-mode="normal"`、工具显隐和 `data-reader-mode="immersive"`。
+
+2026-11-20 生产窗口复核：按用户命令尝试 `fvm flutter run -d macos`，当前环境在 `rhttp` 原生插件构建阶段因 Rust 1.92.0 下载被代理拒绝而未启动；随后直接启动当前分支已有的 `build/macos/Build/Products/Debug/VeneraNext.app`。首次启动触发 macOS “允许访问文稿文件夹”权限对话框，点击允许后重新激活窗口，真实生产页面正常显示。截图 `/tmp/venera-front-2.png`（2940×1912）可核验 expanded 收藏工作区；窗口自动缩放后 `/tmp/venera-medium.png`、`/tmp/venera-compact.png` 分别核验 medium/compact；点击首卡后 `/tmp/venera-after-card.png` 核验详情页；点击“阅读”后 `/tmp/venera-reader.png` 核验普通阅读器。阅读器漫画区域点击复核 `/tmp/venera-reader-tools.png`、`/tmp/venera-reader-tools-2.png` 均未出现草稿预期的阅读工具行，记录为真实差异，交由 5A.2 分类。空壳根因是权限提示/启动时机与旧安装实例，不是生产页面缺失。
 
 约束分类：**[草稿]** 指 A 草稿的布局/层级/控件/行数基线；**[token]** 指 `design-spec.md` §2–§4、§7 和 `tokens.dart`/`breakpoints.dart`；**[功能]** 指 proposal/design/reader spec 的标签、预览、章节和恢复契约。
 
@@ -51,5 +57,5 @@
 
 - `git diff --check`：通过。
 - `openspec validate --changes ux1-bookshelf-workspace`：通过（1 passed, 0 failed）。
-- GUI/DOM 证据：0/0；限制已在本报告“证据与限制”明确记录。
+- 草稿 GUI/DOM 证据：8 张页面级截图 + `evidence-5a-1-draft-dom.json`；正常生产页面级证据：expanded/medium/compact 收藏、详情、普通阅读器和阅读器点击复核共 7 张截图。已完成页面级差异审计；差异未视为视觉纠偏通过，后续由 5A.2 分类与排批。
 - 未提交、未归档、未 push；未运行会改变依赖或生产代码的命令。

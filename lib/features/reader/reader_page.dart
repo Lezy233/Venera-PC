@@ -4,6 +4,7 @@ import 'keyboard_shortcuts.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show listEquals;
@@ -1935,8 +1936,9 @@ class ReaderState extends State<Reader>
   void _escapeReader() {
     if (_sessionFrozen ||
         !_workspaceActive ||
-        ModalRoute.of(context)?.isCurrent != true)
+        ModalRoute.of(context)?.isCurrent != true) {
       return;
+    }
     if (immersive) {
       fullscreen();
     } else if (scaffoldKey.currentState?.isOpen == false) {
@@ -1945,11 +1947,32 @@ class ReaderState extends State<Reader>
   }
 
   void fullscreen() {
-    if (_sessionFrozen) return;
+    if (_sessionFrozen || _stateDisposed || !mounted) {
+      return;
+    }
     immersive = !immersive;
     updateShell();
+    // Debug macOS runs can lose the VM connection while AppKit changes the
+    // native fullscreen window during a live Flutter session. Keep the
+    // reader's immersive chrome behavior in debug; defer native fullscreen
+    // verification to a release/profile build.
+    if (kDebugMode) {
+      return;
+    }
     final window = _windowController;
-    if (window != null) _observeWindow(window.toggle());
+    if (window != null) {
+      // Defer the native window transition until after the shell has rebuilt.
+      // Entering immersive changes the workspace chrome and the native frame
+      // in the same gesture; doing both synchronously can tear down the
+      // active reader surface on macOS.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            !_stateDisposed &&
+            identical(_windowController, window)) {
+          _observeWindow(window.toggle());
+        }
+      });
+    }
   }
 
   void disposeReaderWindow() => _observeWindow(_closeReaderWindow());

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:venera_next/components/effects.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
@@ -39,12 +38,12 @@ class ReaderBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final barHeight = isOpen ? height : 8.0;
     Widget child = SizedBox(
-      height: height,
+      height: barHeight,
       child: Column(
         children: [
           if (isOpen) const SizedBox(height: 8),
-          if (!isOpen) const SizedBox(height: ReaderBottomBar.height - 48),
           Row(
             children: [
               const SizedBox(width: 8),
@@ -128,27 +127,21 @@ class ReaderBottomBar extends StatelessWidget {
     );
 
     if (!isOpen) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: context.padding.left,
-          right: context.padding.right,
-          bottom: context.padding.bottom,
-        ),
-        child: child,
-      );
+      // The compact desktop rail is intentionally flush with the viewport
+      // edge. Safe-area insets belong to the expanded controls, not this
+      // eight-pixel visual indicator.
+      return child;
     }
-    return BlurEffect(
+    return Material(
+      color: context.colorScheme.surface,
       child: Container(
         decoration: BoxDecoration(
-          color: context.colorScheme.surface.toOpacity(0.92),
-          border: isOpen
-              ? Border(
-                  top: BorderSide(
-                    color: Colors.grey.toOpacity(0.5),
-                    width: 0.5,
-                  ),
-                )
-              : null,
+          border: Border(
+            top: BorderSide(
+              color: context.colorScheme.outlineVariant,
+              width: AppSizes.hairline,
+            ),
+          ),
         ),
         padding: EdgeInsets.only(bottom: context.padding.bottom),
         child: Padding(
@@ -185,6 +178,64 @@ class ReaderProgressSlider extends StatelessWidget {
     final count = maxPage < 1 ? 1 : maxPage;
     final displayPage = page.clamp(1, count);
     final interactive = enabled && count > 1;
+    if (compact) {
+      return MergeSemantics(
+        child: Semantics(
+          label: 'Page'.tl,
+          value: 'Page @page'.tlParams({'page': '$displayPage / $count'}),
+          child: CallbackShortcuts(
+            bindings: interactive
+                ? {
+                    const SingleActivator(LogicalKeyboardKey.home): () =>
+                        onChanged(1),
+                    const SingleActivator(LogicalKeyboardKey.end): () =>
+                        onChanged(count),
+                  }
+                : const {},
+            child: SizedBox(
+              height: 8,
+              child: LayoutBuilder(
+                builder: (context, constraints) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: interactive
+                      ? (details) => onChanged(
+                          _pageAt(
+                            details.localPosition.dx,
+                            constraints.maxWidth,
+                            count,
+                            reversed: reversed,
+                          ),
+                        )
+                      : null,
+                  onHorizontalDragUpdate: interactive
+                      ? (details) => onChanged(
+                          _pageAt(
+                            details.localPosition.dx,
+                            constraints.maxWidth,
+                            count,
+                            reversed: reversed,
+                          ),
+                        )
+                      : null,
+                  child: CustomPaint(
+                    painter: _CompactProgressPainter(
+                      progress: count <= 1
+                          ? 0
+                          : (displayPage - 1) / (count - 1),
+                      reversed: reversed,
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      inactiveColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return MergeSemantics(
       child: Semantics(
         label: 'Page'.tl,
@@ -204,17 +255,21 @@ class ReaderProgressSlider extends StatelessWidget {
               height: 48,
               child: SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  trackHeight: compact ? 3 : 6,
-                  trackShape: const RoundedRectSliderTrackShape(),
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 11,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 22,
-                  ),
+                  trackHeight: compact ? 8 : 6,
+                  trackShape: compact
+                      ? const RectangularSliderTrackShape()
+                      : const RoundedRectSliderTrackShape(),
+                  thumbShape: compact
+                      ? SliderComponentShape.noThumb
+                      : const RoundSliderThumbShape(enabledThumbRadius: 11),
+                  overlayShape: compact
+                      ? SliderComponentShape.noOverlay
+                      : const RoundSliderOverlayShape(overlayRadius: 22),
                 ),
                 child: Slider(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: compact
+                      ? EdgeInsets.zero
+                      : const EdgeInsets.symmetric(horizontal: 24),
                   value: displayPage.toDouble(),
                   min: 1,
                   max: count.toDouble(),
@@ -233,6 +288,43 @@ class ReaderProgressSlider extends StatelessWidget {
       ),
     );
   }
+}
+
+int _pageAt(double x, double width, int count, {required bool reversed}) {
+  if (width <= 0 || count <= 1) return 1;
+  final fraction = x.clamp(0, width) / width;
+  final logicalFraction = reversed ? 1 - fraction : fraction;
+  return (1 + (logicalFraction * (count - 1))).round().clamp(1, count);
+}
+
+class _CompactProgressPainter extends CustomPainter {
+  const _CompactProgressPainter({
+    required this.progress,
+    required this.reversed,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+  final double progress;
+  final bool reversed;
+  final Color activeColor;
+  final Color inactiveColor;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final y = size.height / 2;
+    final inactive = Paint()..color = inactiveColor;
+    final active = Paint()..color = activeColor;
+    canvas.drawRect(Rect.fromLTWH(0, y - 4, size.width, 8), inactive);
+    final activeWidth = size.width * progress;
+    final activeLeft = reversed ? size.width - activeWidth : 0.0;
+    canvas.drawRect(Rect.fromLTWH(activeLeft, y - 4, activeWidth, 8), active);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompactProgressPainter old) =>
+      old.progress != progress ||
+      old.reversed != reversed ||
+      old.activeColor != activeColor ||
+      old.inactiveColor != inactiveColor;
 }
 
 class ReaderPageInfo extends StatelessWidget {

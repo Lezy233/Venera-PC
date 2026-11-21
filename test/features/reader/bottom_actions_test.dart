@@ -37,11 +37,39 @@ void main() {
       expect(find.byIcon(Icons.first_page), findsNothing);
       expect(find.byIcon(Icons.last_page), findsNothing);
       expect(find.byType(BlurEffect), findsNothing);
-      expect(tester.getRect(find.byType(ReaderBottomBar)).height, 105);
-      expect(tester.getRect(find.byType(ReaderProgressSlider)).height, 48);
+      expect(tester.getRect(find.byType(ReaderBottomBar)).height, 8);
+      expect(tester.getRect(find.byType(ReaderProgressSlider)).height, 8);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('compact progress follows the reading direction', (tester) async {
+    final calls = <int>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReaderBottomBar(
+            label: 'P3',
+            actions: const [],
+            page: 3,
+            maxPage: 10,
+            reversed: true,
+            isOpen: false,
+            onPageChanged: calls.add,
+            onPrevious: () {},
+            onNext: () {},
+          ),
+        ),
+      ),
+    );
+    final rail = tester.getRect(find.byType(ReaderProgressSlider));
+    await tester.tapAt(Offset(rail.left + 1, rail.center.dy));
+    await tester.pump();
+    expect(calls.last, 10);
+    await tester.tapAt(Offset(rail.right - 1, rail.center.dy));
+    await tester.pump();
+    expect(calls.last, 1);
+  });
 
   testWidgets('compact progress cancels an in-flight drag on close', (
     tester,

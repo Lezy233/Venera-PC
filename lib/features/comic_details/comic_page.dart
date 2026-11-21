@@ -1,5 +1,6 @@
 import 'package:venera_next/foundation/app_page_route.dart';
 import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/components/file_save_task.dart';
@@ -378,6 +379,9 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
     final subtitle = comic.subTitle ?? comic.findAuthor();
 
     yield SliverAppbar(
+      leading: DesktopChromeScope.maybeOf(context) == null
+          ? null
+          : const SizedBox.shrink(),
       title: AnimatedOpacity(
         opacity: showAppbarTitle ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),

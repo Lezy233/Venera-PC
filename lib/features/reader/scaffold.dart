@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 
 import 'package:venera_next/app_shell/desktop_chrome.dart';
@@ -556,14 +555,15 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
         .fold(1.0, (largest, scale) => scale > largest ? scale : largest);
     final topBarHeight = kTopBarHeight * titleScale;
     final body = App.isDesktop ? SafeArea(child: _buildBody()) : _buildBody();
-    final compactBody = _isOpen
-        ? body
-        : Column(
-            children: [
-              Expanded(child: body),
-              buildBottom(),
-            ],
-          );
+    // Keep the image viewport geometry stable while the reader tools appear.
+    // The compact progress rail owns only its 8px visual line plus the safe
+    // area; the expanded bar is painted over that same bottom slot.
+    final compactBody = Column(
+      children: [
+        Expanded(child: body),
+        if (_isOpen) const SizedBox(height: 8) else buildBottom(),
+      ],
+    );
     return Stack(
       children: [
         // WindowFrame exposes its title strip as MediaQuery padding rather

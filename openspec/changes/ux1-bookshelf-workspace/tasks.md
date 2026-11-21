@@ -1,5 +1,7 @@
 # UX1 A 书架型工作区实施任务
 
+2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。5A.1/5A.2审计与计划、Batch A–D已交付切片及标签布局/排序证据已冻结到 `../archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；Batch B后续项、owner GUI复核与6.x/7.x仍未完成，本活动change继续作为契约和任务源，不整项archive或合入未实现delta。
+
 2026-11-19 owner 澄清 `explorations/ux1-directions` A 草稿是布局、信息层级、控件组合与顶栏行数基线，并确认普通阅读工具隐藏时顶部一行、显示工具时两行，不保留独立标题栏形成第三行。当前 6.x 暂停，先完成 5A 草稿视觉对齐审计与纠偏批次确认；既有阶段功能验收和证据保留，但不自动视为视觉对齐通过。本项仅更新契约与计划，未改生产代码，未勾任何实现任务。
 
 2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
@@ -108,8 +110,14 @@
 
 ## 5A. 草稿视觉基线对齐（2026-11-19 新增）
 
-- [ ] 5A.1 对照 `explorations/ux1-directions` A 草稿与正常生产 main，审计壳层、收藏、搜索、详情、临时预览和阅读器的布局、信息层级、控件组合及顶栏行数；覆盖 expanded/medium/compact，以及普通阅读工具隐藏／显示和沉浸阅读，保留真实 GUI 差异证据，不在审计中修改生产代码。
-- [ ] 5A.2 architect 将差异按保留、调整、重构分类，提出逐页、单会话可完成的纠偏批次和对应验收场景；owner 确认后方可实施或继续 6.x。既有功能验收记录不得改写为视觉对齐通过，本项勾选只代表纠偏计划已获确认，不代表视觉纠偏已完成。
+本阶段交付文件与 DOM 证据已移至 `../archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；下列文件名均相对于该归档目录。
+
+- [x] 5A.1 对照 `explorations/ux1-directions` A 草稿与正常生产 main，审计壳层、收藏、搜索、详情、临时预览和阅读器的布局、信息层级、控件组合及顶栏行数；覆盖 expanded/medium/compact，以及普通阅读工具隐藏／显示和沉浸阅读，保留真实 GUI 差异证据，不在审计中修改生产代码。
+  - 2026-11-20：基于当前 HEAD `d25642a` 完成审计。ego lite 取得探索稿 A 方案 8 组页面级截图与 DOM（`evidence-5a-1-draft-dom.json`，截图留在 `/tmp/ux1-5a-1-draft-*.png`）；当前分支 Debug 产物取得 expanded/medium/compact 收藏、详情、普通阅读器及阅读器点击复核截图（`/tmp/venera-front-2.png`、`/tmp/venera-medium.png`、`/tmp/venera-compact.png`、`/tmp/venera-after-card.png`、`/tmp/venera-reader.png`、`/tmp/venera-reader-tools*.png`）。空壳根因是权限提示/旧安装实例；阅读器点击后工具行未出现的真实差异已记录，交由 5A.2 分类，不代表视觉纠偏通过。详见 `delivery-5a-1.md`。
+- [x] 5A.2 architect 将差异按保留、调整、重构分类，提出逐页、单会话可完成的纠偏批次和对应验收场景；owner 确认后方可实施或继续 6.x。既有功能验收记录不得改写为视觉对齐通过，本项勾选只代表纠偏计划已获确认，不代表视觉纠偏已完成。
+  - 2026-11-20：完成 `delivery-5a-2.md`。差异已分为保留/调整/重构，提出 Batch A（合并顶栏与断点壳层）、Batch B（收藏/作者/搜索/详情层级）、Batch C（预览浮层焦点）、Batch D（阅读器 chrome 与全局收尾），每批含 expanded/medium/compact 和键盘/主题/大文字/减少动画验收场景。owner 确认前不实施、不继续 6.x；既有功能验收不改写为视觉对齐通过。
+  - 2026-11-20：按 owner 指令执行 Batch A 首个实现切片；生产三档 GUI 截图 `/tmp/ux1-batch-a-expanded.png`、`/tmp/ux1-batch-a-medium.png`、`/tmp/ux1-batch-a-compact.png` 已取得，合并顶栏层级与命令中心断点行为可核验。实现与验证记录见 `delivery-batch-a.md`；Batch B–D 仍待后续确认/排期。
+  - 2026-11-20：owner 指令执行 Batch B；先完成收藏首屏筛选摘要切片，详情页以真实 GUI 作为基线，搜索 pinned 栏/滚动/焦点保护保持不变。验证与未完成范围见 `delivery-batch-b.md`；Batch B 尚未整体闭合。
 
 ## 6. 阅读器与全局可访问性
 
@@ -117,6 +125,9 @@
   - 2026-11-18：owner新增缺陷，待 executor 建立真实方案选择红灯并验证磁盘/绑定恢复。
 - [ ] 6.7 调整精简工具形态：仅保留一条不浮在漫画上方的窄横向进度线，精简形态移除上一章/下一章按钮；完整工具形态保留原进度与章节操作，覆盖主题、150%、减少动画和键盘语义。
   - 2026-11-18：用户复验发现上一版仍以 Stack overlay 覆盖漫画；已取消勾选并保留 `/tmp/ux1-reader-67-layout-red.log`（workspace场景在自动阅读恢复处 timeout）。当前生产修复把精简 `ReaderBottomBar` 放入 scaffold body 的 `Column(Expanded(content), compactBar)`，保留完整/精简相同105px布局基准；精简轨道视觉3px、命中区48px，移除 BlurEffect/背景/边框和章节按钮。独立 A 几何/无模糊测试 `/tmp/ux1-reader-67-ab-green.log` 1/0/0；真实 workspace B 对照 `/tmp/ux1-reader-67-ab-workspace.log` 仍 timeout，故不勾。
+  - 2026-11-20 Batch D 追加：精简栏改为真实48px布局槽，完整工具栏覆盖显示以保持漫画内容列几何稳定；沉浸切换改为 post-frame native window 调度并增加 reader 生命周期守卫。GUI 与完整 reader_exit 矩阵仍待复验，暂不勾。
+  - 2026-11-21：精简栏进一步收敛为 8px 自绘单线，移除 thumb、overlay、底部安全区及额外命中槽，工具展开时同步保留 8px 底部几何；`bottom_actions_test.dart` 18/0/0、相关 analyze 无新增问题。GUI 与 reader_exit 矩阵仍待复验，暂不勾。
+  - 2026-11-21 追加：精简轨道视觉填充及点击/拖动映射均遵循 `reversed`，右向左阅读时从右侧增长；新增方向回归场景，`bottom_actions_test.dart` 19/0/0。
 
 
 - [ ] 6.1 实现普通阅读保留合并工作区标签行、沉浸阅读隐藏标签及模式切换现场保持；普通阅读工具隐藏时顶部一行、显示工具时两行，不叠加独立标题栏，单击只切换阅读器工具行；保护阅读方案绑定、翻页与 B3/F9/B5 行为。

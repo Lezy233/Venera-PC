@@ -41,6 +41,22 @@ class DesktopWorkspaceActions {
 class DesktopChromeController extends ChangeNotifier {
   bool _disposed = false;
   DesktopWorkspaceActions? _workspaceActions;
+  WidgetBuilder? _workspaceTabsBuilder;
+  bool _workspaceTabsVisible = true;
+  WidgetBuilder? get workspaceTabsBuilder =>
+      _workspaceTabsVisible ? _workspaceTabsBuilder : null;
+  void setWorkspaceTabs({WidgetBuilder? builder, bool visible = true}) {
+    if (identical(_workspaceTabsBuilder, builder) &&
+        _workspaceTabsVisible == visible) {
+      return;
+    }
+    _workspaceTabsBuilder = builder;
+    _workspaceTabsVisible = visible;
+    notifyListeners();
+  }
+
+  void refreshWorkspaceTabs() => notifyListeners();
+
   DesktopWorkspaceActions? get workspaceActions => _workspaceActions;
   void setWorkspaceActions(DesktopWorkspaceActions? actions) {
     if (identical(_workspaceActions, actions)) return;

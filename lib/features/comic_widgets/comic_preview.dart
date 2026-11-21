@@ -60,6 +60,7 @@ class _ComicPreviewState extends State<_ComicPreview> {
     (c) => c.id == widget.comic.id && c.sourceKey == widget.comic.sourceKey,
   );
   final requests = <(String, String), Future<Res<ComicDetails>>>{};
+  bool _hasFocus = false;
   Comic get comic => index < 0 ? widget.comic : widget.group[index];
   Future<Res<ComicDetails>> details(Comic target) =>
       requests.putIfAbsent((target.sourceKey, target.id), () async {
@@ -90,6 +91,9 @@ class _ComicPreviewState extends State<_ComicPreview> {
     final image = widget.imageProvider(target);
     return Focus(
       autofocus: true,
+      onFocusChange: (value) {
+        if (value != _hasFocus && mounted) setState(() => _hasFocus = value);
+      },
       onKeyEvent: (_, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         final key = event.logicalKey;
@@ -112,12 +116,22 @@ class _ComicPreviewState extends State<_ComicPreview> {
       },
       child: Dialog(
         insetPadding: const EdgeInsets.all(AppSpacing.lg),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: BorderSide(
+            color: _hasFocus
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
+            width: _hasFocus ? 2 : 0,
+          ),
+        ),
         child: Semantics(
           label: 'Comic preview'.tl,
           explicitChildNodes: true,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
+            constraints: BoxConstraints(
               maxWidth: AppSizes.comicPreviewWidth,
+              maxHeight: MediaQuery.sizeOf(context).height - AppSpacing.xl * 2,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

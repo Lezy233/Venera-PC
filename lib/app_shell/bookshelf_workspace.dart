@@ -18,9 +18,15 @@ class BookshelfWorkspace extends StatefulWidget {
     super.key,
     required this.navigation,
     required this.child,
+    this.showToolbar = true,
   });
   final Widget navigation;
   final Widget child;
+
+  /// Standalone bookshelf tests and non-window hosts keep the legacy local
+  /// toolbar. The desktop production shell renders these controls in the
+  /// merged WindowFrame row instead.
+  final bool showToolbar;
   @override
   State<BookshelfWorkspace> createState() => _BookshelfWorkspaceState();
 }
@@ -154,7 +160,7 @@ class _BookshelfWorkspaceState extends SettingsSaveState<BookshelfWorkspace> {
                 child: Column(
                   children: [
                     Visibility(
-                      visible: !immersive,
+                      visible: widget.showToolbar && !immersive,
                       maintainState: true,
                       child: Material(
                         color: scheme.shellSurface,
