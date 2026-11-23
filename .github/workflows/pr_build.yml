@@ -37,56 +37,6 @@ jobs:
             echo "platform=false" >> "$GITHUB_OUTPUT"
           fi
 
-  android:
-    name: Android 冒烟构建
-    needs: changes
-    if: ${{ needs.changes.outputs.platform == 'true' }}
-    runs-on: ubuntu-22.04
-    timeout-minutes: 35
-    steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version-file: pubspec.yaml
-          architecture: x64
-          cache: true
-      - name: 准备 Rust 工具链
-        run: |
-          python3 .github/scripts/prepare_rust_toolchain.py \
-            --target aarch64-linux-android \
-            --target armv7-linux-androideabi \
-            --target x86_64-linux-android
-      - uses: actions/setup-java@v6
-        with:
-          distribution: oracle
-          java-version: '17'
-          cache: gradle
-          cache-dependency-path: |
-            android/**/*.gradle*
-            android/gradle/wrapper/gradle-wrapper.properties
-            pubspec.lock
-      - name: 准备临时 Android Debug 签名
-        run: |
-          keytool -genkeypair -noprompt \
-            -keystore android/debug.keystore \
-            -storepass android \
-            -keypass android \
-            -alias androiddebugkey \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000
-          printf '%s\n' \
-            'storePassword=android' \
-            'keyPassword=android' \
-            'keyAlias=androiddebugkey' \
-            'storeFile=../debug.keystore' \
-            > android/key.properties
-      - run: flutter pub get --enforce-lockfile
-      - name: 构建 Android Debug APK
-        run: flutter build apk --debug --target-platform android-arm64
-
   windows:
     name: Windows 冒烟构建
     needs: changes
@@ -126,7 +76,7 @@ jobs:
 
   platform_gate:
     name: 平台冒烟构建门禁
-    needs: [changes, android, windows]
+    needs: [changes, windows]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -134,13 +84,11 @@ jobs:
       - name: 汇总平台构建结果
         env:
           CHANGES_RESULT: ${{ needs.changes.result }}
-          ANDROID_RESULT: ${{ needs.android.result }}
           WINDOWS_RESULT: ${{ needs.windows.result }}
         run: |
           if [[ "$CHANGES_RESULT" != "success" || \
-                ("$ANDROID_RESULT" != "success" && "$ANDROID_RESULT" != "skipped") || \
                 ("$WINDOWS_RESULT" != "success" && "$WINDOWS_RESULT" != "skipped") ]]; then
-            echo "平台冒烟构建未通过：changes=$CHANGES_RESULT android=$ANDROID_RESULT windows=$WINDOWS_RESULT"
+            echo "平台冒烟构建未通过：changes=$CHANGES_RESULT windows=$WINDOWS_RESULT"
             exit 1
           fi
-          echo "平台冒烟构建通过：Android=$ANDROID_RESULT Windows=$WINDOWS_RESULT"
+          echo "平台冒烟构建通过：Windows=$WINDOWS_RESULT"

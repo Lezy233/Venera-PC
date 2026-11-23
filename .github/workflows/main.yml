@@ -31,13 +31,10 @@ jobs:
     needs: [Release_Metadata, Quality]
     uses: ./.github/workflows/build.yml
     with:
-      build_android: true
       build_windows: true
       build_macos: true
-      build_ios: true
       build_linux_x64: true
       build_linux_arm64: true
-    secrets: inherit
 
   Release:
     runs-on: ubuntu-24.04
@@ -54,15 +51,6 @@ jobs:
         with:
           name: macos_build
           path: outputs
-      - uses: actions/download-artifact@v8
-        with:
-          name: ios_build
-          path: outputs
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: apk-*
-          path: outputs
-          merge-multiple: true
       - uses: actions/download-artifact@v8
         with:
           name: windows_build
@@ -107,9 +95,7 @@ jobs:
         run: |
           shopt -s nullglob
           files=(
-            outputs/*.ipa
             outputs/*.dmg
-            outputs/*.apk
             outputs/*.zip
             outputs/*.exe
             outputs/*.deb
