@@ -2,19 +2,16 @@
   <a href="README.md">简体中文</a> | <strong>English</strong>
 
   <br>
-  <img src="assets/readme_logo.png" alt="VeneraNext" width="200" />
+  <img src="assets/readme_logo.png" alt="Venera-PC" width="200" />
 
-  # VeneraNext
+  # Venera-PC
 
-  ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white&style=flat-square)
-  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases/latest)
+  ![Flutter](https://img.shields.io/badge/Flutter-3.47.7-02569B?logo=flutter&logoColor=white&style=flat-square)
+  [![Release](https://img.shields.io/github/v/release/Lezy233/Venera-PC?label=Release&color=10B981&style=flat-square)](https://github.com/Lezy233/Venera-PC/releases/latest)
   ![License](https://img.shields.io/badge/License-GPL--3.0-10B981?style=flat-square)
   <br>
-  [![Downloads](https://img.shields.io/github/downloads/CyrilPeng/venera-next/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=CyrilPeng&repo=venera-next)
+  [![Downloads](https://img.shields.io/github/downloads/Lezy233/Venera-PC/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=Lezy233&repo=Venera-PC)
   [![Afdian](https://img.shields.io/badge/Afdian-Sponsor-ff69b4?style=flat-square)](https://ifdian.net/a/cyril)
-
-  <a href="https://trendshift.io/repositories/140830?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-140830" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/140830" alt="VeneraNext repository badge on Trendshift" width="250" height="55" /></a>
-  <a href="https://trendshift.io/repositories/140830?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-140830" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/140830/daily?language=Dart" alt="VeneraNext daily Dart ranking on Trendshift" width="250" height="55" /></a>
 
 </div>
 
@@ -25,39 +22,20 @@
 
 ## Introduction
 
-[VeneraNext](https://github.com/CyrilPeng/venera-next) continues development of [Venera](https://github.com/venera-app/venera), a Flutter comic reader for **Android, iOS, Windows, Linux, and macOS**.
+[Venera-PC](https://github.com/Lezy233/Venera-PC) is a desktop comic reader for **Windows, Linux, and macOS**, designed around fewer interruptions while reading: scroll across chapters, split wide spreads for vertical reading, and adjust the reader for nighttime or E-Ink devices. Read Later, update tracking, offline downloads, reading statistics, and synchronization connect the rest of the reading workflow.
 
-This fork focuses on fewer interruptions while reading: scroll across chapters, split wide spreads for vertical reading, and adjust the reader for nighttime or E-Ink devices. Read Later, update tracking, offline downloads, reading statistics, and synchronization connect the rest of the reading workflow.
-
-Venera's JavaScript extensions, local reading, search and categories, favorites, downloads, and source-dependent login, comments, and ratings remain available.
+Reading is powered by an open JavaScript extension interface that provides search, aggregate search, exploration pages, categories, rankings, and tag translation per source. Local reading, favorites, downloads, and source-dependent login, comments, and ratings remain available.
 
 **Quick links:** [Install](#download-and-installation) · [Usage](#usage-guide) · [Write a source](doc/api/comic_source.en.md) · [JavaScript API](doc/api/js.en.md) · [Changelog](CHANGELOG.md)
 
 > [!IMPORTANT]
 > This repository maintains the reader and extension runtime. It does not provide, bundle, host, or recommend comic sources. Users must configure legal extensions themselves; content and availability depend on the corresponding extension and service.
 
-<div align="center">
-  <a href="https://github.com/CyrilPeng/Venera-Next">
-    <img alt="GitHub main repository" src="https://img.shields.io/badge/GitHub-Main_repository-181717?style=for-the-badge&logo=github&logoColor=white" />
-  </a>
-  <a href="https://gitee.com/CyrilPeng/venera-next">
-    <img alt="Gitee China mirror" src="https://img.shields.io/badge/Gitee-China_mirror-C71D23?style=for-the-badge&logo=gitee&logoColor=white" />
-  </a>
-</div>
-
----
-
-## Screenshots
-
-| Home: history, Read Later, and update tracking | Comic details |
-|---|---|
-| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg" alt="VeneraNext home page with reading history, Read Later, and update tracking" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg" alt="VeneraNext comic details page with reading actions, comic information, and chapters" width="100%" /></a> |
-
 ---
 
 ## Highlights
 
-### Improvements in this fork
+### Focused improvements
 
 | Improvement | What it adds |
 |---|---|
@@ -65,7 +43,7 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 | **Split wide spreads vertically** | Stack the two halves of a wide image in vertical Continuous and Waterfall modes, with an option to swap their order. Original image counts and progress are preserved. |
 | **Night dimming** | An independent reader toggle and 20%–100% brightness control in reader settings and the bottom quick panel, alongside the app's light and dark themes. |
 | **E-Ink refresh** | Flash after a configurable number of Gallery page changes, with adjustable duration and black, white, or white-then-black styles to help reduce ghosting. |
-| **Clearer comic details** | Consistent two-row actions on desktop and mobile emphasize Download, Read, and Continue, with chapter progress, update indicators, and a saved chapter sort preference. |
+| **Clearer comic details** | A consistent two-row action layout emphasizes Download, Read, and Continue, with chapter progress, update indicators, and a saved chapter sort preference. |
 | **Read Later and update tracking** | Keep titles you want to start separate from ongoing series. The home page provides the reading queue, followed-cover previews, and update indicators. |
 | **Favorites and discovery shortcuts** | Browse favorites in a cover gallery with automatic or 2–6 columns, save author/tag searches, and view saved images in a gallery for each comic. |
 | **Reading statistics** | Track active foreground reading time and view totals, comic counts, and rankings from History or Settings. |
@@ -73,10 +51,10 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 | **WebDAV library and archives** | Read NAS/WebDAV image folders with directory caching, incremental synchronization, and metadata support; back up local comics as CBZ archives and restore them separately. |
 | **Data and desktop improvements** | Atomic settings writes and recovery, sync status and errors, history cleanup, and Windows installers, portable packages, and winget updates. |
 
-### Core Venera capabilities retained
+### Core capabilities
 
 - **Extensible sources:** use JavaScript to provide search, aggregate search, exploration pages, categories, rankings, and tag translation.
-- **Flexible reading:** Gallery pagination, scrolling within a chapter, zoom, and multi-image layouts, with touch, keyboard, and mobile volume-key controls.
+- **Flexible reading:** Gallery pagination, scrolling within a chapter, zoom, and multi-image layouts, with keyboard, mouse, and touch controls.
 - **Favorites and offline access:** local and network favorites, history, saved images, and a download queue; read downloaded chapters offline.
 - **Source-dependent interaction:** accounts, cookies, comments and replies, chapter comments, likes, and ratings where implemented by the extension.
 - **Multiple devices:** WebDAV app-data synchronization, import/export, and [headless commands](doc/user/headless.en.md) for scripting.
@@ -84,22 +62,6 @@ Venera's JavaScript extensions, local reading, search and categories, favorites,
 ---
 
 ## Download and installation
-
-### Android
-
-Download an APK from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest):
-
-| File | Description | Recommended for |
-|---|---|---|
-| `VeneraNext-xxx-android.apk` | Universal build | Most Android devices |
-| `VeneraNext-xxx-android-arm64-v8a.apk` | ARM64 build | Android devices that support ARM64 apps |
-| `VeneraNext-xxx-android-armeabi-v7a.apk` | ARM32 build | Older 32-bit devices |
-
-When in doubt, use the universal `VeneraNext-xxx-android.apk` package.
-
-### iOS
-
-Download the IPA from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest) and sideload it with AltStore.
 
 ### Windows
 
@@ -110,34 +72,34 @@ winget install --id CyrilPeng.VeneraNext --exact
 winget upgrade --id CyrilPeng.VeneraNext --exact
 ```
 
-You can also download `VeneraNext-xxx-windows-installer.exe` or the portable ZIP from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest). Portable builds are not managed by winget and must be updated manually. New winget versions may appear later than GitHub Releases because Microsoft reviews manifest updates; run `winget source update` before checking again.
+You can also download `VeneraPC-xxx-windows-installer.exe` or the portable `VeneraPC-xxx-windows.zip` from the [latest stable release](https://github.com/Lezy233/Venera-PC/releases/latest). Portable builds are not managed by winget and must be updated manually. New winget versions may appear later than GitHub Releases because Microsoft reviews manifest updates; run `winget source update` before checking again.
 
 See [Windows Distribution](doc/distribution/windows.en.md) for installer, portable build, and winget maintenance details.
 
 ### Linux
 
-Download the package matching your distribution and architecture from the [latest stable release](https://github.com/CyrilPeng/venera-next/releases/latest):
+Download the package matching your distribution and architecture from the [latest stable release](https://github.com/Lezy233/Venera-PC/releases/latest):
 
 | Distribution / format | Install or run |
 |---|---|
 | Debian / Ubuntu (DEB) | `sudo apt install ./venera-next_xxx_amd64.deb` (use `arm64` on ARM64) |
 | Fedora and other distributions providing the required dependencies (RPM) | `sudo dnf install ./venera-next-xxx.x86_64.rpm` (use `aarch64` on ARM64) |
 | Arch Linux (x86_64) | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage (x86_64 / ARM64) | Run `chmod +x VeneraNext-xxx-x86_64.AppImage`, then `./VeneraNext-xxx-x86_64.AppImage` (use the `aarch64` file on ARM64) |
+| AppImage (x86_64 / ARM64) | Run `chmod +x VeneraPC-xxx-x86_64.AppImage`, then `./VeneraPC-xxx-x86_64.AppImage` (use the `aarch64` file on ARM64) |
 
-Replace `xxx` with the actual version in the downloaded filename. The v1.18.0 stable release includes RPM and AppImage packages for both x86_64 and ARM64. Use `uname -m` to check your architecture.
+Replace `xxx` with the actual version in the downloaded filename. Stable releases include RPM and AppImage packages for both x86_64 and ARM64. Use `uname -m` to check your architecture. Once installed, the app can be launched with either `venera-pc` or the compatible `venera-next` command.
 
 Linux packages are built on Ubuntu 22.04 with a glibc 2.35 baseline. The current stable AppImage includes GTK 3 and WebKitGTK 4.1, so no separate GTK/WebKit installation is needed. It still requires host glibc 2.35 or newer and compatible OpenGL/EGL graphics drivers. See [Linux Installation and Distribution](doc/distribution/linux.en.md) for dependencies, FUSE troubleshooting, and distribution compatibility.
 
 ### macOS
 
-Download `VeneraNext-xxx.dmg` from the [latest stable release](https://github.com/CyrilPeng/Venera-Next/releases/latest).
+Download `VeneraPC-xxx.dmg` from the [latest stable release](https://github.com/Lezy233/Venera-PC/releases/latest), open it, and drag `Venera-PC` into Applications.
 
 ---
 
 ## Quick start
 
-1. Install the appropriate build from the [latest stable release](https://github.com/CyrilPeng/venera-next/releases/latest).
+1. Install the appropriate build from the [latest stable release](https://github.com/Lezy233/Venera-PC/releases/latest).
 2. Choose a channel: use Local → Import for existing images, archives, or image documents; install a compatible extension for network reading; configure Settings → App → WebDAV Comic Library for a NAS.
 3. Choose a mode in Settings → Reader. Waterfall is the default for long series; Gallery turns pages; Continuous scrolls within the current chapter.
 4. Adjust split spreads, night dimming, or E-Ink refresh for your device. Enable device-specific or per-comic settings when needed.
@@ -158,10 +120,6 @@ Download `VeneraNext-xxx.dmg` from the [latest stable release](https://github.co
 - **Split wide images:** available in vertical Continuous and Waterfall only. Swap the split order if needed; page counts still refer to original images.
 - **Resume:** history stores chapter, page, and chapter group. Waterfall records the chapter actually being read. Ascending/descending on the details page only changes the chapter list display.
 - **Setting scope:** reader settings fall back from enabled per-comic settings to enabled device settings and then global settings.
-
-| Single-page view | Split double-page view |
-|---|---|
-| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg" alt="A wide page before splitting" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg" alt="The same spread with double-page splitting enabled" width="100%" /></a> |
 
 ### Nighttime and E-Ink reading
 
@@ -213,7 +171,7 @@ These are configured separately:
 | Comic archives | Comic Archive Backup | Upload local comics as CBZ archives or download archives into the local library |
 | Online library | WebDAV Comic Library | Load remote image folders on demand and cache directory information and images |
 
-The online library accepts ordinary image folders, chapter folders, and extracted CBZ exports from VeneraNext. Valid `metadata.json` can supply title, author, tags, chapter page ranges, and identify comic roots in nested folders. Invalid metadata falls back to ordinary folder detection.
+The online library accepts ordinary image folders, chapter folders, and extracted CBZ exports from Venera-PC. Valid `metadata.json` can supply title, author, tags, chapter page ranges, and identify comic roots in nested folders. Invalid metadata falls back to ordinary folder detection.
 
 The shelf displays cached entries first and checks remote changes incrementally. Manual synchronization and an automatic update interval are available. Remote CBZ/ZIP/7Z/CB7 files cannot be previewed directly: extract them on the server, or restore an archive for local reading. [Folder and metadata rules](doc/user/import_comic.en.md#webdav-online-library)
 
@@ -230,21 +188,17 @@ The shelf displays cached entries first and checks remote changes incrementally.
 
 Chinese editions: [漫画源编写指南](doc/api/comic_source.zh.md) · [JavaScript API](doc/api/js.zh.md) · [本地调试](doc/development/source_debugging.zh.md).
 
-This fork continues to maintain Venera-compatible extension interfaces. Waterfall, split spreads, and night dimming are reader responsibilities. Extensions supply stable comic/chapter IDs, correctly ordered chapters and images, and valid update dates; they do not need separate rules for every reader mode.
+Venera-PC maintains Venera-compatible extension interfaces. Waterfall, split spreads, and night dimming are reader responsibilities. Extensions supply stable comic/chapter IDs, correctly ordered chapters and images, and valid update dates; they do not need separate rules for every reader mode.
 
 ## FAQ
 
-### Does VeneraNext include comic sources?
+### Does Venera-PC include comic sources?
 
 No source or recommended catalog is bundled. Import local comics or configure a legal compatible extension or WebDAV library.
 
 ### Why are searches, images, or update indicators missing?
 
 Check the extension, login/cookies, service availability, and network. Update tracking additionally requires a valid update date. Contact the relevant maintainer for site/content issues. Reader or extension-runtime problems reproducible independently of a particular site can be reported under the [contribution guidelines](CONTRIBUTING.en.md).
-
-### How do I shrink strip comics on a tablet?
-
-Select vertical continuous or waterfall reading in reader settings, then adjust **Shrink strip comics (margin per side)**. At 20% per side, image width becomes 60% of its original size, with proportional height and the same reading progress. See [strip comic size and side margins](doc/user/reader_width.en.md).
 
 ### How do I update on Windows?
 
@@ -254,26 +208,14 @@ Run `winget upgrade --id CyrilPeng.VeneraNext --exact`. Public-source availabili
 
 - [Build and Development](doc/development/build.en.md): Flutter/Rust, locked dependencies, tests, and releases.
 - [Contributing](CONTRIBUTING.en.md) · [Dependency Governance](doc/development/dependencies.en.md).
-- [Windows Distribution](doc/distribution/windows.en.md) · [Headless Mode](doc/user/headless.en.md).
+- [Windows Distribution](doc/distribution/windows.en.md) · [Linux Installation and Distribution](doc/distribution/linux.en.md) · [Headless Mode](doc/user/headless.en.md).
 - [Security Policy](SECURITY.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Documentation Index](doc/README.en.md).
-
----
-
-## Star history
-
-<a href="https://www.star-history.com/?repos=CyrilPeng%2Fvenera-next&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=CyrilPeng/venera-next&type=date&theme=dark&legend=top-left&sealed_token=2JdfPV5RItrAVJNxNXhSHVr6mVbj9H_y_YMHJio2smj8uoRHGQKgrtY9k0PmbxUf6q0P-dR90ZWZSKlDDaygMd90LT7F0xI-2Bbtiq5muew1iXUSEFJzfouyqu70BiWT-hUeD9BKbFsdVr1knEJDWBqAArkJYIJcJCOYLZ5rUdpFdQ2aBIhT8wTQnOED" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=CyrilPeng/venera-next&type=date&legend=top-left&sealed_token=2JdfPV5RItrAVJNxNXhSHVr6mVbj9H_y_YMHJio2smj8uoRHGQKgrtY9k0PmbxUf6q0P-dR90ZWZSKlDDaygMd90LT7F0xI-2Bbtiq5muew1iXUSEFJzfouyqu70BiWT-hUeD9BKbFsdVr1knEJDWBqAArkJYIJcJCOYLZ5rUdpFdQ2aBIhT8wTQnOED" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=CyrilPeng/venera-next&type=date&legend=top-left&sealed_token=2JdfPV5RItrAVJNxNXhSHVr6mVbj9H_y_YMHJio2smj8uoRHGQKgrtY9k0PmbxUf6q0P-dR90ZWZSKlDDaygMd90LT7F0xI-2Bbtiq5muew1iXUSEFJzfouyqu70BiWT-hUeD9BKbFsdVr1knEJDWBqAArkJYIJcJCOYLZ5rUdpFdQ2aBIhT8wTQnOED" />
- </picture>
-</a>
 
 ---
 
 ## Statement
 
-This repository maintains the VeneraNext comic reader itself. It **does not provide, bundle, host, or recommend any comic source and does not handle source-site content**.
+This repository maintains the Venera-PC comic reader itself. It **does not provide, bundle, host, or recommend any comic source and does not handle source-site content**.
 
 Network reading uses extensions compatible with the JavaScript API. Users are responsible for configuring legal extensions. Search results, chapter loading, image availability, and content copyright depend on the corresponding source site and extension implementation.
 
@@ -283,7 +225,7 @@ Network reading uses extensions compatible with the JavaScript API. Users are re
 
 ## Sponsors
 
-VeneraNext is maintained as a personal-interest project and is not operated for profit. If it helps with your daily reading, you can support ongoing maintenance through [Afdian](https://ifdian.net/a/cyril).
+Venera-PC is maintained as a personal-interest project and is not operated for profit. If it helps with your daily reading, you can support ongoing maintenance through [Afdian](https://ifdian.net/a/cyril).
 
 Sponsorship status is synchronized periodically through the Afdian API. To request public acknowledgement, put `公开昵称：Your name` in the order remark. Orders without an explicit public name are not displayed.
 

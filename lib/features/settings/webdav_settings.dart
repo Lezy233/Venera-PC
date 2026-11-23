@@ -123,7 +123,7 @@ class _DataSyncWebdavSettingState extends State<DataSyncWebdavSetting> {
                                       icon: const Icon(Icons.open_in_new),
                                       onPressed: () {
                                         launchUrlString(
-                                          "https://github.com/CyrilPeng/venera-next/blob/main/lib/foundation/appdata.dart#L138",
+                                          "https://github.com/Lezy233/Venera-PC/blob/main/lib/foundation/appdata.dart#L138",
                                         );
                                       },
                                     ),

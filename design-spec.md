@@ -1,7 +1,7 @@
-# Venera-Next 设计契约（design-spec）
+# Venera-PC 设计契约（design-spec）
 
 - 版本：v0.3（2026-11-19）
-- 状态：生效中。本文件是 Venera-Next 全部 UI 的唯一设计契约。
+- 状态：生效中。本文件是 Venera-PC 全部 UI 的唯一设计契约。
 - 代码 token：`lib/design_system/tokens.dart`、`lib/design_system/breakpoints.dart`
 - 维护规则：任何 UI 相关 change 的 proposal/design MUST 引用本文件对应章节；实现与本文件冲突时 MUST 先更新本文件再实现。代码中确有理由偏离契约的个案 MUST 登记到文末「例外清单」，否则视为违规。
 

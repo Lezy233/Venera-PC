@@ -2,11 +2,11 @@
 
 English version: [build.en.md](build.en.md)
 
-本文面向准备从源码构建、测试或维护 VeneraNext 的开发者。安装和使用说明请阅读仓库根目录的 [README](../../README.md)。
+本文面向准备从源码构建、测试或维护 Venera-PC 的开发者。安装和使用说明请阅读仓库根目录的 [README](../../README.md)。
 
 ## 环境要求
 
-- Flutter `3.41.4`
+- Flutter `3.47.7`
 - Dart `>=3.8.0 <4.0.0`
 - JDK `17`，用于 Android 构建
 - Rust 工具链；Android 构建需要安装对应 Android targets
@@ -25,8 +25,8 @@ flutter --version
 克隆仓库后，使用仓库锁文件获取依赖：
 
 ```bash
-git clone https://github.com/CyrilPeng/venera-next.git
-cd venera-next
+git clone https://github.com/Lezy233/Venera-PC.git
+cd Venera-PC
 flutter pub get --enforce-lockfile
 ```
 

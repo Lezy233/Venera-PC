@@ -6,10 +6,10 @@ Chinese version: [windows.zh.md](windows.zh.md)
 
 Windows stable releases are built by `.github/workflows/main.yml` through the `完整构建` workflow:
 
-- `VeneraNext-<version>-windows-installer.exe`: Inno Setup installer, suitable for winget.
-- `VeneraNext-<version>-windows.zip`: portable package, suitable for manual download and extraction.
+- `VeneraPC-<version>-windows-installer.exe`: Inno Setup installer, suitable for winget.
+- `VeneraPC-<version>-windows.zip`: portable package, suitable for manual download and extraction.
 
-VeneraNext is officially available through winget with package ID `CyrilPeng.VeneraNext`. winget uses the installer and does not manage the portable zip package.
+Venera-PC is officially available through winget with package ID `CyrilPeng.VeneraNext`. winget uses the installer and does not manage the portable zip package.
 
 ## Install And Upgrade With Winget
 
@@ -40,7 +40,7 @@ Local generation command:
 $version = "1.13.0"
 python .github\scripts\generate_winget_manifest.py `
   --version $version `
-  --installer "build\windows\VeneraNext-$version-windows-installer.exe" `
+  --installer "build\windows\VeneraPC-$version-windows-installer.exe" `
   --output build\winget `
   --print-path
 ```
@@ -60,7 +60,7 @@ After the package is already accepted, WingetCreate can be used for updates:
 ```powershell
 $version = "1.13.0"
 wingetcreate update CyrilPeng.VeneraNext `
-  -u "https://github.com/CyrilPeng/Venera-Next/releases/download/v$version/VeneraNext-$version-windows-installer.exe" `
+  -u "https://github.com/Lezy233/Venera-PC/releases/download/v$version/VeneraPC-$version-windows-installer.exe" `
   -v $version `
   -t <GitHub PAT> `
   --submit
@@ -100,6 +100,6 @@ ctest --test-dir build/windows/startup_tests -C Debug --output-on-failure
 ## Notes
 
 - Do not casually change the `AppId` in `windows/build.iss`; it affects how winget identifies installed apps.
-- The installer filename must remain `VeneraNext-<version>-windows-installer.exe`; the manifest script validates this naming.
+- The installer filename must remain `VeneraPC-<version>-windows-installer.exe`; the manifest script validates this naming.
 - If Windows ARM64 stable releases are added later, the winget installer manifest needs an `arm64` installer entry.
 - Code signing is not currently required by the scripts, but should be prioritized for winget distribution to reduce SmartScreen and installation trust issues.

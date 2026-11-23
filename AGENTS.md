@@ -1,12 +1,12 @@
-# AGENTS.md — Venera-Next 多 agent 协作入口
+# AGENTS.md — Venera-PC 多 agent 协作入口
 
 > 任何 agent（Kimi Code / dsh / 其他）在本仓库开局的**第一份必读文件**。
 > 读完本文后按「最小阅读清单」继续，不要全库探索。
 
 ## 1. 项目一句话
 
-Venera-Next 是 PC 优先的 Flutter 漫画阅读器，fork 自 venera-next，**已与上游决裂**
-（不为保留上游结构/行为而保留；重构是预期行为，移动端可用但不再是设计中心）。
+Venera-PC 是 PC 优先的独立 Flutter 漫画阅读器（仓库 `Lezy233/Venera-PC`），
+桌面（Windows/macOS/Linux）为设计中心，移动端可用但不再是设计中心。
 
 ## 2. 角色路由（开局先确认你是谁）
 
@@ -41,7 +41,7 @@ Venera-Next 是 PC 优先的 Flutter 漫画阅读器，fork 自 venera-next，**
 
 - **2026-11-16 最新状态（覆盖下方历史排期）**：owner 已授权归档、提交并推送 UX1 已完成的书架壳层与 F1 多标签阶段（tasks 2.1–2.4、3.1–3.6，含 1.1/1.2/1.4）。阶段证据归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；活动 change `ux1-bookshelf-workspace` 保留未完成的 1.3、4.x F2、5.x 搜索/详情、6.x 阅读器及 7.x 整体验收。继续该 change 时读活动四件套和 tasks；复核已验收阶段时读归档 README。整个 UX1 尚未完成，不运行整项 OpenSpec archive 或合入尚未实现的 delta spec。
 
-- 分支：`redesign-2026`（github.com/Lezy233/Venera-Next）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送此分支。
+- 分支：`redesign-2026`（github.com/Lezy233/Venera-PC）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送此分支。
 - 已完成并归档：`design-system-foundation`（设计基座 + 验收缺陷 5.1–5.3 修复）；`settings-ia-cleanup`（2026-10-21 归档）；`save-bar-layout-fix`（2026-10-21 归档，commit 9669b5c）；`desktop-shell-polish`（2026-10-21 归档，commit ae00919）；`desktop-search-context`（2026-10-21 归档，commit 5833677）；`reader-quick-settings-panel`（2026-10-22 归档，commit 11c495e）；`save-feedback-placement-fix`（2026-10-22 归档，commit 63d45e7）；`chrome-binding-lifecycle-fix`（2026-10-22 归档，commit 0121b81，BACKLOG B1）；`keyboard-shortcuts`（2026-10-23 归档，commit b735663，BACKLOG F3，批次 A——动作注册表/多键位自定义/冲突检测/独立主分类/平台默认键）；`reader-mode-presets`（2026-10-23 归档，commit 1c8fbc3，BACKLOG F4，批次 A——阅读模式方案 CRUD + 面板方案切换）；`favorite-series`（2026-10-25 归档，批次 C F5——跨来源手动系列、收藏交互入口、多选 Escape、批量加入系列）；`search-profiles-author`（2026-11-03 owner验收通过并归档，实现commit c5429bb，批次 C F6+F7——搜索方案与收藏创作者平台名称树，替代旧B2作者聚合入口）。
 - 2026-11-03 owner验收`comic-card-hit-target-fix`（B4）通过，按owner指令归档至`openspec/changes/archive/2026-11-03-comic-card-hit-target-fix/`；实现commit `6f65f7f`，独立174测试0skip、analyze50=38+12、GUI及正常构建通过。
 - B3 `reader-preset-state-recovery`于2026-11-03经owner验收通过并归档，实现commit `526c311`：持续编辑共享19键及「跟随默认」保持绑定；独立285测试、B4保护174测试均0skip，analyze raw/unique50=38+12零新增，GUI/真实重启/正常构建与清理通过。证据见`openspec/changes/archive/2026-11-03-reader-preset-state-recovery/review.md`。

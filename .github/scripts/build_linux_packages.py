@@ -41,7 +41,7 @@ def versions(value):
 
 
 def validate_bundle(bundle, arch):
-    binary = bundle / "venera-next"
+    binary = bundle / "venera-pc"
     with binary.open("rb") as stream:
         header = stream.read(20)
     if (len(header) != 20 or header[:6] != b"\x7fELF\x02\x01"
@@ -55,7 +55,7 @@ def validate_bundle(bundle, arch):
 def desktop_file(exec_path):
     return f"""[Desktop Entry]
 Type=Application
-Name=VeneraNext
+Name=Venera-PC
 Comment=Comic reader
 Exec={exec_path} %U
 Icon=venera-next
@@ -67,7 +67,7 @@ MimeType=x-scheme-handler/venera;
 
 def stage_bundle(bundle, destination):
     shutil.copytree(bundle, destination, symlinks=True)
-    (destination / "venera-next").chmod(0o755)
+    (destination / "venera-pc").chmod(0o755)
     shutil.copyfile(ROOT / "LICENSE", destination / "LICENSE")
 
 
@@ -82,9 +82,9 @@ def rpm_spec(version, build, private_libs):
 Name: venera-next
 Version: {version}
 Release: {build}
-Summary: VeneraNext comic reader
+Summary: Venera-PC comic reader
 License: GPL-3.0-only
-URL: https://github.com/CyrilPeng/venera-next
+URL: https://github.com/Lezy233/Venera-PC
 Requires: gtk3, webkit2gtk4.1
 
 %description
@@ -93,12 +93,14 @@ A cross-platform comic reader with JavaScript source extensions and local readin
 %install
 mkdir -p "%{{buildroot}}/opt" "%{{buildroot}}/usr/bin" "%{{buildroot}}/usr/share/applications" "%{{buildroot}}/usr/share/icons/hicolor/256x256/apps"
 cp -a "%{{_sourcedir}}/app" "%{{buildroot}}/opt/venera-next"
-ln -s /opt/venera-next/venera-next "%{{buildroot}}/usr/bin/venera-next"
+ln -s /opt/venera-next/venera-pc "%{{buildroot}}/usr/bin/venera-pc"
+ln -s /opt/venera-next/venera-pc "%{{buildroot}}/usr/bin/venera-next"
 install -m644 "%{{_sourcedir}}/venera-next.desktop" "%{{buildroot}}/usr/share/applications/"
 install -m644 "%{{_sourcedir}}/venera-next.png" "%{{buildroot}}/usr/share/icons/hicolor/256x256/apps/"
 
 %files
 /opt/venera-next
+/usr/bin/venera-pc
 /usr/bin/venera-next
 /usr/share/applications/venera-next.desktop
 /usr/share/icons/hicolor/256x256/apps/venera-next.png
@@ -146,7 +148,7 @@ def stage_appdir(bundle, appdir):
 set -eu
 APPDIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 . "$APPDIR/runtime-env.sh"
-"$APPDIR/usr/lib/venera-next/venera-next" "$@"
+"$APPDIR/usr/lib/venera-next/venera-pc" "$@"
 ''', encoding="utf-8", newline="\n")
     apprun.chmod(0o755)
 
@@ -170,7 +172,7 @@ def build_appimage(bundle, out, arch, version, work):
     )
     # Extract the build tool so CI does not need FUSE or a privileged container.
     run(tool, "--appimage-extract", cwd=work, stdout=subprocess.DEVNULL)
-    package = out / f"VeneraNext-{version}-{machine}.AppImage"
+    package = out / f"VeneraPC-{version}-{machine}.AppImage"
     run(work / "squashfs-root/AppRun", "--no-appstream", "--runtime-file", runtime,
         appdir, package, env={**os.environ, "ARCH": machine, "SOURCE_DATE_EPOCH": os.environ.get("SOURCE_DATE_EPOCH", "0")})
     if not package.exists() or package.stat().st_size == 0:

@@ -30,17 +30,25 @@ def stage_package(bundle, stage, arch, version):
         "Section: graphics\nPriority: optional\n"
         "Depends: libwebkit2gtk-4.1-0, libgtk-3-0\n"
         "Maintainer: Lezy233\n"
-        "Description: VeneraNext comic reader\n",
+        "Description: Venera-PC comic reader\n",
         encoding="utf-8",
     )
     applications = stage / "usr/share/applications"
     applications.mkdir(parents=True)
     (applications / "venera-next.desktop").write_text(
-        desktop_file(f"/{INSTALL_PATH}/venera-next"), encoding="utf-8"
+        desktop_file(f"/{INSTALL_PATH}/venera-pc"), encoding="utf-8"
     )
     icons = stage / "usr/share/icons/hicolor/256x256/apps"
     icons.mkdir(parents=True)
     shutil.copyfile(ROOT / "debian/gui/venera-next.png", icons / "venera-next.png")
+    # The real binary is venera-pc; keep the historical venera-next entry
+    # working and expose both commands system-wide.
+    binary = stage / INSTALL_PATH / "venera-pc"
+    (binary.parent / "venera-next").symlink_to("venera-pc")
+    bin_dir = stage / "usr/bin"
+    bin_dir.mkdir(parents=True)
+    (bin_dir / "venera-pc").symlink_to(f"/{INSTALL_PATH}/venera-pc")
+    (bin_dir / "venera-next").symlink_to(f"/{INSTALL_PATH}/venera-pc")
 
 
 def package_bundle(bundle, output, arch, version):

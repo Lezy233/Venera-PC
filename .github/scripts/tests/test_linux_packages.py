@@ -18,7 +18,7 @@ class LinuxPackagesTest(unittest.TestCase):
         header = bytearray(20)
         header[:6] = b"\x7fELF\x02\x01"
         header[18:20] = machine.to_bytes(2, "little")
-        (bundle / "venera-next").write_bytes(header)
+        (bundle / "venera-pc").write_bytes(header)
         (bundle / "lib/libflutter_linux_gtk.so").write_bytes(b"flutter")
         (bundle / "data/icudtl.dat").write_bytes(b"icu")
         (bundle / "data/flutter_assets/test.txt").write_text("asset")
@@ -45,7 +45,19 @@ class LinuxPackagesTest(unittest.TestCase):
             self.assertTrue((appdir / "usr/lib/venera-next/LICENSE").is_file())
             self.assertNotIn(b"\r", (appdir / "AppRun").read_bytes())
             self.assertIn('"$@"', (appdir / "AppRun").read_text())
-            self.assertIn("Exec=AppRun %U", (appdir / "venera-next.desktop").read_text())
+            self.assertIn('usr/lib/venera-next/venera-pc', (appdir / "AppRun").read_text())
+            desktop = (appdir / "venera-next.desktop").read_text()
+            self.assertIn("Exec=AppRun %U", desktop)
+            self.assertIn("Name=Venera-PC", desktop)
+
+    def test_rpm_spec_keeps_package_identity_and_provides_both_commands(self):
+        content = packages.rpm_spec("1.16.0", "225", set())
+        self.assertIn("Name: venera-next\n", content)
+        self.assertIn("URL: https://github.com/Lezy233/Venera-PC\n", content)
+        self.assertIn('ln -s /opt/venera-next/venera-pc', content)
+        self.assertIn("/usr/bin/venera-pc\n", content)
+        self.assertIn("/usr/bin/venera-next\n", content)
+        self.assertIn("Summary: Venera-PC comic reader", content)
 
     def test_versions_preserve_build_and_prerelease_order(self):
         self.assertEqual(packages.versions("1.16.0+225"), ("1.16.0", "225"))

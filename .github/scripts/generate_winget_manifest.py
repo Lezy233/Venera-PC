@@ -8,9 +8,10 @@ from release_version import load_release_config
 
 
 PACKAGE_IDENTIFIER = "CyrilPeng.VeneraNext"
-PACKAGE_PUBLISHER = "CyrilPeng/venera-next"
-PACKAGE_NAME = "VeneraNext"
-PACKAGE_MONIKER = "venera-next"
+PACKAGE_PUBLISHER = "Lezy233/Venera-PC"
+PACKAGE_NAME = "Venera-PC"
+PACKAGE_FILE_NAME = "VeneraPC"
+PACKAGE_MONIKER = "venera-pc"
 MANIFEST_VERSION = "1.10.0"
 SCHEMA_BASE_URL = "https://aka.ms"
 SCHEMA_HEADERS = {
@@ -28,7 +29,7 @@ SCHEMA_HEADERS = {
     ),
 }
 APP_ID = "{C6B7E69A-0FD6-4F2A-AC64-7D1AE8A40FB8}_is1"
-REPOSITORY_URL = "https://github.com/CyrilPeng/venera-next"
+REPOSITORY_URL = "https://github.com/Lezy233/Venera-PC"
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:-rc\.\d+)?$")
 
 
@@ -53,7 +54,7 @@ def package_version(version: str | None) -> str:
 def installer_url(version: str) -> str:
     return (
         f"{REPOSITORY_URL}/releases/download/v{version}/"
-        f"{PACKAGE_NAME}-{version}-windows-installer.exe"
+        f"{PACKAGE_FILE_NAME}-{version}-windows-installer.exe"
     )
 
 
@@ -66,7 +67,7 @@ def installer_sha256(path: Path) -> str:
 
 
 def expected_installer_name(version: str) -> str:
-    return f"{PACKAGE_NAME}-{version}-windows-installer.exe"
+    return f"{PACKAGE_FILE_NAME}-{version}-windows-installer.exe"
 
 
 def validate_installer_path(version: str, path: Path) -> None:
@@ -149,14 +150,14 @@ PackageLocale: en-US
 Publisher: {PACKAGE_PUBLISHER}
 PublisherUrl: {REPOSITORY_URL}
 PublisherSupportUrl: {REPOSITORY_URL}/issues
-Author: CyrilPeng
+Author: Lezy233
 PackageName: {PACKAGE_NAME}
 PackageUrl: {REPOSITORY_URL}
 License: GPL-3.0
 LicenseUrl: {REPOSITORY_URL}/blob/main/LICENSE
-Copyright: Copyright (C) CyrilPeng
+Copyright: Copyright (C) Lezy233
 ShortDescription: A comic app.
-Description: VeneraNext is a free and open-source app for comic reading.
+Description: Venera-PC is a free and open-source app for comic reading.
 Moniker: {PACKAGE_MONIKER}
 Tags:
 - comic

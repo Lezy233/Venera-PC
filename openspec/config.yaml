@@ -4,8 +4,9 @@ context: |
   Language: zh-CN
   All artifacts must be written in zh-CN.
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
-  Project: Venera-Next, a Flutter comic reader forked from venera-next.
-  This fork has DIVERGED from upstream: do not preserve upstream file structure
+  Project: Venera-PC, an independent Flutter desktop comic reader.
+  Repository: https://github.com/Lezy233/Venera-PC
+  The project targets desktop only: do not preserve legacy file structure
   or behavior for its own sake; restructuring is allowed and expected.
   Primary target platform is desktop (Windows/macOS/Linux); mobile layouts
   must keep working but are no longer the design center.

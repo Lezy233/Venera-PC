@@ -78,7 +78,7 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           python3 .github/scripts/generate_winget_manifest.py \
             --version "$version" \
-            --installer "outputs/VeneraNext-${version}-windows-installer.exe" \
+            --installer "outputs/VeneraPC-${version}-windows-installer.exe" \
             --release-date "$(date -u +%F)" \
             --output outputs/winget \
             --print-path
@@ -123,5 +123,5 @@ jobs:
         run: gh release edit "${GITHUB_REF_NAME}" --draft=false
       - name: 清理 jsDelivr CDN 缓存
         run: |
-          curl -s "https://purge.jsdelivr.net/gh/CyrilPeng/venera-next@main/pubspec.yaml" | jq '.status'
-          curl -s "https://purge.jsdelivr.net/gh/CyrilPeng/venera-next@main/CHANGELOG.md" | jq '.status'
+          curl -s "https://purge.jsdelivr.net/gh/Lezy233/Venera-PC@main/pubspec.yaml" | jq '.status'
+          curl -s "https://purge.jsdelivr.net/gh/Lezy233/Venera-PC@main/CHANGELOG.md" | jq '.status'

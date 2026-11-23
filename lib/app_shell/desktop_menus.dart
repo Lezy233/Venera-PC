@@ -73,10 +73,10 @@ class DesktopApplicationMenuBar extends StatelessWidget {
     final reader = chrome.readerActions;
     return [
       PlatformMenu(
-        label: 'VeneraNext',
+        label: 'Venera-PC',
         menus: [
           PlatformMenuItem(
-            label: 'About VeneraNext'.tl,
+            label: 'About Venera-PC'.tl,
             onSelected: showDesktopAbout,
           ),
           PlatformMenuItem(
@@ -88,7 +88,7 @@ class DesktopApplicationMenuBar extends StatelessWidget {
             ),
           ),
           PlatformMenuItem(
-            label: 'Quit VeneraNext'.tl,
+            label: 'Quit Venera-PC'.tl,
             onSelected: () => windowManager.close(),
           ),
         ],
@@ -185,13 +185,13 @@ class DesktopApplicationMenuBar extends StatelessWidget {
         label: 'Help'.tl,
         menus: [
           PlatformMenuItem(
-            label: 'About VeneraNext'.tl,
+            label: 'About Venera-PC'.tl,
             onSelected: showDesktopAbout,
           ),
           PlatformMenuItem(
             label: 'GitHub Repository'.tl,
             onSelected: () =>
-                launchUrlString('https://github.com/Lezy233/Venera-Next'),
+                launchUrlString('https://github.com/Lezy233/Venera-PC'),
           ),
         ],
       ),

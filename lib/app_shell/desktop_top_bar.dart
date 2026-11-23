@@ -293,13 +293,13 @@ class DesktopInlineMenuBar extends StatelessWidget {
             label: 'Help'.tl,
             items: [
               _InlineItem(
-                label: 'About VeneraNext'.tl,
+                label: 'About Venera-PC'.tl,
                 onSelected: () => showDesktopAbout(),
               ),
               _InlineItem(
                 label: 'GitHub Repository'.tl,
                 onSelected: () =>
-                    launchUrlString('https://github.com/Lezy233/Venera-Next'),
+                    launchUrlString('https://github.com/Lezy233/Venera-PC'),
               ),
             ],
           ),
@@ -398,7 +398,7 @@ Future<void> toggleDesktopFullScreen() async {
 void showDesktopAbout() {
   showAboutDialog(
     context: appNavigation.rootContext,
-    applicationName: 'VeneraNext',
+    applicationName: 'Venera-PC',
     applicationVersion: App.version,
     applicationLegalese: '© 2026 Lezy233',
     applicationIcon: const Icon(Icons.menu_book, size: 40),

@@ -2,11 +2,11 @@
 
 Default Chinese version: [build.zh.md](build.zh.md)
 
-This guide is for developers building, testing, or maintaining VeneraNext from source. For installation and usage, see the root [README](../../README.md).
+This guide is for developers building, testing, or maintaining Venera-PC from source. For installation and usage, see the root [README](../../README.md).
 
 ## Prerequisites
 
-- Flutter `3.41.4`
+- Flutter `3.47.7`
 - Dart `>=3.8.0 <4.0.0`
 - JDK `17` for Android builds
 - A Rust toolchain; Android builds require the corresponding Android targets
@@ -25,8 +25,8 @@ flutter --version
 Clone the repository and resolve dependencies from its lock file:
 
 ```bash
-git clone https://github.com/CyrilPeng/venera-next.git
-cd venera-next
+git clone https://github.com/Lezy233/Venera-PC.git
+cd Venera-PC
 flutter pub get --enforce-lockfile
 ```
 

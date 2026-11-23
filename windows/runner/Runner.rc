@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.github.lezy233" "\0"
-            VALUE "FileDescription", "VeneraNext" "\0"
+            VALUE "FileDescription", "Venera-PC" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "VeneraNext" "\0"
+            VALUE "InternalName", "Venera-PC" "\0"
             VALUE "LegalCopyright", "© 2026 Lezy233" "\0"
-            VALUE "OriginalFilename", "VeneraNext.exe" "\0"
-            VALUE "ProductName", "VeneraNext" "\0"
+            VALUE "OriginalFilename", "VeneraPC.exe" "\0"
+            VALUE "ProductName", "Venera-PC" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
