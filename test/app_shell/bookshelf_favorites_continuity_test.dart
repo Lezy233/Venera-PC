@@ -4,8 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:venera_next/components/scroll.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/bookshelf_workspace.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/bookshelf_workspace.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
@@ -28,10 +28,11 @@ void main() {
     'real favorite selection scroll instance and focus survive bookshelf transitions',
     (tester) async {
       Future<void> settleWorkspace() async {
-        await tester.pump(const Duration(milliseconds:400));
-        await settleSidebarWork(tester,()=>appdata.writeImplicitData());
+        await tester.pump(const Duration(milliseconds: 400));
+        await settleSidebarWork(tester, () => appdata.writeImplicitData());
         await tester.pumpAndSettle();
       }
+
       final root = Directory.systemTemp.createTempSync('ux1-continuity-');
       final oldPath = App.dataPath, oldCache = App.cachePath;
       final oldSettings = Map<String, dynamic>.from(

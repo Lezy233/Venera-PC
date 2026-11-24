@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-import 'package:venera_next/app_shell/workspace/workspace_navigation_scope.dart';
-import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/components/workspace_navigation_scope.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';

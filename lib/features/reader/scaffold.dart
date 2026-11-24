@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:venera_next/components/settings_save_state.dart';
 
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/features/reader/status_info.dart';
 import 'package:flutter/material.dart';
 import 'package:venera_next/features/reader/progress_bar.dart';

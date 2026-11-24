@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/translations.dart';
-import 'workspace_record.dart';
-import 'workspace_comic_drag.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
+import 'package:venera_next/components/workspace_comic_drag.dart';
 import 'package:window_manager/window_manager.dart';
 
 final workspaceTabDragActive = ValueNotifier<bool>(false);

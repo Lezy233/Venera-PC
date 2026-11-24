@@ -1,4 +1,4 @@
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 
 /// Ephemeral drag payload. It never owns or edits a favorite/source record.
 class WorkspaceComicDrag {

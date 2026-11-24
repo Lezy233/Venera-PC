@@ -30,7 +30,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:venera_next/app_runtime/app_runtime.dart';
 import 'package:venera_next/app_shell/app_shell.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/global_shortcuts.dart';
 import 'package:venera_next/app_shell/desktop_menus.dart';
 import 'package:venera_next/foundation/log.dart';

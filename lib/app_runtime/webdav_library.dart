@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:venera_next/features/webdav_library/webdav_library_api.dart';
+import 'package:venera_next/features/webdav_library/webdav_library.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
@@ -8,30 +8,6 @@ import 'package:venera_next/foundation/app_data_operations.dart';
 import 'package:venera_next/foundation/persistence_failure.dart';
 
 WebDavLibraryServices? _library;
-final _registryOwners = Expando<WebDavLibrarySource>('WebDAV registry owner');
-
-/// Replace callbacks from a previous app mount with this owner's instance.
-void mountWebDavLibrary(WebDavLibraryServices services) {
-  if (services.source.isDisposed) return;
-  _registryOwners[ComicSourceManager()] = services.source;
-  _registerLibrary(
-    ComicSourceManager(),
-    services.source,
-    services.settings.read(),
-  );
-}
-
-void _registerLibrary(
-  ComicSourceManager manager,
-  WebDavLibrarySource source,
-  WebDavLibrarySettings settings,
-) {
-  if (source.isDisposed) return;
-  manager.remove(WebDavLibrarySource.sourceKey);
-  if (settings.enabled && settings.connection.isValid) {
-    manager.add(source.create());
-  }
-}
 
 /// Core startup and the mounted UI share this application-owned instance.
 WebDavLibraryServices get webDavLibrary {
@@ -67,7 +43,7 @@ WebDavLibraryServices createWebDavLibraryServices({
     cache: WebDavLibraryCache('$dataPath/webdav_library.db'),
     ops: ops,
   );
-  _registryOwners[manager] = source;
+  adoptWebDavLibrarySource(manager, source);
   return WebDavLibraryServices(source: source, settings: settings);
 }
 
@@ -88,7 +64,7 @@ class _LibraryConfigurationWriter {
 
   void _checkOwner() {
     if (source().isDisposed ||
-        !identical(_registryOwners[manager], source()) ||
+        !ownsWebDavLibrarySource(manager, source()) ||
         App.dataPath != dataPath) {
       throw StateError('WebDAV library owner changed. Reopen settings.');
     }
@@ -145,7 +121,7 @@ class _LibraryConfigurationWriter {
     // state without restoring an old snapshot or reporting persistence success.
     if (previous != null &&
         !source().isDisposed &&
-        identical(_registryOwners[manager], source()) &&
+        ownsWebDavLibrarySource(manager, source()) &&
         App.dataPath == dataPath) {
       final current = read();
       if (previous!.connectionKey != current.connection.connectionKey) {
@@ -160,7 +136,7 @@ class _LibraryConfigurationWriter {
         }
       }
       try {
-        _registerLibrary(manager, source(), current);
+        registerWebDavLibrarySource(manager, source(), current);
       } catch (error, stack) {
         failures.add((error: error, stackTrace: stack));
       }

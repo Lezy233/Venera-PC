@@ -3,7 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:venera_next/app_runtime/webdav_library.dart';
+import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/features/settings/remote_storage.dart';
+import 'package:venera_next/features/webdav_library/webdav_library.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/context.dart';
@@ -52,9 +55,24 @@ Directory _prepare(List<String> messages) {
   return root;
 }
 
-Widget _host() => MaterialApp(
-  home: Scaffold(
-    body: RemoteStorageSettings(testConnection: (_) async => const Res(true)),
+WebDavLibraryServices _services(Directory root) {
+  final services = createWebDavLibraryServices(
+    dataPath: root.path,
+    manager: ComicSourceManager(),
+  );
+  addTearDown(() async {
+    ComicSourceManager().remove(WebDavLibrarySource.sourceKey);
+    await services.source.closeAndWait();
+  });
+  return services;
+}
+
+Widget _host(WebDavLibraryServices services) => WebDavLibraryScope(
+  services: services,
+  child: MaterialApp(
+    home: Scaffold(
+      body: RemoteStorageSettings(testConnection: (_) async => const Res(true)),
+    ),
   ),
 );
 
@@ -63,8 +81,9 @@ void main() {
     tester,
   ) async {
     final messages = <String>[];
-    _prepare(messages);
-    await tester.pumpWidget(_host());
+    final root = _prepare(messages);
+    final services = _services(root);
+    await tester.pumpWidget(_host(services));
 
     expect(find.text('Not configured'), findsWidgets);
     await tester.tap(find.text('Comic Archive Backup'));
@@ -86,7 +105,8 @@ void main() {
   ) async {
     final messages = <String>[];
     final root = _prepare(messages);
-    await tester.pumpWidget(_host());
+    final services = _services(root);
+    await tester.pumpWidget(_host(services));
 
     await tester.enterText(find.byType(TextField).at(0), 'https://dav.example');
     await tester.enterText(find.byType(TextField).at(1), 'user');
@@ -116,14 +136,15 @@ void main() {
     tester,
   ) async {
     final messages = <String>[];
-    _prepare(messages);
+    final root = _prepare(messages);
+    final services = _services(root);
     appdata.settings[webDavConnectionKey] = {
       'url': 'https://dav.example',
       'user': '',
       'pass': '',
     };
     appdata.settings[webDavConnectionPendingConfirmationKey] = true;
-    await tester.pumpWidget(_host());
+    await tester.pumpWidget(_host(services));
 
     expect(
       find.text(
@@ -144,6 +165,41 @@ void main() {
     await tester.pump();
     await _flush(tester, appdata.saveData(false));
     expect(appdata.settings[WebDavPurposes.dataSync], isFalse);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('library purpose switch mounts the scoped services', (
+    tester,
+  ) async {
+    final messages = <String>[];
+    final root = _prepare(messages);
+    final services = _services(root);
+    appdata.settings[webDavConnectionKey] = {
+      'url': 'https://dav.example',
+      'user': '',
+      'pass': '',
+    };
+    appdata.settings[WebDavPurposes.library] = false;
+    await tester.pumpWidget(_host(services));
+
+    final manager = ComicSourceManager();
+    expect(manager.find(WebDavLibrarySource.sourceKey), isNull);
+    await tester.scrollUntilVisible(
+      find.text('WebDAV Comic Library'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    final row = find.ancestor(
+      of: find.text('WebDAV Comic Library'),
+      matching: find.byType(ListTile),
+    );
+    await tester.tap(find.descendant(of: row, matching: find.byType(Switch)));
+    await tester.pump();
+    await _flush(tester, appdata.saveData(false));
+
+    expect(appdata.settings[WebDavPurposes.library], isTrue);
+    expect(manager.find(WebDavLibrarySource.sourceKey), isNotNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

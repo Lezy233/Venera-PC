@@ -183,6 +183,46 @@ class QualityWorkflowTests(unittest.TestCase):
         self.assertIn("swift test --package-path apple", text)
         self.assertNotIn("rhttp-ios", text)
 
+    def test_directory_access_uses_the_desktop_macos_runner(self):
+        quality = load_workflow(ANALYZE_YML)
+        build = load_workflow(BUILD_YML)
+        job = quality["jobs"]["apple-directory-access"]
+        self.assertEqual(job["runs-on"], "macos-15")
+        desktop_runners = {
+            name: definition["runs-on"]
+            for name, definition in build["jobs"].items()
+            if str(definition.get("runs-on", "")).startswith("macos-")
+        }
+        self.assertEqual(set(desktop_runners.values()), {job["runs-on"]})
+        self.assertEqual(
+            [step.get("run") for step in job["steps"]],
+            [None, "swift test --package-path apple"],
+        )
+
+    def test_quality_steps_keep_structure_tests_and_coverage(self):
+        workflow = load_workflow(ANALYZE_YML)
+        analyze_runs = [
+            step.get("run", "") for step in workflow["jobs"]["analyze"]["steps"]
+        ]
+        self.assertIn(
+            "python3 .github/scripts/check_structure_imports.py", analyze_runs
+        )
+        self.assertIn(
+            'python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"',
+            analyze_runs,
+        )
+        self.assertIn("flutter pub get --enforce-lockfile", analyze_runs)
+        self.assertIn("flutter analyze --fatal-infos --fatal-warnings", analyze_runs)
+        flutter_runs = [
+            step.get("run", "")
+            for step in workflow["jobs"]["flutter-tests"]["steps"]
+        ]
+        self.assertTrue(any("flutter test --coverage" in run for run in flutter_runs))
+        self.assertIn(
+            "python3 .github/scripts/prepare_linux_test_libraries.py",
+            "".join(flutter_runs),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

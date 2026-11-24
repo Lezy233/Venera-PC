@@ -9,8 +9,8 @@ import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/translations.dart';
-import 'package:venera_next/app_shell/desktop_top_bar.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_top_bar.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/components/overlay_host.dart';
 import 'package:window_manager/window_manager.dart';
 

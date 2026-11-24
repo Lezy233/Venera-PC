@@ -3,13 +3,11 @@ import 'package:flutter/widgets.dart';
 import 'package:venera_next/app_shell/home_page.dart';
 import 'package:venera_next/features/discovery/discovery.dart';
 import 'package:venera_next/features/favorites/favorites.dart';
-import 'package:venera_next/features/search/search_page.dart';
-import 'package:venera_next/features/search/search_result_page.dart';
-import 'package:venera_next/features/search/aggregated_search_page.dart';
+import 'package:venera_next/features/search/search.dart';
 import 'package:venera_next/features/comic_details/comic_details.dart';
 import 'package:venera_next/features/reader/reader.dart';
 import 'package:venera_next/features/settings/settings.dart';
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 
 /// Explicit auxiliary allowlist; unknown main pages are not silently made
 /// eligible for parent-only restoration.

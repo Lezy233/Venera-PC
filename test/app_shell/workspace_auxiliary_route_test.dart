@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:image/image.dart' as img;
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'package:venera_next/app_shell/workspace/workspace_store.dart';
 import 'package:venera_next/features/comic_details/cover_viewer.dart';
 import 'package:venera_next/components/image.dart';
@@ -19,7 +19,7 @@ import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
 import 'package:venera_next/app_shell/workspace/workspace_tab_strip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';

@@ -3,8 +3,8 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 import 'package:venera_next/components/sidebar_resize_handle.dart';

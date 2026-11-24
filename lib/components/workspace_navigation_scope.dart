@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 
 /// Content submits a durable destination without depending on the shell State.
 class WorkspaceNavigationScope extends InheritedWidget {

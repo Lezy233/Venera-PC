@@ -14,8 +14,8 @@ import 'package:venera_next/routing/app_navigation.dart';
 
 import 'consts.dart';
 import 'gesture.dart';
-import 'package:venera_next/app_shell/bookshelf_workspace.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/bookshelf_workspace.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/foundation/translations.dart';
 
 class PaneItemEntry {

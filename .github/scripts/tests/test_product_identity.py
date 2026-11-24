@@ -15,9 +15,12 @@ class RepositoryUrlTests(unittest.TestCase):
         for dependency in (
             "CyrilPeng/flutter_qjs",
             "venera-app/flutter_desktop_webview",
-            "CyrilPeng/webdav_client",
         ):
             self.assertIn(dependency, pubspec)
+        # The WebDAV client is vendored so clean environments do not depend on
+        # the upstream repository staying reachable.
+        self.assertIn("path: packages/webdav_client", pubspec)
+        self.assertNotIn("CyrilPeng/webdav_client", pubspec)
 
     def test_workflows_reference_new_repository_and_asset_names(self):
         for workflow in ("main.yml", "winget.yml", "build.yml"):

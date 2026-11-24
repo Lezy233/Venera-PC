@@ -1,4 +1,4 @@
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'package:venera_next/foundation/shortcuts/shortcut_registry.dart';
 import 'keyboard_shortcuts.dart';
 import 'package:venera_next/features/history/history_scope.dart';

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/app_shell/workspace/workspace_store.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';

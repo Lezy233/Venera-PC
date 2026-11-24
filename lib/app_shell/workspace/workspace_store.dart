@@ -1,6 +1,6 @@
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 
 /// Per-window ownership of the existing appdata transaction, not a second store.
 class WorkspaceStore {

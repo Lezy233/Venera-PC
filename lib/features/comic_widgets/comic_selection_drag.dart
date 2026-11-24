@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:venera_next/app_shell/workspace/workspace_comic_drag.dart';
-import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/components/workspace_comic_drag.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/translations.dart';
 
