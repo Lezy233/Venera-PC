@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/context.dart';
@@ -31,7 +32,9 @@ class SmoothCustomScrollView extends StatelessWidget {
         return CustomScrollView(
           controller: controller,
           physics: physics,
-          cacheExtent: cacheExtent,
+          scrollCacheExtent: cacheExtent == null
+              ? null
+              : ScrollCacheExtent.pixels(cacheExtent!),
           slivers: [
             ...slivers,
             SliverPadding(

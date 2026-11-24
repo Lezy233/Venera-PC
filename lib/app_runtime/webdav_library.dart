@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:venera_next/features/webdav_library/webdav_library.dart';
+import 'package:venera_next/features/webdav_library/webdav_library_api.dart';
+import 'package:venera_next/features/webdav_library/webdav_library_registry.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:venera_next/features/sync/data_sync_commit.dart';
 import 'package:venera_next/features/sync/data_sync_operation.dart';
 import 'package:venera_next/foundation/sync_preference_store.dart';
+import 'package:venera_next/foundation/webdav_connection.dart';
 
 void main() {
   test(
@@ -265,6 +266,7 @@ void main() {
       };
       final settings = <String, Object?>{
         'webdav': originalConnection,
+        webDavConnectionKey: null,
         'disableSyncFields': originalExcluded,
       };
       final implicit = <String, dynamic>{

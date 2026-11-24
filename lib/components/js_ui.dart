@@ -223,6 +223,7 @@ class JsUiApi implements JsUiMessageHandler {
     final task = WindowSelectionTask(context);
     final presentation = Completer<String?>();
     final pending = <Future<void>>{};
+    late final Future<String?> presented;
     try {
       String? result;
       final func = validator == null
@@ -330,11 +331,12 @@ class JsUiApi implements JsUiMessageHandler {
           },
         ),
       );
-      return presentation.future;
+      presented = presentation.future;
     } catch (_) {
       callbacks.dispose();
       rethrow;
     }
+    return presented;
   }
 
   Future<int?> _showSelectDialog(

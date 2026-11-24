@@ -141,9 +141,18 @@ class _Host {
           .onWindowClose();
 }
 
-ReorderCallback _reorder(WidgetTester tester) => tester
-    .widget<ReorderableListView>(find.byType(ReorderableListView))
-    .onReorder;
+/// Simulates a drag using the insertion index reported by the gesture layer,
+/// which is what the retired `onReorder` contract exposed. `onReorderItem`
+/// already adjusts the target index for the removed item.
+ReorderCallback _reorder(WidgetTester tester) {
+  final list = tester.widget<ReorderableListView>(
+    find.byType(ReorderableListView),
+  );
+  return (oldIndex, newIndex) => list.onReorderItem!(
+    oldIndex,
+    oldIndex < newIndex ? newIndex - 1 : newIndex,
+  );
+}
 
 VoidCallback _help(WidgetTester tester) => tester
     .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.help_outline))

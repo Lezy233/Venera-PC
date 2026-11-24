@@ -1,13 +1,12 @@
 import 'package:venera_next/features/comic_source/source.dart';
-import 'package:venera_next/features/comic_source/source_data_storage.dart';
 
 class ComicSourceFixture extends ComicSource {
   ComicSourceFixture({
     String key = 'fixture',
     AccountConfig? account,
     Map<String, Map<String, dynamic>>? settings,
-    Map<String, dynamic> initialData = const {},
-    SourceDataStorage dataStorage = const SourceDataStorage(),
+    super.initialData,
+    super.dataStorage,
   }) : super(
          'Fixture source',
          key,
@@ -42,7 +41,5 @@ class ComicSourceFixture extends ComicSource {
          false,
          null,
          null,
-         initialData: initialData,
-         dataStorage: dataStorage,
        );
 }

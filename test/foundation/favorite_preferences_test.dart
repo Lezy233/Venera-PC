@@ -6,7 +6,8 @@ import 'package:venera_next/foundation/application_preferences.dart';
 void main() {
   test('favorite defaults keep legacy keys and JSON value types', () {
     const legacy = {
-      'favoritesDisplayMode': 'list',
+      'favoritesDensity': 'comfortable',
+      'favoritesDisplayMode': 'gallery',
       'favoritesGalleryColumns': 0,
       'localFavoritesFirst': true,
       'autoCloseFavoritePanel': false,

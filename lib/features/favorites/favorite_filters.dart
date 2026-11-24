@@ -1,4 +1,4 @@
-import 'package:venera_next/features/comic_source/comic_source.dart';
+import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/foundation/app_locale.dart';
 
 import 'favorite_models.dart';

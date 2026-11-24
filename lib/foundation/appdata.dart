@@ -3,6 +3,7 @@ import 'package:venera_next/foundation/sync_configuration.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'app_locale.dart';
 import 'settings_recovery.dart';
 import 'reader_preset_values.dart';
 import 'translations.dart';
@@ -23,7 +24,9 @@ import 'package:venera_next/foundation/log.dart';
 import 'package:venera_next/foundation/webdav_connection.dart';
 
 class Appdata with Init {
-  Appdata._create();
+  Appdata._create() {
+    attachAppLocaleSettings(settings);
+  }
 
   final Settings settings = Settings._create();
 

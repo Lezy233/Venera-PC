@@ -199,6 +199,40 @@ class QualityWorkflowTests(unittest.TestCase):
             [None, "swift test --package-path apple"],
         )
 
+    def test_format_check_only_excludes_the_vendored_webdav_client(self):
+        workflow = load_workflow(ANALYZE_YML)
+        steps = workflow["jobs"]["analyze"]["steps"]
+        format_steps = [
+            step for step in steps if step.get("name") == "检查本次修改的 Dart 格式"
+        ]
+        self.assertEqual(len(format_steps), 1)
+        script = format_steps[0].get("run", "")
+
+        # The CI diff range contract stays unchanged.
+        self.assertIn('diff_range="${BASE_SHA}...HEAD"', script)
+        self.assertIn('diff_range="HEAD^...HEAD"', script)
+        self.assertIn("--diff-filter=ACMRTUXB", script)
+
+        # Only the vendored directory is excluded, through one narrow pathspec.
+        self.assertEqual(script.count(":(exclude)"), 1, script)
+        self.assertIn("':(exclude)packages/webdav_client/**'", script)
+        self.assertIn("'*.dart'", script)
+        for broad in (
+            ":(exclude)packages/**",
+            ":(exclude)lib/",
+            ":(exclude)test/",
+            ":(exclude)tool/",
+            ":(exclude)*",
+        ):
+            self.assertNotIn(broad, script)
+
+        # Vendored files are filtered by path, not by reformatting the source.
+        self.assertNotIn("packages/webdav_client/lib", script)
+        self.assertIn(
+            'dart format --output=none --set-exit-if-changed "${dart_files[@]}"',
+            script,
+        )
+
     def test_quality_steps_keep_structure_tests_and_coverage(self):
         workflow = load_workflow(ANALYZE_YML)
         analyze_runs = [
