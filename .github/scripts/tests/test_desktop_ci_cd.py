@@ -1,4 +1,7 @@
+import json
+import os
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -38,11 +41,18 @@ class DesktopBuildWorkflowTests(unittest.TestCase):
         on = load_workflow(BUILD_YML)["on"]
         for trigger in ("workflow_call", "workflow_dispatch"):
             inputs = on[trigger].get("inputs", {})
+            self.assertIsInstance(inputs, dict)
             self.assertEqual(
                 sorted(inputs),
                 ["build_linux_arm64", "build_linux_x64", "build_macos", "build_windows"],
                 f"{trigger} inputs should only cover desktop platforms",
             )
+            for definition in inputs.values():
+                self.assertEqual(definition["type"], "boolean")
+                self.assertTrue(definition["default"])
+            expected_required = trigger == "workflow_dispatch"
+            for definition in inputs.values():
+                self.assertEqual(definition["required"], expected_required)
 
     def test_mobile_signing_secrets_are_removed(self):
         workflow = load_workflow(BUILD_YML)
@@ -79,6 +89,35 @@ class DesktopReleaseWorkflowTests(unittest.TestCase):
             ["build_linux_arm64", "build_linux_x64", "build_macos", "build_windows"],
         )
         self.assertNotIn("secrets", build)
+
+    def test_release_metadata_validation_distinguishes_manual_builds_and_tags(self):
+        workflow = load_workflow(MAIN_YML)
+        steps = workflow["jobs"]["Release_Metadata"]["steps"]
+        step = next(step for step in steps if step.get("name") == "校验发布元数据")
+        version = json.loads((ROOT / "release.json").read_text(encoding="utf-8"))["version"]
+        cases = (
+            ("workflow_dispatch", "main"),
+            ("push", f"v{version}"),
+        )
+        for event_name, ref_name in cases:
+            with self.subTest(event_name=event_name, ref_name=ref_name):
+                result = subprocess.run(
+                    ["bash", "-e", "-c", step["run"]],
+                    cwd=ROOT,
+                    env={
+                        **os.environ,
+                        "GITHUB_EVENT_NAME": event_name,
+                        "GITHUB_REF_NAME": ref_name,
+                    },
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(
+                    result.returncode,
+                    0,
+                    f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}",
+                )
+                self.assertIn(f"Release metadata for v{version} is valid", result.stdout)
 
     def test_release_downloads_only_desktop_artifacts(self):
         text = MAIN_YML.read_text(encoding="utf-8")

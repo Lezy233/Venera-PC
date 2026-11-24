@@ -20,7 +20,7 @@
 
 ## 4. 集成验证
 
-- [x] 4.1 运行 `python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"`，确认全部通过；运行 `git diff --check` 并检查只有预期工作流、测试和文档发生变化。
+- [ ] 4.1 运行 `python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"`，确认全部通过；运行 `git diff --check` 并检查只有预期工作流、测试和文档发生变化。
 - [x] 4.2 按项目环境运行 `flutter analyze`，确认相对 50 项既有基线零新增；不得重新生成 `pubspec.lock`，并核对其无差异。
 - [ ] 4.3 在 PR 中确认代码分析、Flutter 测试、Windows 冒烟与 `platform_gate` 通过，且不再出现 Android/iOS 检查；不通过实际打 tag 验证 Release，交付中列出下一次桌面 Release 的人工验收项。
 

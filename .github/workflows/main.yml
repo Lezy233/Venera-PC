@@ -21,7 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: 校验发布元数据
-        run: python3 .github/scripts/validate_release.py
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag="$(python3 -c 'import json; print("v" + json.load(open("release.json", encoding="utf-8"))["version"])')"
+          fi
+          python3 .github/scripts/validate_release.py --tag "$tag"
 
   Quality:
     needs: Release_Metadata

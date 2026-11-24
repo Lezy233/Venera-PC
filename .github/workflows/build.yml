@@ -4,6 +4,45 @@ run-name: 构建 ${{ github.ref_name }}
 on:
   workflow_call:
     inputs:
+      build_windows:
+        required: false
+        type: boolean
+        default: true
+      build_macos:
+        required: false
+        type: boolean
+        default: true
+      build_linux_x64:
+        required: false
+        type: boolean
+        default: true
+      build_linux_arm64:
+        required: false
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      build_windows:
+        description: '构建 Windows'
+        required: true
+        type: boolean
+        default: true
+      build_macos:
+        description: '构建 macOS'
+        required: true
+        type: boolean
+        default: true
+      build_linux_x64:
+        description: '构建 Linux x64'
+        required: true
+        type: boolean
+        default: true
+      build_linux_arm64:
+        description: '构建 Linux ARM64'
+        required: true
+        type: boolean
+        default: true
+
 concurrency:
   group: build-${{ github.workflow }}-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: true
