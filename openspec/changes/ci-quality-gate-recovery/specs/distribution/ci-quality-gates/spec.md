@@ -14,7 +14,14 @@
 
 - **WHEN** 维护者在干净源码副本中使用空 pub 缓存执行强制锁文件依赖解析
 - **THEN** 所有依赖成功解析且应用依赖版本保持锁定
-- **AND** 过程不访问已失效的 `CyrilPeng/webdav_client` 仓库
+- **AND** 过程不访问任何已失效的 `CyrilPeng` 仓库
+- **AND** 所有 git 依赖保持锁定 ref、版本与源码内容不变
+
+#### Scenario: 失效 git 依赖迁移
+
+- **WHEN** 一个已锁定 git 依赖的远端仓库不可访问
+- **THEN** 该依赖 SHALL 迁移到同一 commit 可达的来源，或改为仓库内 vendored 源码
+- **AND** 迁移 MUST NOT 改变 ref、锁定版本或源码内容
 
 ### Requirement: 质量工作流使用受支持的 macOS 环境
 
@@ -28,11 +35,23 @@ macOS 目录授权检查 SHALL 在 GitHub Actions 当前支持的 runner 上执�
 
 ### Requirement: 质量门禁完整执行
 
-质量工作流 SHALL 在依赖恢复后实际执行结构检查、静态分析、Flutter 测试与覆盖率步骤，MUST NOT 通过删除检查或豁免既有违规获得成功结果。
+质量工作流 SHALL 在依赖恢复后实际执行结构检查、架构 inventory 检查、静态分析、Flutter 测试与覆盖率步骤，MUST NOT 通过删除检查、扩大豁免范围或把既有违规加入白名单获得成功结果。
 
 #### Scenario: 当前源码执行质量门禁
 
 - **WHEN** 维护者本地或 CI 按工作流顺序执行质量检查
 - **THEN** 结构检查无受限 import 或 feature 入口违规
-- **AND** 静态分析相对既有 50 项基线零新增
-- **AND** Flutter 测试与覆盖率命令实际运行并成功结束
+- **AND** 架构 inventory 中每个 `lib/` 库文件恰有一个分类，且没有未登记的新 feature 依赖边
+- **AND** `flutter analyze --fatal-infos --fatal-warnings` 通过
+- **AND** Flutter 测试与覆盖率命令实际运行，失败项均被归类为可复现的环境限制或已修复的仓库缺陷
+
+### Requirement: vendored 第三方源码不属于本包检查范围
+
+静态分析与 Dart 格式检查 SHALL 允许排除仓库内 vendored 的第三方源码目录，MUST 仅限该目录，且 MUST NOT 缩减本仓代码、测试、工具或其他本地 package 的检查范围，也不得放宽 lint 规则。
+
+#### Scenario: 检查 vendored 依赖
+
+- **WHEN** 维护者或 CI 对仓库运行静态分析与格式检查
+- **THEN** `packages/webdav_client/` 不被当作本包代码报告问题
+- **AND** 本仓其他目录仍按原有规则检查
+- **AND** 排除范围由静态测试锁定，不能被扩大为通用豁免

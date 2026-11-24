@@ -43,7 +43,7 @@
 
 | 16 | **favorites-sidebar-section-collapse**（F11）✅已归档 | 本地/系列/网络独立折叠、状态记忆、当前条目摘要及键盘/菜单隔离 | 2026-11-07 owner验收，实现4a886a6；tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 |
 | 17 | **ux1-bookshelf-workspace**（UX1，5A基本工作已归档） | 书架、多栈、F2、搜索/详情、5A Batch A–D 基本切片已交付；余 5.5、Batch B 后续、6.x 阅读器、7.x 整体验收；tasks 33/46 | 依赖 #18 完成 `app_shell` 共享 UI 搬迁后再复工 6.x；5.5 GUI 与 7.x 需 owner 复核 |
-| 18 | **ci-quality-gate-recovery**（新建，0/11） | WebDAV 客户端入库为 path 依赖、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；不改用户行为、不重生成锁文件 | 无硬前置；须先于 #19 的 4.1/4.3 与 #20 的 7.3；⚠ 会搬迁 `app_shell` 共享 UI，须在 UX1 6.x 复工前完成 |
+| 18 | **ci-quality-gate-recovery**（实施中，10/15） | WebDAV 客户端入库为 path 依赖、两个额外失效 git 依赖改同 commit 镜像、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；并补齐架构 inventory、修复 CI 可见 analyze 问题、vendored 目录排除格式/分析检查 | 无硬前置；须先于 #19 的 4.1/4.3 与 #20 的 7.3；⚠ 会搬迁 `app_shell` 共享 UI，须在 UX1 6.x 复工前完成 |
 | 19 | **desktop-only-ci-cd**（10/12） | 桌面专用 CI/CD：build/main/pr_build/analyze 收敛，移动商店工作流删除 | 余 4.1 本地全量脚本测试、4.3 PR 门禁核实；依赖 #18 让门禁转绿，其 PR 证据可复用 |
 | 20 | **venera-pc-rebrand**（20/21） | Venera-PC 产品身份与发布命名（Windows/macOS/Linux 资产、README、元数据） | 平台构建验证依赖 #18/#19；余 7.3（Linux 冷启动走查 + CI 构建核实） |
 

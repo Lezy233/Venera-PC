@@ -33,3 +33,18 @@ components、features、foundation、network、routing 与 utils 中的代码 MU
 
 - **WHEN** 维护者运行仓库结构 import 检查
 - **THEN** 检查不报告 search feature 的入口违规
+
+### Requirement: 库文件边界 inventory 保持完整
+
+`lib/` 下每个 Dart 库文件 MUST 在架构基线中恰好登记为 business、UI 或 pending review 之一；新增、移动或删除库文件时 SHALL 同步更新 inventory。inventory MUST NOT 通过忽略规则、修改检查脚本或把业务文件归入 pending review 来规避既有违规。
+
+#### Scenario: 扫描库文件分类
+
+- **WHEN** 维护者运行架构依赖检查
+- **THEN** 每个库文件都有唯一分类且没有未分类文件
+- **AND** 新增 feature 之间的依赖边必须已在允许列表中登记
+
+#### Scenario: 搬迁共享 UI 文件
+
+- **WHEN** 一个已被分类的库文件移动到新目录
+- **THEN** inventory 同步登记新路径，旧路径不残留
