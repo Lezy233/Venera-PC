@@ -8,6 +8,7 @@ import 'package:venera_next/features/settings/keyword_blocking.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 import 'package:venera_next/routing/app_navigation.dart';
+import 'package:venera_next/features/search/search_profiles.dart';
 
 class ExploreSettings extends StatefulWidget {
   const ExploreSettings({super.key});
@@ -47,6 +48,10 @@ class _ExploreSettingsState extends State<ExploreSettings> {
           title: "Search Sources".tl,
           builder: setSearchSourcesWidget,
         ).toSliver(),
+        PopupWindowSetting(
+          title: "Search profiles".tl,
+          builder: () => const SearchProfilesSettings(),
+        ).toSliver(),
         SwitchSetting.preference(
           title: "Show favorite status on comic tile".tl,
           preference: DiscoveryPreferences.showFavoriteStatusOnTile,
@@ -66,10 +71,6 @@ class _ExploreSettingsState extends State<ExploreSettings> {
         SwitchSetting.preference(
           title: "Show update status on comic tile".tl,
           preference: DiscoveryPreferences.showUpdateStatusOnTile,
-        ).toSliver(),
-        SwitchSetting.preference(
-          title: "Reverse default chapter order".tl,
-          preference: AppPreferences.reverseChapterOrder,
         ).toSliver(),
         PopupWindowSetting(
           title: "Keyword blocking".tl,
@@ -104,21 +105,19 @@ class _ExploreSettingsState extends State<ExploreSettings> {
           },
         ).toSliver(),
         SelectSetting.preference(
-          title: "Initial Page".tl,
-          preference: DiscoveryPreferences.initialPage,
-          optionTranslation: {
-            '0': "Home Page".tl,
-            '1': "Favorites Page".tl,
-            '2': "Explore Page".tl,
-            '3': "Categories Page".tl,
-          },
-        ).toSliver(),
-        SelectSetting.preference(
           title: "Display mode of comic list".tl,
           preference: DiscoveryPreferences.comicListDisplayMode,
           optionTranslation: {
             "paging": "Paging".tl,
             "Continuous": "Continuous".tl,
+          },
+        ).toSliver(),
+        SelectSetting.preference(
+          title: "Comic detail mode".tl,
+          preference: DiscoveryPreferences.comicDetailMode,
+          optionTranslation: {
+            'information': "Information first".tl,
+            'reading': "Reading first".tl,
           },
         ).toSliver(),
       ],

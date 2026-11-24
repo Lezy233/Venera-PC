@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:venera_next/components/gesture.dart';
+import 'package:venera_next/design_system/breakpoints.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
-import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/features/settings/about.dart';
 import 'package:venera_next/features/settings/appearance.dart';
 import 'package:venera_next/features/settings/local_favorites.dart';
-import 'package:venera_next/features/settings/debug.dart';
 import 'package:venera_next/features/settings/network.dart';
 import 'package:venera_next/features/settings/explore_settings.dart';
 import 'package:venera_next/features/settings/app.dart';
 import 'package:venera_next/features/settings/reader.dart';
+import 'keyboard_shortcuts.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({this.initialPage = -1, super.key});
 
   final int initialPage;
+
+  /// Opens an existing editor in the two-pane settings navigator, if present.
+  /// Standalone settings and compact layouts keep their popup presentation.
+  static bool openEditor(BuildContext context, Widget Function() builder) {
+    if (Breakpoints.isCompact(context)) return false;
+    final scope = context
+        .getInheritedWidgetOfExactType<_SettingsEditingScope>();
+    if (scope == null) return false;
+    scope.open(context, builder);
+    return true;
+  }
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -27,35 +39,38 @@ class _SettingsPageState extends State<SettingsPage> {
 
   ColorScheme get colors => Theme.of(context).colorScheme;
 
-  bool get enableTwoViews => context.width > 720;
+  bool get enableTwoViews => !Breakpoints.isCompact(context);
 
   final categories = <String>[
     "Explore",
     "Reading",
-    "Reading statistics",
     "Appearance",
     "Local Favorites",
     "APP",
     "Network",
     "About",
-    "Debug",
+    "Keyboard shortcuts",
   ];
 
   final icons = <IconData>[
     Icons.explore,
     Icons.book,
-    Icons.query_stats,
     Icons.color_lens,
     Icons.collections_bookmark_rounded,
     Icons.apps,
     Icons.public,
     Icons.info,
-    Icons.bug_report,
+    Icons.keyboard,
   ];
 
   @override
   void initState() {
-    currentPage = widget.initialPage;
+    // Category indexes changed when statistics/debug left the main list; drop
+    // any stale initial index rather than opening a removed page.
+    currentPage =
+        widget.initialPage >= -1 && widget.initialPage < categories.length
+        ? widget.initialPage
+        : -1;
     super.initState();
   }
 
@@ -64,25 +79,33 @@ class _SettingsPageState extends State<SettingsPage> {
     return Material(child: buildBody());
   }
 
+  /// In desktop two-pane mode always land on a category instead of a blank pane.
+  int get _effectivePage =>
+      enableTwoViews && currentPage == -1 ? 0 : currentPage;
+
   Widget buildBody() {
     if (enableTwoViews) {
       return Row(
         children: [
-          SizedBox(width: 280, height: double.infinity, child: buildLeft()),
+          SizedBox(
+            width: AppSizes.settingsSidebarWidth,
+            height: double.infinity,
+            child: buildLeft(_effectivePage),
+          ),
           Container(
             height: double.infinity,
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
-                  color: context.colorScheme.outlineVariant,
-                  width: 0.6,
+                  color: context.colorScheme.contentBorder,
+                  width: AppSizes.hairline,
                 ),
               ),
             ),
           ),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: AppMotion.normal,
               transitionBuilder: (child, animation) {
                 return LayoutBuilder(
                   builder: (context, constrains) {
@@ -110,26 +133,26 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                 );
               },
-              child: buildRight(),
+              child: buildRight(_effectivePage),
             ),
           ),
         ],
       );
     } else {
-      return buildLeft();
+      return buildLeft(_effectivePage);
     }
   }
 
-  Widget buildLeft() {
+  Widget buildLeft(int selectedPage) {
     return Material(
       child: Column(
         children: [
           SizedBox(height: MediaQuery.of(context).padding.top),
           SizedBox(
-            height: 56,
+            height: AppSizes.settingsHeaderHeight,
             child: Row(
               children: [
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Tooltip(
                   message: "Back".tl,
                   child: IconButton(
@@ -137,51 +160,59 @@ class _SettingsPageState extends State<SettingsPage> {
                     onPressed: context.pop,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(width: AppSpacing.xl),
                 Text("Settings".tl, style: ts.s20),
               ],
             ),
           ),
-          const SizedBox(height: 4),
-          Expanded(child: buildCategories()),
+          const SizedBox(height: AppSpacing.xs),
+          Expanded(child: buildCategories(selectedPage)),
         ],
       ),
     );
   }
 
-  Widget buildCategories() {
+  Widget buildCategories(int selectedPage) {
     Widget buildItem(String name, int id) {
-      final bool selected = id == currentPage;
+      final bool selected = id == selectedPage;
 
       Widget content = AnimatedContainer(
         key: ValueKey(id),
-        duration: const Duration(milliseconds: 200),
+        duration: AppMotion.normal,
         width: double.infinity,
-        height: 46,
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+        height: AppSizes.settingsCategoryHeight,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         decoration: BoxDecoration(
-          color: selected ? colors.primaryContainer.toOpacity(0.36) : null,
+          color: selected
+              ? colors.accentContainer.toOpacity(AppOpacity.selectedContainer)
+              : null,
           border: Border(
             left: BorderSide(
-              color: selected ? colors.primary : Colors.transparent,
-              width: 2,
+              color: selected ? colors.accent : Colors.transparent,
+              width: AppSizes.settingsSelectedIndicatorWidth,
             ),
           ),
         ),
         child: Row(
           children: [
-            Icon(icons[id]),
-            const SizedBox(width: 16),
-            Text(name, style: ts.s16),
-            const Spacer(),
-            if (selected) const Icon(Icons.arrow_right),
+            Icon(icons[id], size: AppSizes.navIconSize),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Text(
+                name,
+                style: ts.s16,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (selected && !enableTwoViews) const Icon(Icons.arrow_right),
           ],
         ),
       );
 
       return Padding(
         padding: enableTwoViews
-            ? const EdgeInsets.fromLTRB(8, 0, 8, 0)
+            ? const EdgeInsets.symmetric(horizontal: AppSpacing.sm)
             : EdgeInsets.zero,
         child: ClickInkWell(
           onTap: () {
@@ -192,7 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
             }
           },
           child: content,
-        ).paddingVertical(4),
+        ).paddingVertical(AppSpacing.xs),
       );
     }
 
@@ -203,19 +234,24 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget buildRight() {
-    if (currentPage == -1) {
+  Widget buildRight(int page) {
+    if (page == -1) {
       return const SizedBox();
     }
-    return Navigator(
-      onGenerateRoute: (settings) {
-        return PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) {
-            return _buildSettingsContent(currentPage);
-          },
-          transitionDuration: Duration.zero,
-        );
-      },
+    return _SettingsEditingScope(
+      key: ValueKey(page),
+      open: (context, builder) => context.to(builder),
+      child: Navigator(
+        key: ValueKey(page),
+        onGenerateRoute: (settings) {
+          return PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) {
+              return _buildSettingsContent(page);
+            },
+            transitionDuration: Duration.zero,
+          );
+        },
+      ),
     );
   }
 
@@ -223,16 +259,28 @@ class _SettingsPageState extends State<SettingsPage> {
     return switch (pageIndex) {
       0 => const ExploreSettings(),
       1 => const ReaderSettings(),
-      2 => const ReadingStatsPage(),
-      3 => const AppearanceSettings(),
-      4 => const LocalFavoritesSettings(),
-      5 => const AppSettings(),
-      6 => const NetworkSettings(),
-      7 => const AboutSettings(),
-      8 => const DebugPage(),
+      2 => const AppearanceSettings(),
+      3 => const LocalFavoritesSettings(),
+      4 => const AppSettings(),
+      5 => const NetworkSettings(),
+      6 => const AboutSettings(),
+      7 => const KeyboardShortcutsSettings(),
       _ => throw UnimplementedError(),
     };
   }
+}
+
+class _SettingsEditingScope extends InheritedWidget {
+  const _SettingsEditingScope({
+    super.key,
+    required this.open,
+    required super.child,
+  });
+
+  final void Function(BuildContext context, Widget Function() builder) open;
+
+  @override
+  bool updateShouldNotify(_SettingsEditingScope oldWidget) => false;
 }
 
 class _SettingsDetailPage extends StatelessWidget {
@@ -249,13 +297,12 @@ class _SettingsDetailPage extends StatelessWidget {
     return switch (pageIndex) {
       0 => const ExploreSettings(),
       1 => const ReaderSettings(),
-      2 => const ReadingStatsPage(),
-      3 => const AppearanceSettings(),
-      4 => const LocalFavoritesSettings(),
-      5 => const AppSettings(),
-      6 => const NetworkSettings(),
-      7 => const AboutSettings(),
-      8 => const DebugPage(),
+      2 => const AppearanceSettings(),
+      3 => const LocalFavoritesSettings(),
+      4 => const AppSettings(),
+      5 => const NetworkSettings(),
+      6 => const AboutSettings(),
+      7 => const KeyboardShortcutsSettings(),
       _ => throw UnimplementedError(),
     };
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/components/pop_up_widget.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/components/window_selection_task.dart';
@@ -10,6 +11,7 @@ import 'package:venera_next/foundation/image_work.dart';
 import 'package:venera_next/foundation/selection_operation.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/translations.dart';
+import 'package:venera_next/foundation/settings_recovery.dart';
 
 /// Settings opened by a reader retain accepted saves in that reading session,
 /// even if the sidebar or setting control is forcibly removed.
@@ -38,6 +40,7 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
   Object _owner = Object();
   bool _leaving = false;
   bool _disposed = false;
+  int _completedSaves = 0;
 
   bool get savingSettings => _pending.isNotEmpty;
   bool get acceptsSettingsChanges =>
@@ -122,6 +125,8 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
     Future<void> Function() persist, {
     VoidCallback? onSaved,
     bool Function()? isCurrent,
+    bool showSavedFeedback = true,
+    bool requireCurrentForFeedback = false,
   }) async {
     if (!acceptsSettingsChanges) return false;
     final owner = _owner;
@@ -163,6 +168,10 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
       // A successful accepted assignment can repair its own older attempts,
       // even if its page has detached. It never repairs a later attempt.
       save.acknowledgeRepairedFailures();
+      if (showSavedFeedback &&
+          (!requireCurrentForFeedback || (isCurrent?.call() ?? true))) {
+        _completedSaves++;
+      }
       return true;
     } catch (error, stack) {
       save.error = error;
@@ -200,6 +209,15 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
     }
   }
 
+  /// An opt-in domain recovery can be completed by another control on the
+  /// same page. Settle only that domain's retained failure registrations.
+  @protected
+  void acknowledgeSettingsRecovery(Object key) {
+    final save = _latest.remove(key);
+    save?.acknowledgeRepairedFailures();
+    _updateGuards();
+  }
+
   Future<void> waitForSettingsSave() async {
     while (_pending.isNotEmpty) {
       await Future.wait(_pending.map((save) => save.done.future).toList());
@@ -210,6 +228,9 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
   }
 
   static void _reportFailures(Iterable<_SettingsSave> saves) {
+    for (final save in saves) {
+      save.reconcileRecovery();
+    }
     final failures = [
       for (final save in saves)
         for (final attempt in save.attempts)
@@ -236,8 +257,20 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
             (entry.value.isCurrent?.call() ?? true))
           saveSetting(
             entry.key,
-            entry.value.persist,
-            onSaved: entry.value.onSaved,
+            entry.value.error is SettingsRecoveryFailure &&
+                    (entry.value.error as SettingsRecoveryFailure).incomplete
+                ? (entry.value.error as SettingsRecoveryFailure)
+                          .retryRecovery ??
+                      entry.value.persist
+                : entry.value.persist,
+            showSavedFeedback:
+                !(entry.value.error is SettingsRecoveryFailure &&
+                    (entry.value.error as SettingsRecoveryFailure).incomplete),
+            onSaved:
+                entry.value.error is SettingsRecoveryFailure &&
+                    (entry.value.error as SettingsRecoveryFailure).incomplete
+                ? null
+                : entry.value.onSaved,
             isCurrent: entry.value.isCurrent,
           ),
     ]);
@@ -280,6 +313,8 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
     }
   }
 
+  /// Legacy inline feedback, retained for callers outside the three migrated
+  /// pages. New page-level feedback should use [withSettingsSaveFeedback].
   Widget get settingsSaveStatus => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -302,6 +337,26 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
           child: Text('Retry'.tl),
         ),
     ],
+  );
+
+  /// The body alone determines the size, including inside an unbounded sliver.
+  /// Positioned feedback never changes the body's constraints or coordinates.
+  Widget withSettingsSaveFeedback(Widget child) => _SettingsSaveFeedback(
+    saving: savingSettings,
+    failed: hasSettingsSaveError,
+    completedSaves: _completedSaves,
+    status: settingsSaveStatus,
+    child: child,
+  );
+
+  /// Home/workspace shells persist automatically but keep success and pending
+  /// feedback out of the page chrome. Failures remain actionable via Retry.
+  Widget withSettingsSaveFailureFeedback(Widget child) => _SettingsSaveFeedback(
+    saving: false,
+    failed: hasSettingsSaveError,
+    completedSaves: 0,
+    status: settingsSaveStatus,
+    child: child,
   );
 
   Widget protectSettings(Widget child) => ExcludeFocus(
@@ -327,6 +382,90 @@ abstract class SettingsSaveState<W extends StatefulWidget> extends State<W> {
     }
     super.dispose();
   }
+}
+
+/// Keeps transient success feedback local to the page, without adding work to
+/// the persistence, admission, or exit-wait lifecycle.
+class _SettingsSaveFeedback extends StatefulWidget {
+  const _SettingsSaveFeedback({
+    required this.saving,
+    required this.failed,
+    required this.completedSaves,
+    required this.status,
+    required this.child,
+  });
+
+  final bool saving;
+  final bool failed;
+  final int completedSaves;
+  final Widget status;
+  final Widget child;
+
+  @override
+  State<_SettingsSaveFeedback> createState() => _SettingsSaveFeedbackState();
+}
+
+class _SettingsSaveFeedbackState extends State<_SettingsSaveFeedback> {
+  Timer? _successTimer;
+  bool _saved = false;
+
+  @override
+  void didUpdateWidget(covariant _SettingsSaveFeedback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.saving || widget.failed) {
+      _successTimer?.cancel();
+      _saved = false;
+    } else if (widget.completedSaves != oldWidget.completedSaves) {
+      _saved = true;
+      _successTimer?.cancel();
+      _successTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _saved = false);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _successTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      widget.child,
+      if (widget.saving || widget.failed || _saved)
+        Positioned.fill(
+          // WindowFrame advertises its overlaid title bar through MediaQuery.
+          // Consume that inset only for feedback; keep the body unchanged.
+          child: SafeArea(
+            bottom: false,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Semantics(
+                liveRegion: true,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: AppSizes.hairline,
+                    ),
+                  ),
+                  child: widget.saving || widget.failed
+                      ? widget.status
+                      : Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Text('Saved'.tl),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
 }
 
 class SettingsSaveFailure implements Exception {
@@ -358,8 +497,24 @@ class _SettingsSave {
     }
   }
 
-  bool get hasFailures =>
-      attempts.any((save) => save.error != null && !save.repaired);
+  void reconcileRecovery() {
+    for (final save in attempts) {
+      if (save.error case final SettingsRecoveryFailure failure
+          when failure.incomplete &&
+              failure.isDurablyRecovered?.call() == true) {
+        save.repaired = true;
+        save.acknowledgeWorkFailure?.call();
+        save.acknowledgeWorkFailure = null;
+        save.releaseIfSettled();
+      }
+    }
+  }
+
+  bool get hasFailures {
+    reconcileRecovery();
+    return attempts.any((save) => save.error != null && !save.repaired);
+  }
+
   bool get hasPending => attempts.any((save) => !save.done.isCompleted);
 
   void cancel() => cancelled = true;
@@ -379,6 +534,7 @@ class _SettingsSave {
 
   Future<void> closeAndWait() async {
     await done.future;
+    reconcileRecovery();
     if (error != null && !repaired) {
       Error.throwWithStackTrace(error!, stack!);
     }

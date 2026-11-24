@@ -1,0 +1,34 @@
+{
+  "old_rich_pids": [
+    255580,
+    266168,
+    269207
+  ],
+  "window_order_pids": [
+    275351,
+    277155,
+    281091
+  ],
+  "all_exit_codes": 0,
+  "premount_physical_size": [
+    1000,
+    700
+  ],
+  "new_flutter_error_headers": 0,
+  "restore_snapshot_except_consumed_marker_equal": true,
+  "fresh_keeps_live_tabs": 5,
+  "fresh_new_pid_tabs": 1,
+  "fresh_new_pid_source_requests": 0,
+  "normal_main_build_exit": 0,
+  "normal_main_artifacts": {
+    "build/linux/x64/debug/bundle/venera-next": "82ce0018ad5d2cad0d0aa12ecc39d8c1798fddf826fd7aeb21b2bd6720c32d44",
+    "build/linux/x64/debug/bundle/data/flutter_assets/kernel_blob.bin": "62d480b6e83bf6c6c8b3dfbdc3109f79e1ee02f4320824bbdfe10234a55f5962"
+  },
+  "production_manifest_matches": 34,
+  "test_manifest_matches": 27,
+  "limitations": [
+    "Native DRI3/Atk warnings persist; not Flutter exceptions.",
+    "GUI scenarios are not added to flutter-test counts.",
+    "Earlier startup errors retained; corrected temporary harness initialization only."
+  ]
+}

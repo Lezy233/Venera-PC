@@ -217,14 +217,14 @@ void main() {
     f.menu = false;
     f.calls.clear();
     await tester.tapAt(f.center(tester) + const Offset(170, 0));
-    expect(f.calls, ['next']);
+    expect(f.calls, ['menu']);
     await f.dispose(tester);
   });
 
   for (final vertical in [false, true]) {
     for (final reversed in [false, true]) {
       testWidgets(
-        'tap policy preserves direction; vertical=$vertical reverse=$reversed',
+        'edge taps toggle tools without navigation; vertical=$vertical reverse=$reversed',
         (tester) async {
           final f = _Fixture()
             ..doubleTap = false
@@ -236,7 +236,7 @@ void main() {
             f.center(tester) +
                 (vertical ? const Offset(0, 170) : const Offset(170, 0)),
           );
-          expect(f.calls, [reversed ? 'previous' : 'next']);
+          expect(f.calls, ['menu']);
           await f.dispose(tester);
         },
       );

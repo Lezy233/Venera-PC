@@ -19,6 +19,7 @@ void main() {
         var finished = false;
         final result = service.check().whenComplete(() => finished = true);
         await adapter.entered.future;
+        expect(adapter.paths.single, contains('repos/Lezy233/Venera-PC/'));
         expect(
           adapter.paths.single.endsWith('releases/latest'),
           current == '1.10.0',

@@ -1,3 +1,4 @@
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -126,7 +127,23 @@ class _NormalComicChapters extends StatefulWidget {
   State<_NormalComicChapters> createState() => _NormalComicChaptersState();
 }
 
-class _NormalComicChaptersState extends State<_NormalComicChapters> {
+class _NormalComicChaptersState extends State<_NormalComicChapters>
+    with WorkspaceViewState<_NormalComicChapters> {
+  @override
+  String get workspaceViewKey => 'comic-chapters';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {'expanded': showAll};
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    showAll = saved['expanded'] as bool? ?? false;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+  }
+
   bool showAll = false;
 
   late History? history;
@@ -274,7 +291,30 @@ class _GroupedComicChapters extends StatefulWidget {
 }
 
 class _GroupedComicChaptersState extends State<_GroupedComicChapters>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WorkspaceViewState<_GroupedComicChapters> {
+  @override
+  String get workspaceViewKey => 'comic-chapter-group';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'expanded': showAll,
+    'group': _groups.elementAtOrNull(index),
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    showAll = saved['expanded'] as bool? ?? false;
+    final group = _groups.indexOf(saved['group'] as String? ?? '');
+    if (group >= 0 && group != index) {
+      index = group;
+      tabController.index = group;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+  }
+
   bool showAll = false;
 
   late History? history;

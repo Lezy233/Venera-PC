@@ -151,7 +151,8 @@ class _LocalComicsSummaryState extends State<LocalComicsSummary> {
                       },
                     ),
                   const Spacer(),
-                  if (BackupConfig.fromSettings().isValid)
+                  if (BackupConfig.enabled &&
+                      BackupConfig.fromSettings().isValid)
                     Button.outlined(
                       onPressed: () {
                         context.to(() => const ComicArchivePage());
@@ -311,7 +312,7 @@ class _ImportComicsWidgetState extends State<_ImportComicsWidget> {
           ),
           onPressed: () {
             launchUrlString(
-              "https://github.com/CyrilPeng/venera-next/blob/main/doc/user/import_comic.zh.md",
+              "https://github.com/Lezy233/Venera-PC/blob/main/doc/user/import_comic.zh.md",
             );
           },
         ).fixWidth(90).paddingRight(8),

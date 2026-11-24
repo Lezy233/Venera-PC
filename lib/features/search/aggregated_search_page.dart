@@ -1,30 +1,102 @@
-import 'package:venera_next/foundation/application_preferences.dart';
-import 'package:venera_next/foundation/global_preference_store.dart';
 import "package:flutter/material.dart";
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import "package:venera_next/components/appbar.dart";
 import "package:venera_next/components/gesture.dart";
 import "package:venera_next/components/scroll.dart";
 import "package:venera_next/features/comic_widgets/comic_widgets.dart";
-import "package:venera_next/foundation/appdata.dart";
 import "package:venera_next/foundation/context.dart";
 import "package:venera_next/features/comic_source/comic_source.dart";
 import "package:venera_next/foundation/translations.dart";
 import "package:venera_next/foundation/widget_utils.dart";
 
 import "search_result_page.dart";
+import 'search_profile.dart';
+import 'package:venera_next/features/favorites/favorites_display.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/foundation/appdata.dart';
 
 class AggregatedSearchPage extends StatefulWidget {
-  const AggregatedSearchPage({super.key, required this.keyword});
+  const AggregatedSearchPage({
+    super.key,
+    required this.keyword,
+    this.profileId,
+  });
 
   final String keyword;
+  final String? profileId;
 
   @override
   State<AggregatedSearchPage> createState() => _AggregatedSearchPageState();
 }
 
-class _AggregatedSearchPageState extends State<AggregatedSearchPage> {
-  late final List<ComicSource> sources;
+class _AggregatedSearchPageState extends State<AggregatedSearchPage>
+    with WorkspaceViewState<AggregatedSearchPage> {
+  late List<({String sourceKey, List<String> options})> _targets;
+  ScrollController _workspaceScroll = ScrollController();
+  final _workspaceFocus = FocusNode(debugLabel: 'aggregate-query');
+  double _workspaceOffset = 0;
+  late String _workspaceInput;
+  @override
+  String get workspaceViewKey => 'aggregate-search';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': _keyword,
+    'input': _workspaceInput,
+    'profileId': widget.profileId,
+    'scroll': _workspaceOffset,
+    'sources': [
+      for (final target in _targets)
+        {'sourceKey': target.sourceKey, 'options': List.of(target.options)},
+    ],
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    _keyword = saved['keyword'] as String? ?? _keyword;
+    _workspaceInput = saved['input'] as String? ?? _keyword;
+    controller.currentText = _workspaceInput;
+    if (saved['sources'] is List) {
+      _targets = [
+        for (final raw in saved['sources'] as List)
+          (
+            sourceKey: (raw as Map)['sourceKey'] as String,
+            options: (raw['options'] as List?)?.cast<String>().toList() ?? [],
+          ),
+      ];
+    }
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    _workspaceScroll.dispose();
+    _workspaceScroll = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(_workspaceScrolled);
+  }
+
+  void _workspaceScrolled() {
+    if (_workspaceScroll.hasClients) {
+      _workspaceOffset = _workspaceScroll.offset;
+      workspaceBinding?.changed();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('aggregate-query', _workspaceFocus);
+  }
+
+  @override
+  void dispose() {
+    appdata.settings.removeListener(_settingsChanged);
+    workspaceBinding?.unregisterFocus('aggregate-query', _workspaceFocus);
+    _workspaceFocus.dispose();
+    _workspaceScroll.dispose();
+    super.dispose();
+  }
+
+  late final List<ResolvedSearchProfileSource> sources;
 
   late final SearchBarController controller;
 
@@ -32,49 +104,89 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage> {
 
   @override
   void initState() {
-    var all = ComicSource.all()
-        .where((e) => e.searchPageData != null)
-        .map((e) => e.key)
-        .toList();
-    var settings =
-        GlobalPreferenceStore(
-          appdata.settings,
-        ).read(DiscoveryPreferences.searchSources) ??
-        const <String>[];
-    var sources = <String>[];
-    for (var source in settings) {
-      if (all.contains(source)) {
-        sources.add(source);
-      }
+    appdata.settings.addListener(_settingsChanged);
+    // null explicitly means legacy global settings. The search entry resolves
+    // the default once when initialized; a user's Global choice stays global.
+    final selected = widget.profileId == null
+        ? null
+        : SearchProfileManager.instance.byId(widget.profileId!);
+    if (selected != null) {
+      sources = SearchProfileManager.instance.resolve(selected);
+    } else {
+      sources = [
+        for (final item in searchProfileSourcesFromGlobals())
+          if (ComicSource.find(item.sourceKey) case final source?)
+            ResolvedSearchProfileSource(source: source, options: item.options),
+      ];
     }
-    this.sources = sources.map((e) => ComicSource.find(e)!).toList();
+    _targets = [
+      for (final source in sources)
+        (sourceKey: source.source.key, options: List.of(source.options)),
+    ];
     _keyword = widget.keyword;
+    _workspaceInput = widget.keyword;
     controller = SearchBarController(
       currentText: widget.keyword,
       onSearch: (text) {
         setState(() {
           _keyword = text;
+          _workspaceInput = text;
         });
       },
     );
     super.initState();
+    _workspaceScroll.addListener(_workspaceScrolled);
+  }
+
+  void _settingsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return SmoothCustomScrollView(
+      controller: _workspaceScroll,
       slivers: [
-        SliverSearchBar(controller: controller),
+        SliverSearchBar(
+          controller: controller,
+          focusNode: _workspaceFocus,
+          action: const FavoriteDisplayButton(
+            preference: DiscoveryPreferences.searchDisplayMode,
+            tooltip: 'Search display mode',
+            includeColumns: false,
+          ),
+          onChanged: (value) {
+            _workspaceInput = value;
+            workspaceBinding?.changed();
+          },
+        ),
         SliverList(
           key: ValueKey(_keyword),
           delegate: SliverChildBuilderDelegate((context, index) {
-            final source = sources[index];
+            final target = _targets[index];
+            final source = ComicSource.find(target.sourceKey);
+            if (source?.searchPageData == null) {
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Search source unavailable: @source'.tlParams({
+                    'source': target.sourceKey,
+                  }),
+                ),
+              );
+            }
             return _SliverSearchResult(
-              key: ValueKey(source.key),
-              source: source,
+              key: ValueKey(target.sourceKey),
+              source: source!,
+              options: target.options,
               keyword: _keyword,
+              listMode:
+                  GlobalPreferenceStore(
+                    appdata.settings,
+                  ).read(DiscoveryPreferences.searchDisplayMode) ==
+                  'list',
             );
-          }, childCount: sources.length),
+          }, childCount: _targets.length),
         ),
       ],
     );
@@ -84,13 +196,17 @@ class _AggregatedSearchPageState extends State<AggregatedSearchPage> {
 class _SliverSearchResult extends StatefulWidget {
   const _SliverSearchResult({
     required this.source,
+    required this.options,
     required this.keyword,
+    required this.listMode,
     super.key,
   });
 
   final ComicSource source;
+  final List<String> options;
 
   final String keyword;
+  final bool listMode;
 
   @override
   State<_SliverSearchResult> createState() => _SliverSearchResultState();
@@ -107,40 +223,31 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
   static const _kLeftPadding = 16.0;
 
   List<Comic>? comics;
+  final selections = <Comic, bool>{};
 
   String? error;
 
   void load() async {
-    final data = widget.source.searchPageData!;
-    var options = (data.searchOptions ?? [])
-        .map((e) => e.defaultValue)
-        .toList();
-    if (data.loadPage != null) {
-      var res = await data.loadPage!(widget.keyword, 1, options);
-      if (!res.error) {
-        setState(() {
+    try {
+      final data = widget.source.searchPageData!;
+      final res = data.loadPage != null
+          ? await data.loadPage!(widget.keyword, 1, widget.options)
+          : await data.loadNext!(widget.keyword, null, widget.options);
+      if (!mounted) return;
+      setState(() {
+        if (res.error) {
+          error = res.errorMessage ?? 'Unknown error'.tl;
+        } else {
           comics = res.data;
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          error = res.errorMessage ?? "Unknown error".tl;
-          isLoading = false;
-        });
-      }
-    } else if (data.loadNext != null) {
-      var res = await data.loadNext!(widget.keyword, null, options);
-      if (!res.error) {
-        setState(() {
-          comics = res.data;
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          error = res.errorMessage ?? "Unknown error".tl;
-          isLoading = false;
-        });
-      }
+        }
+        isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        error = 'Unknown error'.tl;
+        isLoading = false;
+      });
     }
   }
 
@@ -162,13 +269,6 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
     );
   }
 
-  Widget buildComic(Comic c) {
-    return SimpleComicTile(
-      comic: c,
-      withTitle: true,
-    ).paddingLeft(_kLeftPadding).paddingBottom(2);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (error != null && error!.startsWith("CloudflareException")) {
@@ -181,6 +281,7 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
           () => SearchResultPage(
             text: widget.keyword,
             sourceKey: widget.source.key,
+            options: widget.options,
           ),
         );
       },
@@ -241,12 +342,19 @@ class _SliverSearchResultState extends State<_SliverSearchResult>
               ).paddingHorizontal(16),
             )
           else
-            SizedBox(
-              height: _kComicHeight,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [for (var c in comics!) buildComic(c)],
-              ),
+            CustomScrollView(
+              shrinkWrap: true,
+              primary: false,
+              physics: const NeverScrollableScrollPhysics(),
+              slivers: [
+                SliverGridComics(
+                  comics: comics!,
+                  selections: selections,
+                  displayMode: widget.listMode
+                      ? ComicTileDisplayMode.detailed
+                      : ComicTileDisplayMode.gallery,
+                ),
+              ],
             ),
         ],
       ).paddingBottom(16),

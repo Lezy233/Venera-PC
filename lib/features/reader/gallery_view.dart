@@ -400,7 +400,9 @@ class GalleryModeState extends State<ReaderGalleryView>
         }
         return PhotoView.customChild(
           backgroundDecoration: decoration,
-          childSize: MediaQuery.sizeOf(context),
+          // Use PhotoView's actual viewport for the page canvas. A fixed
+          // thumbnail strip can make it smaller than the window MediaQuery;
+          // using the window size fits images twice and adds extra letterbox.
           controller: controller,
           minScale: PhotoViewComputedScale.contained * 1.0,
           maxScale: PhotoViewComputedScale.covered * 10.0,
@@ -456,6 +458,7 @@ class GalleryModeState extends State<ReaderGalleryView>
                 : Alignment.centerRight,
             onInit: (state) => imageStates[state] = images[0],
             onDispose: (state) => imageStates.remove(state),
+            onImageSize: (size) => data.onImageSize?.call(images[0] + 1, size),
           ),
         ),
         Expanded(
@@ -470,6 +473,7 @@ class GalleryModeState extends State<ReaderGalleryView>
                 : Alignment.centerLeft,
             onInit: (state) => imageStates[state] = images[1],
             onDispose: (state) => imageStates.remove(state),
+            onImageSize: (size) => data.onImageSize?.call(images[1] + 1, size),
           ),
         ),
       ];

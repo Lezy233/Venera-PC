@@ -1,0 +1,9 @@
+你是 executor，继续 UX1 change `ux1-bookshelf-workspace`，本轮只实现 tasks 5.12：搜索结果页增加与收藏一致的“画廊/列表”两种模式。工件以当前 HEAD/工作区为准，不提交、归档或 push。
+
+先读 AGENTS.md、proposal/design/spec/tasks、delivery-batch-8.md。不得改 proposal/design/spec/design-spec.md、正式 openspec/specs/**、pubspec.lock；保留既有 5.6–5.11 改动。
+
+先建立真实 SearchResultPage 红灯：当前默认 gallery，页面缺少可见的收藏式显示模式入口/切换；用真实生产控件断言入口、选择 list/gallery 后 ComicTile display mode、关键词/source/options、滚动、选择、workspace tab 身份保持。核对收藏 `FavoriteDisplayButton`、FavoritePreferences 与 ComicList/SliverGridComics 的现有持久化/列数语义，决定最小复用方式；不得把搜索结果永久绑定为收藏模式而意外改写收藏设置，若共享偏好是契约选择须写明理由。
+
+实现要求：默认画廊；列表模式使用既有 detailed/list 卡片，不重建视觉系统；按钮、菜单、tooltip、翻译和保存反馈复用收藏既有模式，新增文案必须 `.tl` 且 assets/translation.json zh_CN/zh_TW；模式切换不得丢关键词、筛选、滚动、选择、sourceKey、标签身份、主体点击、checkbox、单卡/多选拖放。聚合搜索若有独立 SimpleComicTile 语义，明确覆盖或记录边界，不能静态只改 SearchResultPage 一处冒称全局。
+
+补真实生产 SearchResultPage 模式切换测试（红→绿），覆盖默认 gallery、list/gallery、持久化重进及一项主体/checkbox/拖放保护。每完成立即勾 tasks.md 写命令/通过/失败/skip。跑相关搜索/F2/F8/B4/F10/F11 回归、analyze raw/unique 50=38+12、diff-check、OpenSpec validate、正常构建。回传根因、模式偏好范围、改动文件和 GUI 局限；等待 architect 独立复核，不提交。

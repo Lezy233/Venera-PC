@@ -1,14 +1,20 @@
 # 杂项
 *.class
+tmp
+*.tmp
+tmp.md
+
 # 临时命令、测试和分析日志统一存放在仓库根目录的 logs/。
 *.log
 *.pyc
 *.swp
 .DS_Store
 .atom/
+.build/
 .buildlog/
 .history
 .svn/
+.swiftpm/
 migrate_working_dir/
 */*/generated_*
 */*/Generated*
@@ -43,9 +49,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+**/android/.gradle/
 
 # Agent 相关目录
 .claude/
 .opencode/
 .codex/
 .agents/
+
+# FVM Version Cache
+.fvm/
+
+# 图片提交规则（owner 2026-10-21）：界面截图一律不提交（体积大且部分内容涉版权）。
+# 例外：README/app 资产等确需入库的图片，须在提交信息中特殊说明并用 git add -f 强制添加。
+# 已跟踪文件不受此规则影响。
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp

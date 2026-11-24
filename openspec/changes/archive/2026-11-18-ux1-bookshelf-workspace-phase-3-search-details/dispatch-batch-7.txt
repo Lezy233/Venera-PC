@@ -1,0 +1,9 @@
+你是 executor，继续当前 UX1 change `ux1-bookshelf-workspace`。owner新增两个调整，本轮只实现 tasks 5.9 与 5.10；工件以当前 HEAD/工作区为准，不提交、归档或 push。
+
+先读 AGENTS.md、proposal/design/spec/tasks、delivery-batch-6.md。不得改 proposal/design/spec/design-spec.md、正式 openspec/specs/**、pubspec.lock；不要清理既有未提交改动。
+
+5.9 卡片长按选择移除：先用真实 ComicTile/SliverGridComics 在普通收藏、网络收藏或其他网格建立红灯，长按未选卡片后断言不进入多选、selected 集合不变。定位 `local_favorites_page.dart`、`local_comics_page.dart` 等实际 `onLongPressed` 选择回调，最小移除旧主体长按选择/范围选择。保留 ComicTile 普通右键菜单/必要详情页长按、4.3 右上角 checkbox、菜单和键盘选择、多选拖放、Escape；作者 shelf 的独立手柄/栏内长按排序以及 ComicPage 的 quickFavorite 不能改。补真实生产控件红绿测试，检查 checkbox 选择仍可用。
+
+5.10 首页保存反馈：先建立真实首页页面切换/工作区快照自动保存红灯，精确断言当前出现的 CircularProgressIndicator 和/或“Saved/已保存”浮层。确认自动保存仍执行并可在重载/切换后恢复；最小修改只移除 BookshelfWorkspace/DesktopWorkspace 首页自动保存成功/进行中浮层，失败提示和 Retry 仍可见。设置页、显式保存操作以及真实数据写入不可被静默吞掉。若 owner看到的提示来自更具体的调用点，按调用点修而非全局删除 SettingsSaveState。
+
+每项完成立即勾 tasks.md 写根因、命令、通过/失败/skip 和证据。跑相关保护回归（4.3 checkbox、F2/F10/F11、workspace save/reload）、analyze raw/unique 对比 50=38+12、diff-check、OpenSpec validate、正常构建。回传改动文件、红绿日志、保存成功/失败边界、未覆盖的 GUI 局限；等待 architect 独立复核，不提交。

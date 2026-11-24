@@ -25,6 +25,14 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
     return SmoothCustomScrollView(
       slivers: [
         SliverAppbar(title: Text("Local Favorites".tl)),
+        SelectSetting.preference(
+          title: 'Favorite density'.tl,
+          preference: FavoritePreferences.density,
+          optionTranslation: {
+            'comfortable': 'Comfortable'.tl,
+            'compact': 'Compact'.tl,
+          },
+        ).toSliver(),
         SwitchSetting.preference(
           title: "Show local favorites before network favorites".tl,
           preference: FavoritePreferences.localFavoritesFirst,

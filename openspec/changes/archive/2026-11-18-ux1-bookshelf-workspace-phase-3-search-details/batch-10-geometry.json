@@ -1,0 +1,1780 @@
+{
+  "red_log": "/tmp/ux1-513-geometry-red.log",
+  "single_variable_log": "/tmp/ux1-513-single-variable.log",
+  "green_log": "/tmp/ux1-513-geometry-final.log",
+  "tolerance_px": 1e-06,
+  "red": [
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 4,
+        "card": [
+          142.0,
+          264.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          209.38823529411764
+        ],
+        "title": [
+          8.0,
+          221.38823529411764,
+          126.0,
+          18.19999999999999
+        ],
+        "columnStride": 150.0,
+        "rowStride": 272.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 1,
+        "card": [
+          592.0,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          576.0,
+          88.80000000000001
+        ],
+        "title": [
+          8.0,
+          100.80000000000001,
+          576.0,
+          18.19999999999999
+        ],
+        "columnStride": 600.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 5,
+        "card": [
+          112.0,
+          220.47058823529412
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          173.2705882352941
+        ],
+        "title": [
+          4.0,
+          181.2705882352941,
+          104.0,
+          18.19999999999999
+        ],
+        "columnStride": 120.0,
+        "rowStride": 228.47058823529412,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 1,
+        "card": [
+          592.0,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          584.0,
+          96.80000000000001
+        ],
+        "title": [
+          4.0,
+          104.80000000000001,
+          584.0,
+          18.19999999999999
+        ],
+        "columnStride": 600.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 4,
+        "card": [
+          142.0,
+          299.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          198.98823529411763
+        ],
+        "title": [
+          8.0,
+          210.98823529411763,
+          126.0,
+          54.599999999999994
+        ],
+        "columnStride": 150.0,
+        "rowStride": 307.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 1,
+        "card": [
+          592.0,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          576.0,
+          43.400000000000006
+        ],
+        "title": [
+          8.0,
+          55.400000000000006,
+          576.0,
+          54.599999999999994
+        ],
+        "columnStride": 600.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 5,
+        "card": [
+          112.0,
+          255.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          162.87058823529415
+        ],
+        "title": [
+          4.0,
+          170.87058823529415,
+          104.0,
+          54.599999999999994
+        ],
+        "columnStride": 120.0,
+        "rowStride": 263.47058823529414,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 1,
+        "card": [
+          592.0,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          584.0,
+          51.400000000000006
+        ],
+        "title": [
+          4.0,
+          59.400000000000006,
+          584.0,
+          54.599999999999994
+        ],
+        "columnStride": 600.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          289.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          233.89803921568625
+        ],
+        "title": [
+          8.0,
+          245.89803921568625,
+          142.66666666666666,
+          18.19999999999999
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 297.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      },
+      "search": {
+        "columns": 2,
+        "card": [
+          492.0,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          476.0,
+          88.80000000000001
+        ],
+        "title": [
+          8.0,
+          100.80000000000001,
+          476.0,
+          18.19999999999999
+        ],
+        "columnStride": 500.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          254.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          206.8840336134454
+        ],
+        "title": [
+          4.0,
+          214.8840336134454,
+          126.85714285714286,
+          18.19999999999999
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 262.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      },
+      "search": {
+        "columns": 2,
+        "card": [
+          492.0,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          484.0,
+          96.80000000000001
+        ],
+        "title": [
+          4.0,
+          104.80000000000001,
+          484.0,
+          18.19999999999999
+        ],
+        "columnStride": 500.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          324.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          223.49803921568625
+        ],
+        "title": [
+          8.0,
+          235.49803921568625,
+          142.66666666666666,
+          54.599999999999994
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 332.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      },
+      "search": {
+        "columns": 2,
+        "card": [
+          492.0,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          476.0,
+          43.400000000000006
+        ],
+        "title": [
+          8.0,
+          55.400000000000006,
+          476.0,
+          54.599999999999994
+        ],
+        "columnStride": 500.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          289.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          196.4840336134454
+        ],
+        "title": [
+          4.0,
+          204.4840336134454,
+          126.85714285714286,
+          54.599999999999994
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 297.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      },
+      "search": {
+        "columns": 2,
+        "card": [
+          492.0,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          484.0,
+          51.400000000000006
+        ],
+        "title": [
+          4.0,
+          59.400000000000006,
+          484.0,
+          54.599999999999994
+        ],
+        "columnStride": 500.0,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 8,
+        "card": [
+          167.0,
+          301.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          246.15294117647056
+        ],
+        "title": [
+          8.0,
+          258.15294117647056,
+          151.0,
+          18.19999999999999
+        ],
+        "columnStride": 175.0,
+        "rowStride": 309.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 3,
+        "card": [
+          458.6666666666667,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          442.6666666666667,
+          88.80000000000001
+        ],
+        "title": [
+          8.0,
+          100.80000000000001,
+          442.6666666666667,
+          18.19999999999999
+        ],
+        "columnStride": 466.6666666666667,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 3.999999999999943
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 10,
+        "card": [
+          132.0,
+          249.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          202.68235294117648
+        ],
+        "title": [
+          4.0,
+          210.68235294117648,
+          124.0,
+          18.19999999999999
+        ],
+        "columnStride": 140.0,
+        "rowStride": 257.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 3,
+        "card": [
+          458.6666666666667,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          450.6666666666667,
+          96.80000000000001
+        ],
+        "title": [
+          4.0,
+          104.80000000000001,
+          450.6666666666667,
+          18.19999999999999
+        ],
+        "columnStride": 466.6666666666667,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 3.999999999999943
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 8,
+        "card": [
+          167.0,
+          336.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          235.75294117647056
+        ],
+        "title": [
+          8.0,
+          247.75294117647056,
+          151.0,
+          54.599999999999994
+        ],
+        "columnStride": 175.0,
+        "rowStride": 344.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 3,
+        "card": [
+          458.6666666666667,
+          144.0
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          442.6666666666667,
+          43.400000000000006
+        ],
+        "title": [
+          8.0,
+          55.400000000000006,
+          442.6666666666667,
+          54.599999999999994
+        ],
+        "columnStride": 466.6666666666667,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 3.999999999999943
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 10,
+        "card": [
+          132.0,
+          284.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          192.28235294117647
+        ],
+        "title": [
+          4.0,
+          200.28235294117647,
+          124.0,
+          54.599999999999994
+        ],
+        "columnStride": 140.0,
+        "rowStride": 292.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 3,
+        "card": [
+          458.6666666666667,
+          144.0
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          450.6666666666667,
+          51.400000000000006
+        ],
+        "title": [
+          4.0,
+          59.400000000000006,
+          450.6666666666667,
+          54.599999999999994
+        ],
+        "columnStride": 466.6666666666667,
+        "rowStride": 152.0,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 3.999999999999943
+      }
+    }
+  ],
+  "green": [
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 4,
+        "card": [
+          142.0,
+          264.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          209.38823529411764
+        ],
+        "title": [
+          8.0,
+          221.38823529411764,
+          126.0,
+          18.19999999999999
+        ],
+        "columnStride": 150.0,
+        "rowStride": 272.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 4,
+        "card": [
+          142.0,
+          264.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          209.38823529411764
+        ],
+        "title": [
+          8.0,
+          221.38823529411764,
+          126.0,
+          18.19999999999999
+        ],
+        "columnStride": 150.0,
+        "rowStride": 272.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 5,
+        "card": [
+          112.0,
+          220.47058823529412
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          173.2705882352941
+        ],
+        "title": [
+          4.0,
+          181.2705882352941,
+          104.0,
+          18.19999999999999
+        ],
+        "columnStride": 120.0,
+        "rowStride": 228.47058823529412,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 5,
+        "card": [
+          112.0,
+          220.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          173.2705882352941
+        ],
+        "title": [
+          4.0,
+          181.2705882352941,
+          104.0,
+          18.19999999999999
+        ],
+        "columnStride": 120.0,
+        "rowStride": 228.47058823529412,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 7.999999999999972,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 4,
+        "card": [
+          142.0,
+          299.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          198.98823529411763
+        ],
+        "title": [
+          8.0,
+          210.98823529411763,
+          126.0,
+          54.599999999999994
+        ],
+        "columnStride": 150.0,
+        "rowStride": 307.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 4,
+        "card": [
+          142.0,
+          299.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          198.98823529411766
+        ],
+        "title": [
+          8.0,
+          210.98823529411766,
+          126.0,
+          54.60000000000002
+        ],
+        "columnStride": 150.0,
+        "rowStride": 307.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 5,
+        "card": [
+          112.0,
+          255.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          162.87058823529415
+        ],
+        "title": [
+          4.0,
+          170.87058823529415,
+          104.0,
+          54.599999999999994
+        ],
+        "columnStride": 120.0,
+        "rowStride": 263.47058823529414,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 5,
+        "card": [
+          112.0,
+          255.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          162.87058823529415
+        ],
+        "title": [
+          4.0,
+          170.87058823529415,
+          104.0,
+          54.599999999999994
+        ],
+        "columnStride": 120.0,
+        "rowStride": 263.47058823529414,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          289.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          233.89803921568625
+        ],
+        "title": [
+          8.0,
+          245.89803921568625,
+          142.66666666666666,
+          18.19999999999999
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 297.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      },
+      "search": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          289.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          233.89803921568625
+        ],
+        "title": [
+          8.0,
+          245.89803921568625,
+          142.66666666666666,
+          18.19999999999999
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 297.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          254.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          206.8840336134454
+        ],
+        "title": [
+          4.0,
+          214.8840336134454,
+          126.85714285714286,
+          18.19999999999999
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 262.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      },
+      "search": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          254.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          206.8840336134454
+        ],
+        "title": [
+          4.0,
+          214.8840336134454,
+          126.85714285714286,
+          18.19999999999999
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 262.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          324.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          223.49803921568625
+        ],
+        "title": [
+          8.0,
+          235.49803921568625,
+          142.66666666666666,
+          54.599999999999994
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 332.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      },
+      "search": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          324.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          223.49803921568628
+        ],
+        "title": [
+          8.0,
+          235.49803921568628,
+          142.66666666666666,
+          54.60000000000002
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 332.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000085
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          289.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          196.4840336134454
+        ],
+        "title": [
+          4.0,
+          204.4840336134454,
+          126.85714285714286,
+          54.599999999999994
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 297.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      },
+      "search": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          289.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          196.48403361344538
+        ],
+        "title": [
+          4.0,
+          204.48403361344538,
+          126.85714285714286,
+          54.60000000000002
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 297.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.000000000000028
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 8,
+        "card": [
+          167.0,
+          301.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          246.15294117647056
+        ],
+        "title": [
+          8.0,
+          258.15294117647056,
+          151.0,
+          18.19999999999999
+        ],
+        "columnStride": 175.0,
+        "rowStride": 309.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 8,
+        "card": [
+          167.0,
+          301.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          246.15294117647056
+        ],
+        "title": [
+          8.0,
+          258.15294117647056,
+          151.0,
+          18.19999999999999
+        ],
+        "columnStride": 175.0,
+        "rowStride": 309.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "compact",
+      "favorite": {
+        "columns": 10,
+        "card": [
+          132.0,
+          249.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          202.68235294117648
+        ],
+        "title": [
+          4.0,
+          210.68235294117648,
+          124.0,
+          18.19999999999999
+        ],
+        "columnStride": 140.0,
+        "rowStride": 257.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 10,
+        "card": [
+          132.0,
+          249.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          202.68235294117648
+        ],
+        "title": [
+          4.0,
+          210.68235294117648,
+          124.0,
+          18.19999999999999
+        ],
+        "columnStride": 140.0,
+        "rowStride": 257.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "favorite": {
+        "columns": 8,
+        "card": [
+          167.0,
+          336.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          235.75294117647056
+        ],
+        "title": [
+          8.0,
+          247.75294117647056,
+          151.0,
+          54.599999999999994
+        ],
+        "columnStride": 175.0,
+        "rowStride": 344.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 8,
+        "card": [
+          167.0,
+          336.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          235.75294117647059
+        ],
+        "title": [
+          8.0,
+          247.75294117647059,
+          151.0,
+          54.60000000000002
+        ],
+        "columnStride": 175.0,
+        "rowStride": 344.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "compact",
+      "favorite": {
+        "columns": 10,
+        "card": [
+          132.0,
+          284.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          192.28235294117647
+        ],
+        "title": [
+          4.0,
+          200.28235294117647,
+          124.0,
+          54.599999999999994
+        ],
+        "columnStride": 140.0,
+        "rowStride": 292.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      },
+      "search": {
+        "columns": 10,
+        "card": [
+          132.0,
+          284.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          192.28235294117647
+        ],
+        "title": [
+          4.0,
+          200.28235294117644,
+          124.0,
+          54.60000000000002
+        ],
+        "columnStride": 140.0,
+        "rowStride": 292.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 3.9999999999999716,
+        "rowGap": 8.0,
+        "columnGap": 8.0,
+        "outerRight": 4.0
+      }
+    }
+  ],
+  "aggregate": [
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 4,
+        "card": [
+          142.0,
+          264.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          209.38823529411764
+        ],
+        "title": [
+          8.0,
+          221.38823529411764,
+          126.0,
+          18.19999999999999
+        ],
+        "columnStride": 150.0,
+        "rowStride": 272.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.0,
+      "density": "compact",
+      "aggregate": {
+        "columns": 5,
+        "card": [
+          112.0,
+          220.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          173.2705882352941
+        ],
+        "title": [
+          4.0,
+          181.2705882352941,
+          104.0,
+          18.19999999999999
+        ],
+        "columnStride": 120.0,
+        "rowStride": 228.47058823529412,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 4,
+        "card": [
+          142.0,
+          299.5882352941176
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          126.0,
+          198.98823529411766
+        ],
+        "title": [
+          8.0,
+          210.98823529411766,
+          126.0,
+          54.60000000000002
+        ],
+        "columnStride": 150.0,
+        "rowStride": 307.5882352941176,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 600.0,
+      "scale": 1.5,
+      "density": "compact",
+      "aggregate": {
+        "columns": 5,
+        "card": [
+          112.0,
+          255.47058823529414
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          104.0,
+          162.87058823529412
+        ],
+        "title": [
+          4.0,
+          170.87058823529412,
+          104.0,
+          54.60000000000002
+        ],
+        "columnStride": 120.0,
+        "rowStride": 263.47058823529414,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          289.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          233.89803921568625
+        ],
+        "title": [
+          8.0,
+          245.89803921568625,
+          142.66666666666666,
+          18.19999999999999
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 297.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.0,
+      "density": "compact",
+      "aggregate": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          254.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          206.8840336134454
+        ],
+        "title": [
+          4.0,
+          214.8840336134454,
+          126.85714285714286,
+          18.19999999999999
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 262.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 6,
+        "card": [
+          158.66666666666666,
+          324.09803921568624
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          142.66666666666666,
+          223.49803921568628
+        ],
+        "title": [
+          8.0,
+          235.49803921568628,
+          142.66666666666666,
+          54.60000000000002
+        ],
+        "columnStride": 166.66666666666666,
+        "rowStride": 332.09803921568624,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1000.0,
+      "scale": 1.5,
+      "density": "compact",
+      "aggregate": {
+        "columns": 7,
+        "card": [
+          134.85714285714286,
+          289.0840336134454
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          126.85714285714286,
+          196.48403361344538
+        ],
+        "title": [
+          4.0,
+          204.48403361344538,
+          126.85714285714286,
+          54.60000000000002
+        ],
+        "columnStride": 142.85714285714286,
+        "rowStride": 297.0840336134454,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 8,
+        "card": [
+          167.0,
+          301.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          246.15294117647056
+        ],
+        "title": [
+          8.0,
+          258.15294117647056,
+          151.0,
+          18.19999999999999
+        ],
+        "columnStride": 175.0,
+        "rowStride": 309.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.0,
+      "density": "compact",
+      "aggregate": {
+        "columns": 10,
+        "card": [
+          132.0,
+          249.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          202.68235294117648
+        ],
+        "title": [
+          4.0,
+          210.68235294117648,
+          124.0,
+          18.19999999999999
+        ],
+        "columnStride": 140.0,
+        "rowStride": 257.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "comfortable",
+      "aggregate": {
+        "columns": 8,
+        "card": [
+          167.0,
+          336.35294117647055
+        ],
+        "cover": [
+          8.0,
+          8.0,
+          151.0,
+          235.75294117647059
+        ],
+        "title": [
+          8.0,
+          247.75294117647059,
+          151.0,
+          54.60000000000002
+        ],
+        "columnStride": 175.0,
+        "rowStride": 344.35294117647055,
+        "outerLeft": 4.0,
+        "innerRight": 8.0,
+        "coverToTitleGap": 4.0
+      }
+    },
+    {
+      "width": 1400.0,
+      "scale": 1.5,
+      "density": "compact",
+      "aggregate": {
+        "columns": 10,
+        "card": [
+          132.0,
+          284.88235294117646
+        ],
+        "cover": [
+          4.0,
+          4.0,
+          124.0,
+          192.28235294117644
+        ],
+        "title": [
+          4.0,
+          200.28235294117644,
+          124.0,
+          54.60000000000002
+        ],
+        "columnStride": 140.0,
+        "rowStride": 292.88235294117646,
+        "outerLeft": 4.0,
+        "innerRight": 4.0,
+        "coverToTitleGap": 4.0
+      }
+    }
+  ],
+  "pixel_proof": [
+    "UX1_COVER_PIXELS book-0 decoded=68x100 slot=Rect.fromLTRB(12.0, 64.0, 154.7, 297.9) painted=Rect.fromLTRB(12.0, 76.0, 154.7, 285.9) all_four_edges_visible",
+    "UX1_COVER_PIXELS book-1 decoded=160x60 slot=Rect.fromLTRB(178.7, 64.0, 321.3, 297.9) painted=Rect.fromLTRB(178.7, 154.2, 321.3, 207.7) all_four_edges_visible"
+  ]
+}

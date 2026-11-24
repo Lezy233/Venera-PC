@@ -3,16 +3,20 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:venera_next/design_system/breakpoints.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/app.dart';
-import 'package:venera_next/routing/app_navigation.dart';
 import 'package:venera_next/foundation/app_page_route.dart';
-import 'package:venera_next/foundation/consts.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/edge_back_gesture.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
+import 'package:venera_next/routing/app_navigation.dart';
 
 import 'consts.dart';
 import 'gesture.dart';
+import 'package:venera_next/app_shell/bookshelf_workspace.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/foundation/translations.dart';
 
 class PaneItemEntry {
   String label;
@@ -49,6 +53,9 @@ class NaviPane extends StatefulWidget {
     required this.pageBuilder,
     this.initialPage = 0,
     this.onPageChanged,
+    this.bookshelf = false,
+    this.workspace,
+    this.onWorkspaceNavigate,
     required this.observer,
     required this.navigatorKey,
     super.key,
@@ -63,6 +70,10 @@ class NaviPane extends StatefulWidget {
   final void Function(int index)? onPageChanged;
 
   final int initialPage;
+
+  final bool bookshelf;
+  final Widget? workspace;
+  final ValueChanged<int>? onWorkspaceNavigate;
 
   final NaviObserver observer;
 
@@ -86,6 +97,13 @@ class NaviPaneState extends State<NaviPane>
 
   int get currentPage => _currentPage;
 
+  /// Whether [index] is the current tab and no page is pushed above it.
+  ///
+  /// Shell controls that belong to a tab must be disabled while a detail,
+  /// settings or search page is on top, even though the tab remains mounted.
+  bool isTabRoot(int index) =>
+      currentPage == index && widget.observer.routes.length <= 1;
+
   set currentPage(int value) {
     if (value == _currentPage) return;
     _currentPage = value;
@@ -106,19 +124,23 @@ class NaviPaneState extends State<NaviPane>
     _naviItemTapListeners.remove(listener);
   }
 
-  static const _kBottomBarHeight = 58.0;
+  static const _kBottomBarHeight = AppSizes.navBottomBarHeight;
 
-  static const _kFoldedSideBarWidth = 72.0;
+  static const _kSideBarWidth = AppSizes.navSideRailWidth;
 
-  static const _kSideBarWidth = 224.0;
-
-  static const _kTopBarHeight = 48.0;
+  static const _kTopBarHeight = AppSizes.navTopBarHeight;
 
   void onNavigatorStateChange() {
     onRebuild(context);
   }
 
   void updatePage(int index) {
+    final navigateWorkspace = widget.onWorkspaceNavigate;
+    if (navigateWorkspace != null) {
+      setState(() => currentPage = index);
+      navigateWorkspace(index);
+      return;
+    }
     for (var listener in _naviItemTapListeners) {
       listener(index);
     }
@@ -172,15 +194,11 @@ class NaviPaneState extends State<NaviPane>
   }
 
   double targetFormContext(BuildContext context) {
-    var width = MediaQuery.of(context).size.width;
-    double target = 0;
-    if (width > changePoint) {
-      target = 2;
-    }
-    if (width > changePoint2) {
-      target = 3;
-    }
-    return target;
+    return switch (Breakpoints.of(context)) {
+      WindowSizeClass.compact => 0,
+      WindowSizeClass.medium => 2,
+      WindowSizeClass.expanded => 3,
+    };
   }
 
   double? animationTarget;
@@ -202,6 +220,16 @@ class NaviPaneState extends State<NaviPane>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.bookshelf && App.isDesktop) {
+      return SafeArea(
+        bottom: false,
+        child: BookshelfWorkspace(
+          navigation: buildBookshelfNavigation(),
+          showToolbar: false,
+          child: widget.workspace ?? buildMainView(),
+        ),
+      );
+    }
     onRebuild(context);
     final mq = MediaQuery.of(context);
     final sideInsets = (App.isMobile && mq.orientation == Orientation.landscape)
@@ -218,26 +246,24 @@ class NaviPaneState extends State<NaviPane>
           SystemNavigator.pop();
         }
       },
-      popGesture: App.isIOS && context.width >= changePoint,
+      popGesture: App.isIOS && !Breakpoints.isCompact(context),
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, child) {
           final value = controller.value;
+          // The navigation rail is always the fixed icon bar; only the mobile
+          // slide-in animation is driven by the controller now.
+          final sideBarLeft = _kSideBarWidth * ((value - 2.0).clamp(-1.0, 0.0));
+          final mainViewLeft = _kSideBarWidth * ((value - 1).clamp(0, 1));
           Widget content = Stack(
             children: [
               Positioned(
-                left: _kFoldedSideBarWidth * ((value - 2.0).clamp(-1.0, 0.0)),
+                left: sideBarLeft,
                 top: 0,
                 bottom: 0,
-                child: buildLeft(),
+                child: buildLeft(_kSideBarWidth),
               ),
-              Positioned.fill(
-                left:
-                    _kFoldedSideBarWidth * ((value - 1).clamp(0, 1)) +
-                    (_kSideBarWidth - _kFoldedSideBarWidth) *
-                        ((value - 2).clamp(0, 1)),
-                child: buildMainView(),
-              ),
+              Positioned.fill(left: mainViewLeft, child: buildMainView()),
             ],
           );
           if (sideInsets != EdgeInsets.zero) {
@@ -289,18 +315,67 @@ class NaviPaneState extends State<NaviPane>
     return widget.pageBuilder(currentPage);
   }
 
+  Widget buildBookshelfNavigation() {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: TextButton.icon(
+              onPressed: () =>
+                  DesktopChromeScope.maybeRead(context)?.openGlobalSearch(),
+              icon: const Icon(Icons.search),
+              label: Text('Search'.tl),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              children: [
+                for (var index = 0; index < widget.paneItems.length; index++)
+                  ListTile(
+                    selected: currentPage == index,
+                    selectedColor: Theme.of(context).colorScheme.accent,
+                    minTileHeight: AppSizes.bookshelfItemHeight,
+                    leading: Icon(
+                      currentPage == index
+                          ? widget.paneItems[index].activeIcon
+                          : widget.paneItems[index].icon,
+                    ),
+                    title: Tooltip(
+                      message: widget.paneItems[index].label,
+                      child: Text(
+                        widget.paneItems[index].label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    onTap: () => updatePage(index),
+                  ),
+              ],
+            ),
+          ),
+          for (final action in widget.paneActions)
+            ListTile(
+              leading: Icon(action.icon),
+              title: Text(action.label),
+              onTap: action.onTap,
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget buildTop() {
     return Material(
       child: Container(
-        padding: const EdgeInsets.only(left: 16, right: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         height: _kTopBarHeight,
         width: double.infinity,
         child: Row(
           children: [
-            Text(
-              widget.paneItems[currentPage].label,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text(widget.paneItems[currentPage].label, style: ts.s18.bold),
             const Spacer(),
             for (var action in widget.paneActions)
               Tooltip(
@@ -325,8 +400,8 @@ class NaviPaneState extends State<NaviPane>
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant,
-              width: 1,
+              color: Theme.of(context).colorScheme.shellBorder,
+              width: AppSizes.hairline,
             ),
           ),
         ),
@@ -348,51 +423,41 @@ class NaviPaneState extends State<NaviPane>
     );
   }
 
-  Widget buildLeft() {
-    final value = controller.value;
+  Widget buildLeft(double width) {
     final topPadding = MediaQuery.paddingOf(context).top;
-    final dividerColor = Theme.of(context).colorScheme.outlineVariant;
-    const paddingHorizontal = 12.0;
+    final dividerColor = Theme.of(context).colorScheme.shellBorder;
     return Material(
+      color: Theme.of(context).colorScheme.shellSurface,
       child: SizedBox(
-        width:
-            _kFoldedSideBarWidth +
-            (_kSideBarWidth - _kFoldedSideBarWidth) * ((value - 2).clamp(0, 1)),
+        width: width,
         height: double.infinity,
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: paddingHorizontal,
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  SizedBox(height: topPadding),
-                  ...List<Widget>.generate(
-                    widget.paneItems.length,
-                    (index) => _SideNaviWidget(
-                      enabled: currentPage == index,
-                      entry: widget.paneItems[index],
-                      showTitle: value == 3,
-                      onTap: () {
-                        updatePage(index);
-                      },
-                      key: ValueKey(index),
-                    ),
+            Column(
+              children: [
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(height: topPadding),
+                ...List<Widget>.generate(
+                  widget.paneItems.length,
+                  (index) => _SideNaviWidget(
+                    enabled: currentPage == index,
+                    entry: widget.paneItems[index],
+                    onTap: () {
+                      updatePage(index);
+                    },
+                    key: ValueKey(index),
                   ),
-                  const Spacer(),
-                  ...List<Widget>.generate(
-                    widget.paneActions.length,
-                    (index) => _PaneActionWidget(
-                      entry: widget.paneActions[index],
-                      showTitle: value == 3,
-                      key: ValueKey(index + widget.paneItems.length),
-                    ),
+                ),
+                const Spacer(),
+                ...List<Widget>.generate(
+                  widget.paneActions.length,
+                  (index) => _PaneActionWidget(
+                    entry: widget.paneActions[index],
+                    key: ValueKey(index + widget.paneItems.length),
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
             ),
             Positioned(
               top: topPadding,
@@ -400,7 +465,7 @@ class NaviPaneState extends State<NaviPane>
               bottom: 0,
               child: ColoredBox(
                 color: dividerColor,
-                child: const SizedBox(width: 1),
+                child: const SizedBox(width: AppSizes.hairline),
               ),
             ),
           ],
@@ -415,7 +480,6 @@ class _SideNaviWidget extends StatelessWidget {
     required this.enabled,
     required this.entry,
     required this.onTap,
-    required this.showTitle,
     super.key,
   });
 
@@ -425,61 +489,56 @@ class _SideNaviWidget extends StatelessWidget {
 
   final VoidCallback onTap;
 
-  final bool showTitle;
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final icon = Icon(enabled ? entry.activeIcon : entry.icon);
-    return ClickInkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        height: 38,
-        decoration: BoxDecoration(
-          color: enabled ? colorScheme.primaryContainer : null,
-          borderRadius: BorderRadius.circular(12),
+    return Tooltip(
+      message: entry.label,
+      waitDuration: AppMotion.tooltipWait,
+      child: ClickInkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          width: AppSizes.navItemSize,
+          height: AppSizes.navItemSize,
+          decoration: BoxDecoration(
+            color: enabled ? colorScheme.accentContainer : null,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Center(
+            child: Icon(
+              enabled ? entry.activeIcon : entry.icon,
+              size: AppSizes.navIconSize,
+              color: enabled ? colorScheme.onAccentContainer : null,
+            ),
+          ),
         ),
-        child: showTitle
-            ? Row(
-                children: [icon, const SizedBox(width: 12), Text(entry.label)],
-              )
-            : Align(alignment: Alignment.centerLeft, child: icon),
       ),
-    ).paddingVertical(4);
+    );
   }
 }
 
 class _PaneActionWidget extends StatelessWidget {
-  const _PaneActionWidget({
-    required this.entry,
-    required this.showTitle,
-    super.key,
-  });
+  const _PaneActionWidget({required this.entry, super.key});
 
   final PaneActionEntry entry;
 
-  final bool showTitle;
-
   @override
   Widget build(BuildContext context) {
-    final icon = Icon(entry.icon);
-    return ClickInkWell(
-      onTap: entry.onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        height: 38,
-        child: showTitle
-            ? Row(
-                children: [icon, const SizedBox(width: 12), Text(entry.label)],
-              )
-            : Align(alignment: Alignment.centerLeft, child: icon),
+    return Tooltip(
+      message: entry.label,
+      waitDuration: AppMotion.tooltipWait,
+      child: ClickInkWell(
+        onTap: entry.onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: SizedBox(
+          width: AppSizes.navItemSize,
+          height: AppSizes.navItemSize,
+          child: Center(child: Icon(entry.icon, size: AppSizes.navIconSize)),
+        ),
       ),
-    ).paddingVertical(4);
+    );
   }
 }
 
@@ -563,18 +622,22 @@ class _SingleBottomNaviWidgetState extends State<_SingleBottomNaviWidget>
     );
     return Center(
       child: Container(
-        width: 64,
-        height: 28,
+        width: AppSizes.navBottomIndicatorWidth,
+        height: AppSizes.navBottomIndicatorHeight,
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(32)),
-          color: isHovering ? colorScheme.surfaceContainer : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          color: isHovering
+              ? colorScheme.shellSurfaceHover
+              : Colors.transparent,
         ),
         child: Center(
           child: Container(
-            width: 32 + value * 32,
-            height: 28,
+            width:
+                AppSizes.navBottomIndicatorMinWidth +
+                value * AppSizes.navBottomIndicatorMinWidth,
+            height: AppSizes.navBottomIndicatorHeight,
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(32)),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
               color: value != 0
                   ? colorScheme.secondaryContainer
                   : Colors.transparent,
@@ -764,7 +827,9 @@ class _NaviMainViewState extends State<_NaviMainView> {
 
   @override
   Widget build(BuildContext context) {
-    var shouldShowAppBar = state.controller.value < 2;
+    var shouldShowAppBar =
+        !(state.widget.bookshelf && App.isDesktop) &&
+        state.controller.value < 2;
     return Column(
       children: [
         if (shouldShowAppBar) state.buildTop().paddingTop(context.padding.top),

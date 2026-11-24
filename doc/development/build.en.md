@@ -2,11 +2,11 @@
 
 Default Chinese version: [build.zh.md](build.zh.md)
 
-This guide is for developers building, testing, or maintaining VeneraNext from source. For installation and usage, see the root [README](../../README.md).
+This guide is for developers building, testing, or maintaining Venera-PC from source. For installation and usage, see the root [README](../../README.md).
 
 ## Prerequisites
 
-- Flutter `3.41.4`
+- Flutter `3.47.7`
 - Dart `>=3.8.0 <4.0.0`
 - JDK `17` for Android builds
 - A Rust toolchain; Android builds require the corresponding Android targets
@@ -25,8 +25,8 @@ flutter --version
 Clone the repository and resolve dependencies from its lock file:
 
 ```bash
-git clone https://github.com/CyrilPeng/venera-next.git
-cd venera-next
+git clone https://github.com/Lezy233/Venera-PC.git
+cd Venera-PC
 flutter pub get --enforce-lockfile
 ```
 
@@ -67,7 +67,7 @@ git diff --check
 
 CI runs `flutter test --coverage`, publishes line coverage in the workflow summary, and uploads `coverage/lcov.info`. Coverage is currently a visible baseline rather than a repository-wide hard threshold. Changes to critical behavior still require focused tests.
 
-Pull requests also run `依赖安全审查` and `PR 平台冒烟构建`. Dependency review blocks newly introduced dependencies with high or critical vulnerabilities. Changes to Flutter code, native platform directories, dependencies, build scripts, or workflows run Android Debug and Windows Debug builds; documentation-only changes skip those platform jobs. Dart formatting is checked only for Dart files changed by the current PR, so historical formatting differences do not block new contributions. The `main` branch requires code analysis, dependency review, and the platform smoke-build gate to pass, and direct force-pushes or branch deletion are disabled.
+Pull requests also run `依赖安全审查` and `PR 平台冒烟构建`. Dependency review blocks newly introduced dependencies with high or critical vulnerabilities. Changes to Flutter code, native platform directories, dependencies, build scripts, or workflows run a Windows Debug build with the native startup verification; documentation-only changes skip the platform job. Dart formatting is checked only for Dart files changed by the current PR, so historical formatting differences do not block new contributions. The `main` branch requires code analysis, dependency review, and the platform smoke-build gate to pass, and direct force-pushes or branch deletion are disabled.
 
 For release-related changes, also run:
 
@@ -75,9 +75,9 @@ For release-related changes, also run:
 python .github/scripts/release_version.py --check
 ```
 
-## Android Build
+## Local Android Build
 
-Place local release signing files at:
+CI no longer builds Android. For a local build, place release signing files at:
 
 ```text
 android/keystore.jks
@@ -142,16 +142,11 @@ python .github/scripts/release_version.py --write
 python .github/scripts/release_version.py --check --tag v1.2.3
 ```
 
-`pubspec.yaml`, the release tag, and the version section in `CHANGELOG.md` must match `release.json`. `alt_store.json` is not a version source. After a stable GitHub Release succeeds, workflows update it from release assets; RC prereleases do not update the AltStore source.
+`pubspec.yaml`, the release tag, and the version section in `CHANGELOG.md` must match `release.json`. CI/CD covers only the Windows, macOS, and Linux desktop platforms: the full build and Release produce and publish desktop assets only (DMG, Windows installer and portable package, DEB, RPM, Arch package, and AppImage) and no longer build or upload Android/iOS artifacts. Mobile source code and local build capability remain in the repository but are no longer built, checked, or published by CI.
 
-The `代码分析` workflow runs version and structure checks, Python script tests, formatting checks for changed Dart files, `flutter analyze`, the full Dart test suite, and coverage reporting. `依赖安全审查` checks dependencies added or upgraded by a pull request, while `PR 平台冒烟构建` verifies Android and Windows compilation when the changed files can affect platform builds. Before starting multi-platform builds, `完整构建` reuses the same quality workflow. Manual platform builds and tag releases both reuse `.github/workflows/build.yml` so their build definitions cannot drift apart.
+The `代码分析` workflow runs version and structure checks, Python script tests, formatting checks for changed Dart files, `flutter analyze`, the full Dart test suite, and coverage reporting. `依赖安全审查` checks dependencies added or upgraded by a pull request, while `PR 平台冒烟构建` verifies Windows compilation and startup when the changed files can affect platform builds. Before starting multi-platform desktop builds, `完整构建` reuses the same quality workflow. Manual platform builds and tag releases both reuse `.github/workflows/build.yml` so their build definitions cannot drift apart.
 
-Android release workflows require these repository Secrets:
-
-- `ANDROID_KEYSTORE`: Base64 content of the keystore file
-- `ANDROID_KEY_PROPERTIES`: text content of `key.properties`
-
-After a stable release, the AltStore workflow reuses the fixed `automation/update-altstore` branch and creates a pull request. Configure `ALTSTORE_PR_TOKEN` with permission to push a branch and create pull requests in this repository; when it is not configured, the workflow falls back to `WINGET_PKGS_TOKEN`. A missing token or failed PR creation now fails the job instead of reporting success with only an orphan branch.
+The Fastlane Supply metadata validation and AltStore source update workflows have been disabled and are no longer triggered by pushes, PRs, or releases. The `fastlane/` directory, AltStore data, and the update script remain in the repository.
 
 AI issue checking is disabled by default. After confirming that `API_URL` and `API_KEY` work, set the repository variable `ENABLE_AI_ISSUE_CHECK` to `true`; `ISSUE_CHECK_MODEL` can override the default model. The workflow posts summaries and close recommendations only and never closes an issue automatically.
 
@@ -174,6 +169,24 @@ flutter pub get --enforce-lockfile
 ### `Unable to satisfy pubspec.yaml using pubspec.lock`
 
 The Flutter/Dart version or package-source environment usually does not match. Check the Flutter version required by this guide and the output of `flutter doctor -v`; do not immediately delete the lock file.
+
+### macOS build fails with `NativeAssetsManifest.json references pdfium`
+
+The error looks like:
+
+```text
+Exception: The native assets specification at .../VeneraNext.app/Contents/Frameworks/App.framework/Resources/flutter_assets/NativeAssetsManifest.json references pdfium, which was not found in .../build/native_assets/macos/.
+```
+
+This is a stale native-assets build cache from `pdfrx` / `pdfium_dart`: the Xcode embed phase expects `build/native_assets/macos/pdfium.framework`, but the cached build never regenerated it. Clear the build cache and resolve dependencies again:
+
+```bash
+flutter clean
+flutter pub get --enforce-lockfile
+flutter run -d macos
+```
+
+PDFium native assets are produced by a build hook. Do not delete or replace files under `build/native_assets/` by hand. If the failure persists after cleaning, run `flutter run -d macos -v` to inspect the full Xcode embed phase output.
 
 ### Slow Gradle Downloads
 

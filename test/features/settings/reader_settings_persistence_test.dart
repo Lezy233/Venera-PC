@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:venera_next/features/reader/brightness.dart';
 import 'package:venera_next/features/settings/reader.dart';
+import 'package:venera_next/features/settings/reader_mode.dart';
 import 'package:venera_next/features/settings/reader_brightness.dart';
 import 'package:venera_next/features/settings/setting_components.dart';
 import 'package:venera_next/components/settings_save_state.dart';
@@ -59,8 +60,71 @@ Widget _host(Widget child, {ImageWork? work}) => MaterialApp(
 );
 
 void main() {
+  for (final width in [375.0, 1280.0]) {
+    for (final comic in [false, true]) {
+      for (final outer in [false, true]) {
+        testWidgets(
+          'reader save feedback keeps layout fixed: width=$width comic=$comic outer=$outer',
+          (tester) async {
+            _prepare();
+            tester.view.physicalSize = Size(width, 1000);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            await tester.pumpWidget(
+              _host(
+                ReaderSettings(
+                  comicId: comic ? 'comic' : null,
+                  comicSource: comic ? 'local' : null,
+                ),
+              ),
+            );
+            final mode = find.byType(ReaderModeSettings);
+            final display = find.text('Page animation');
+            final modePosition = tester.getTopLeft(mode);
+            final displayPosition = tester.getTopLeft(display);
+            final scrollable = tester.state<ScrollableState>(
+              find.byType(Scrollable).first,
+            );
+            final scrollPosition = scrollable.position.pixels;
+            final owner = tester.state<SettingsSaveState>(
+              outer ? find.byType(ReaderSettings) : mode,
+            );
+            final release = Completer<void>();
+            addTearDown(() {
+              if (!release.isCompleted) release.complete();
+            });
+            final saving = owner.saveSetting(
+              'layout-test',
+              () => release.future,
+            );
+            await tester.pump();
+            expect(owner.savingSettings, isTrue);
+            expect(find.byType(CircularProgressIndicator), findsOneWidget);
+            expect(tester.getTopLeft(mode), modePosition);
+            expect(tester.getTopLeft(display), displayPosition);
+            expect(scrollable.position.pixels, scrollPosition);
+
+            release.complete();
+            await tester.pump();
+            expect(await saving, isTrue);
+            expect(find.text('Saved'), findsOneWidget);
+            expect(tester.getTopLeft(mode), modePosition);
+            expect(tester.getTopLeft(display), displayPosition);
+            await tester.pump(const Duration(seconds: 2));
+            expect(find.text('Saved'), findsNothing);
+            expect(tester.getTopLeft(display), displayPosition);
+            expect(scrollable.position.pixels, scrollPosition);
+            expect(tester.takeException(), isNull);
+            await tester.pumpWidget(const SizedBox());
+          },
+        );
+      }
+    }
+  }
+
   testWidgets(
-    'device scope saves and clears only this device while preserving global values',
+    'device scope saves and resets only this device while preserving global values',
     (tester) async {
       _prepare();
       appdata.settings['deviceSpecificSettings'] = <String, dynamic>{
@@ -69,19 +133,15 @@ void main() {
       await tester.pumpWidget(_host(const ReaderSettings()));
       final release = Completer<void>();
       final exclusive = AppDataOperations.instance.run(() => release.future);
-      tester
-          .widget<SwitchListTile>(
-            find.widgetWithText(
-              SwitchListTile,
-              'Enable device specific settings',
-            ),
-          )
-          .onChanged!(true);
+      await tester.tap(find.text('This device'));
+      await tester.pump();
       expect(appdata.settings.isDeviceSpecificSettingsEnabled(), isFalse);
-      // The second edit must resolve the scope at its queue head, after the
-      // admitted toggle, even though the live settings still use global scope.
+      // The brightness edit must resolve the scope at its queue head, after the
+      // admitted scope switch, even though the live settings still use global.
       tester
-          .widget<ReaderBrightnessControl>(find.byType(ReaderBrightnessControl))
+          .widget<ReaderBrightnessControl>(
+            find.byType(ReaderBrightnessControl, skipOffstage: false),
+          )
           .onBrightnessChanged(25);
       expect(appdata.settings['readerBrightness'], 50);
       release.complete();
@@ -89,11 +149,10 @@ void main() {
       expect(appdata.settings.isDeviceSpecificSettingsEnabled(), isTrue);
       expect(appdata.settings.getDeviceReaderSetting('readerBrightness'), 25);
       expect(appdata.settings['readerBrightness'], 50);
-      await tester.tap(
-        find.text('Clear specific reader settings for this device'),
-      );
+      await tester.tap(find.text('Reset this device'));
       await _flush(tester, appdata.saveData(false));
-      expect(appdata.settings.isDeviceSpecificSettingsEnabled(), isFalse);
+      // Reset clears the overrides but keeps the selected device layer active.
+      expect(appdata.settings.isDeviceSpecificSettingsEnabled(), isTrue);
       expect(
         appdata
             .settings['deviceSpecificSettings']['other-device']['readerBrightness'],
@@ -123,7 +182,9 @@ void main() {
       final release = Completer<void>();
       final exclusive = AppDataOperations.instance.run(() => release.future);
       final change = tester
-          .widget<ReaderBrightnessControl>(find.byType(ReaderBrightnessControl))
+          .widget<ReaderBrightnessControl>(
+            find.byType(ReaderBrightnessControl, skipOffstage: false),
+          )
           .onBrightnessChanged;
       change(20);
       change(35);
@@ -158,7 +219,9 @@ void main() {
       final release = Completer<void>();
       final exclusive = AppDataOperations.instance.run(() => release.future);
       tester
-          .widget<ReaderBrightnessControl>(find.byType(ReaderBrightnessControl))
+          .widget<ReaderBrightnessControl>(
+            find.byType(ReaderBrightnessControl, skipOffstage: false),
+          )
           .onBrightnessChanged(25);
       await tester.pumpWidget(const SizedBox.shrink());
       expect(preview.brightness, 25);
@@ -185,7 +248,9 @@ void main() {
       );
       final blocked = Directory('${root.path}/appdata.json')..createSync();
       tester
-          .widget<ReaderBrightnessControl>(find.byType(ReaderBrightnessControl))
+          .widget<ReaderBrightnessControl>(
+            find.byType(ReaderBrightnessControl, skipOffstage: false),
+          )
           .onBrightnessChanged(30);
       for (var i = 0; i < 500 && find.text('Retry').evaluate().isEmpty; i++) {
         await tester.runAsync(
@@ -232,7 +297,9 @@ void main() {
       final release = Completer<void>();
       final exclusive = AppDataOperations.instance.run(() => release.future);
       tester
-          .widget<ReaderBrightnessControl>(find.byType(ReaderBrightnessControl))
+          .widget<ReaderBrightnessControl>(
+            find.byType(ReaderBrightnessControl, skipOffstage: false),
+          )
           .onBrightnessChanged(20);
       updateHost(() => comic = 'two');
       await tester.pump();
@@ -253,7 +320,7 @@ void main() {
   );
 
   testWidgets(
-    'comic scope toggle and reset wait for admission and preserve another comic',
+    'comic scope reset waits for admission and preserves another comic',
     (tester) async {
       _prepare();
       appdata.settings.setReaderSetting(
@@ -262,6 +329,13 @@ void main() {
         'readerBrightness',
         80,
       );
+      appdata.settings.setReaderSetting(
+        'comic',
+        'local',
+        'readerBrightness',
+        33,
+      );
+      appdata.settings.setEnabledComicSpecificSettings('comic', 'local', true);
       var callbacks = 0;
       await tester.pumpWidget(
         _host(
@@ -274,17 +348,11 @@ void main() {
       );
       final release = Completer<void>();
       final exclusive = AppDataOperations.instance.run(() => release.future);
-      tester
-          .widget<SwitchListTile>(
-            find.widgetWithText(
-              SwitchListTile,
-              'Customize other settings for this comic',
-            ),
-          )
-          .onChanged!(true);
+      await tester.tap(find.text('Reset this comic'));
+      await tester.pump();
       expect(
-        appdata.settings.isComicSpecificSettingsEnabled('comic', 'local'),
-        isFalse,
+        appdata.settings.getReaderSetting('comic', 'local', 'readerBrightness'),
+        33,
       );
       expect(callbacks, 0);
       release.complete();
@@ -293,19 +361,60 @@ void main() {
         appdata.settings.isComicSpecificSettingsEnabled('comic', 'local'),
         isTrue,
       );
-      expect(callbacks, 1);
-      await tester.tap(find.text('Reset all settings for this comic'));
-      await _flush(tester, appdata.saveData(false));
       expect(
-        appdata.settings.isComicSpecificSettingsEnabled('comic', 'local'),
-        isFalse,
+        appdata.settings.getReaderSetting('comic', 'local', 'readerBrightness'),
+        50,
       );
       expect(
         appdata
             .settings['comicSpecificSettings']['other@local']['readerBrightness'],
         80,
       );
-      expect(callbacks, 2);
+      expect(callbacks, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'comic edit shows save status and leaves default settings untouched',
+    (tester) async {
+      _prepare();
+      appdata.settings['enablePageAnimation'] = true;
+      await tester.pumpWidget(
+        _host(ReaderSettings(comicId: 'comic', comicSource: 'local')),
+      );
+      final control = find.ancestor(
+        of: find.text('Page animation'),
+        matching: find.byType(SwitchSetting),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Page animation'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      final release = Completer<void>();
+      final exclusive = AppDataOperations.instance.run(() => release.future);
+      tester
+          .widget<Switch>(
+            find.descendant(of: control, matching: find.byType(Switch)),
+          )
+          .onChanged!(false);
+      await tester.pump();
+      final owner = tester.state<SettingsSaveState>(control);
+      expect(owner.savingSettings, isTrue);
+      expect(appdata.settings['enablePageAnimation'], isTrue);
+      release.complete();
+      await _flush(tester, Future.wait([exclusive, appdata.saveData(false)]));
+      expect(
+        appdata.settings.getReaderSetting(
+          'comic',
+          'local',
+          'enablePageAnimation',
+        ),
+        isFalse,
+      );
+      expect(appdata.settings['enablePageAnimation'], isTrue);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

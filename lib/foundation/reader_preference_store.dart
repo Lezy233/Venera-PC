@@ -50,9 +50,43 @@ class ReaderPreferenceStore {
     }
   }
 
+  /// Manual mode follows the full form's dedicated comic override. Unlike
+  /// other comic edits, it must not activate unrelated saved comic settings.
+  void writeComicModeOverride(String? value) {
+    if (scope != ReaderPreferenceScope.comic) {
+      throw StateError('A manual comic mode requires comic scope');
+    }
+    if (settings is ReaderPresetEditing &&
+        (settings as ReaderPresetEditing).writePresetField(
+          'comic',
+          comicId,
+          sourceKey,
+          'readerMode',
+          value,
+        )) {
+      return;
+    }
+    settings.setReaderSetting(
+      comicId!,
+      sourceKey!,
+      'readerModeOverride',
+      value == null ? 'default' : ReaderPreferences.readerMode.normalize(value),
+    );
+  }
+
   /// The remaining heterogeneous fields keep their JSON representation and
   /// use the same write target. Typed writes additionally enforce their rules.
   void writeRaw(String key, Object? value) {
+    if (settings is ReaderPresetEditing &&
+        (settings as ReaderPresetEditing).writePresetField(
+          scope.name,
+          comicId,
+          sourceKey,
+          key,
+          value,
+        )) {
+      return;
+    }
     // Preserve the existing slider JSON representation for whole numbers.
     final stored = value is num && value.toInt() == value
         ? value.toInt()
@@ -62,8 +96,17 @@ class ReaderPreferenceStore {
         settings[key] = stored;
       case ReaderPreferenceScope.device:
         settings.setDeviceReaderSetting(key, stored);
+        // An explicit device-scope edit activates the device layer so the
+        // value is not shadowed by the global fallback.
+        if (key != 'enabled') {
+          settings.setDeviceReaderSetting('enabled', true);
+        }
       case ReaderPreferenceScope.comic:
         settings.setReaderSetting(comicId!, sourceKey!, key, stored);
+        // An explicit comic-scope edit activates this comic's overrides.
+        if (key != 'enabled') {
+          settings.setReaderSetting(comicId!, sourceKey!, 'enabled', true);
+        }
       case ReaderPreferenceScope.active:
         settings.setActiveReaderSetting(comicId, sourceKey, key, stored);
     }

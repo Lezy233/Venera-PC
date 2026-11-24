@@ -3,6 +3,11 @@ import 'package:venera_next/foundation/sync_configuration.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'settings_recovery.dart';
+import 'reader_preset_values.dart';
+import 'translations.dart';
+export 'settings_recovery.dart' show SettingsRecoveryFailure;
+
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:venera_next/foundation/app.dart';
@@ -15,6 +20,7 @@ import 'package:venera_next/foundation/reader_preference_settings.dart';
 import 'package:venera_next/foundation/file_system.dart';
 import 'package:venera_next/foundation/init.dart';
 import 'package:venera_next/foundation/log.dart';
+import 'package:venera_next/foundation/webdav_connection.dart';
 
 class Appdata with Init {
   Appdata._create();
@@ -24,6 +30,63 @@ class Appdata with Init {
   var searchHistory = <String>[];
 
   Future<void>? _writeQueue;
+
+  final _deferredRollbacks = <(String, String), (Map, Map)>{};
+
+  final _settingsRecoveries = <(String, String), SettingsRecoveryFailure>{};
+  final _recoveryCompletions = <(String, String), Completer<void>>{};
+
+  final _readerRecoveryAliases = <(String, String), String>{};
+  SettingsRecoveryFailure? settingsRecovery(String path, String target) =>
+      _settingsRecoveries[(
+        path,
+        _readerRecoveryAliases[(path, target)] ?? target,
+      )];
+
+  /// Recovery retries persist current valid state, never replay the failed edit.
+  Future<void> retrySettingsRecovery(String path, String target) =>
+      AppDataOperations.instance.access(
+        () => _enqueueWrite(() async {
+          target = _readerRecoveryAliases[(path, target)] ?? target;
+          final failure = _settingsRecoveries[(path, target)];
+          if (failure == null) return;
+          if (App.dataPath != path) throw failure;
+          try {
+            final deferred = _deferredRollbacks.remove((path, target));
+            if (deferred != null) {
+              final restored = restoreOwnedSettings(
+                deferred.$1,
+                deferred.$2,
+                settings._data,
+              );
+              _applyChangedFields(
+                settings._data,
+                Map.of(settings._data),
+                restored,
+              );
+            }
+            await _writeAppData(path, _appDataContents(jsonEncode(toJson())));
+            _settingsRecoveries.remove((path, target));
+            _recoveryCompletions.remove((path, target))?.complete();
+            _readerRecoveryAliases.removeWhere(
+              (key, owner) => key.$1 == path && owner == target,
+            );
+          } catch (error, stack) {
+            final next = SettingsRecoveryFailure(
+              failure.initialError,
+              failure.initialStack,
+              error,
+              stack,
+              failure.retryRecovery,
+              failure.isDurablyRecovered,
+            );
+            _settingsRecoveries[(path, target)] = next;
+            throw next;
+          } finally {
+            settings.notifyListeners();
+          }
+        }),
+      );
 
   FutureOr<void> Function()? _syncDataRequestHandler;
 
@@ -54,6 +117,9 @@ class Appdata with Init {
     // Initialization repairs can avoid rewriting an unchanged snapshot. Normal
     // saves keep this true so retrying an already-published value writes again.
     bool persistIfUnchanged = true,
+    String? recoveryKey,
+    // Order-only writes must preserve even legacy raw bindings/records.
+    bool migrateReaderPresets = true,
   }) => _edit(
     (draft, _) {
       final previousExclusions = jsonEncode(draft['disableSyncFields']);
@@ -70,7 +136,18 @@ class Appdata with Init {
     },
     sync: sync,
     beforePersist: beforePersist,
+    recoveryKey: recoveryKey,
     persistIfUnchanged: persistIfUnchanged,
+    migrateReaderPresets: migrateReaderPresets,
+    readerOwnership: (
+      App.dataPath,
+      settings['deviceId'],
+      {
+        if (settings._data['readerPresetSelections'] case final Map selections)
+          for (final target in selections.keys.whereType<String>())
+            target: settings.readerPresetId(target),
+      },
+    ),
   );
 
   /// Serialize storage recovery with settings writers. The callback receives
@@ -107,9 +184,19 @@ class Appdata with Init {
     bool persist = true,
     bool persistIfUnchanged = true,
     Object? Function(Map<String, String> contents)? beforePersist,
+    String? recoveryKey,
+    (String, Object?, Map<String, dynamic>)? readerOwnership,
+    bool migrateReaderPresets = true,
   }) => AppDataOperations.instance.access(() {
     final path = App.dataPath;
     return _enqueueWrite(() async {
+      if (recoveryKey != null) {
+        final failure = settingsRecovery(path, recoveryKey!);
+        if (failure != null) throw failure;
+        if (path != App.dataPath) {
+          throw StateError('Settings directory changed'.tl);
+        }
+      }
       final before = jsonDecode(jsonEncode(toJson())) as Map<String, dynamic>;
       final draft = Settings._create().._batchDepth = 1;
       draft._data
@@ -117,9 +204,14 @@ class Appdata with Init {
         ..addAll(
           jsonDecode(jsonEncode(before['settings'])) as Map<String, dynamic>,
         );
+      draft._readerOwnership = readerOwnership;
+      draft._readerAdmissionDeviceId = draft._data['deviceId'];
+      draft._readerRecoveryKey = recoveryKey;
+      if (migrateReaderPresets) ReaderPresetValues(draft._data).migrate();
       final history = List<String>.from(before['searchHistory'] as List);
       final result = change(draft, history);
       _requireSynchronousEdit(result);
+      recoveryKey ??= draft._readerRecoveryKey;
       final snapshot = jsonEncode({
         'settings': draft._data,
         'searchHistory': history,
@@ -141,13 +233,55 @@ class Appdata with Init {
       if (historyChanged) {
         searchHistory = List<String>.from(published['searchHistory'] as List);
       }
-      // Persistence can partially commit. Keep the applied memory state and
-      // report the real failure rather than restoring an unrelated snapshot.
+      // Default callers retain their existing publish-before-IO semantics.
+      // Explicit recovery owners roll back only their own assignments, while
+      // still inside this writer slot, then compensate every required file.
       try {
         if (persist &&
             (persistIfUnchanged || settingsChanged || historyChanged)) {
           await _writeAppData(path, contents);
         }
+      } catch (error, stack) {
+        if (recoveryKey == null) rethrow;
+        Object? recoveryError;
+        StackTrace? recoveryStack;
+        try {
+          if (App.dataPath != path) {
+            _deferredRollbacks[(path, recoveryKey!)] = (
+              before['settings'] as Map,
+              published['settings'] as Map,
+            );
+            throw StateError('Settings directory changed'.tl);
+          }
+          final restored = restoreOwnedSettings(
+            before['settings'] as Map,
+            published['settings'] as Map,
+            settings._data,
+          );
+          _applyChangedFields(settings._data, Map.of(settings._data), restored);
+          await _writeAppData(path, _appDataContents(jsonEncode(toJson())));
+        } catch (error, stack) {
+          recoveryError = error;
+          recoveryStack = stack;
+        }
+        final ownerKey = recoveryKey!;
+        final completion = Completer<void>();
+        final failure = SettingsRecoveryFailure(
+          error,
+          stack,
+          recoveryError,
+          recoveryStack,
+          () => retrySettingsRecovery(path, ownerKey),
+          () => completion.isCompleted,
+        );
+        if (failure.incomplete) {
+          _settingsRecoveries[(path, recoveryKey!)] = failure;
+          _recoveryCompletions[(path, ownerKey)] = completion;
+          for (final target in draft._readerRecoveryTargets) {
+            _readerRecoveryAliases[(path, target)] = recoveryKey!;
+          }
+        }
+        throw failure;
       } finally {
         if (settingsChanged || draft._notificationPending) {
           settings.notifyListeners();
@@ -393,9 +527,19 @@ class Appdata with Init {
     var dataPath = App.dataPath;
     return _enqueueWrite(() async {
       await _loadAppData(dataPath);
+      final migration = WebDavConnectionMigration.inspect(
+        (key) => settings._data[key],
+      );
+      if (migration.changed) {
+        for (final entry in migration.changes.entries) {
+          settings._data[entry.key] = entry.value;
+        }
+      }
       final deviceId = settings['deviceId'];
       if (deviceId is! String || deviceId.isEmpty) {
         settings._data["deviceId"] = const Uuid().v4();
+        await _writeAppData(dataPath, _appDataContents(jsonEncode(toJson())));
+      } else if (migration.changed) {
         await _writeAppData(dataPath, _appDataContents(jsonEncode(toJson())));
       }
       await _loadImplicitData(dataPath);
@@ -593,7 +737,137 @@ class AppdataWriteFailure implements Exception {
 
 final appdata = Appdata._create();
 
-class Settings with ChangeNotifier implements ReaderPreferenceSettings {
+class Settings
+    with ChangeNotifier
+    implements ReaderPreferenceSettings, ReaderPresetEditing {
+  (String, Object?, Map<String, dynamic>)? _readerOwnership;
+  Object? _readerAdmissionDeviceId;
+  String? _readerRecoveryKey;
+  final _readerRecoveryTargets = <String>{};
+  bool _materializingReader = false;
+  ReaderPresetValues get _presets => ReaderPresetValues(_data);
+
+  String? readerPresetId(String target) => _presets.selected(target);
+
+  String readerTarget(String scope, String? cid, String? source) {
+    if (scope == 'active') {
+      scope = isComicSpecificSettingsEnabled(cid, source)
+          ? 'comic'
+          : isDeviceSpecificSettingsEnabled()
+          ? 'device'
+          : 'global';
+    }
+    return jsonEncode(switch (scope) {
+      'comic' => ['comic', source, cid],
+      'device' => ['device', _data['deviceId']],
+      _ => ['global'],
+    });
+  }
+
+  void readerTransaction(String target, [Iterable<String> ids = const []]) {
+    final targets = {
+      target,
+      for (final id in ids) jsonEncode(['preset', id]),
+    };
+    for (final key in targets) {
+      final failure = appdata.settingsRecovery(App.dataPath, key);
+      if (failure != null) throw failure;
+    }
+    _readerRecoveryKey ??= target;
+    _readerRecoveryTargets.addAll(targets);
+  }
+
+  T materializeReaderValues<T>(T Function() action) {
+    final old = _materializingReader;
+    _materializingReader = true;
+    try {
+      return action();
+    } finally {
+      _materializingReader = old;
+    }
+  }
+
+  @override
+  bool writePresetField(
+    String scope,
+    String? comicId,
+    String? sourceKey,
+    String key,
+    Object? value,
+  ) {
+    if (_materializingReader) return false;
+    final preference = readerPresetPreferences
+        .where((p) => p.key == key)
+        .firstOrNull;
+    if (preference == null) return false;
+    final target = readerTarget(scope, comicId, sourceKey);
+    final id = _presets.selected(target);
+    final ownership = _readerOwnership;
+    // Pure pre-initialization settings callers have no persistence directory.
+    // Admitted writers must still respect a paused target after detachment.
+    if (ownership != null || id != null) {
+      final pending = appdata.settingsRecovery(App.dataPath, target);
+      if (pending != null) throw pending;
+    }
+    if (ownership != null &&
+        (ownership.$1 != App.dataPath ||
+            ownership.$2 != _readerAdmissionDeviceId ||
+            ownership.$3[target] != id)) {
+      throw StateError('Reading settings target changed'.tl);
+    }
+    if (id == null) return false;
+    readerTransaction(target, [id]);
+    final inherit = key == 'readerMode' && value == null;
+    _data['readerModePresets'] = [
+      for (final item in _data['readerModePresets'] as List)
+        if (item is Map && item['id'] == id)
+          {
+            ...item,
+            'modeBehavior': inherit
+                ? 'inherit'
+                : readerPresetModeKeys.contains(key)
+                ? 'fixed'
+                : _presets.inherits(id)
+                ? 'inherit'
+                : 'fixed',
+            'values': {
+              ...item['values'] as Map,
+              if (!inherit) key: preference.normalize(value),
+            },
+          }
+        else
+          item,
+    ];
+    notifyListeners();
+    return true;
+  }
+
+  /// Materialize detachment/application of an inherit behavior without
+  /// freezing its currently resolved mode or changing other layer fields.
+  void preserveReaderModeInheritance(
+    String scope,
+    String? cid,
+    String? source,
+  ) {
+    if (scope == 'global') return;
+    final container = scope == 'device'
+        ? 'deviceSpecificSettings'
+        : 'comicSpecificSettings';
+    final key = scope == 'device' ? _getOrCreateDeviceId() : '$cid@$source';
+    final records = _copyScopeContainer(container);
+    final current = records[key];
+    final values = <String, dynamic>{
+      if (current is Map) ...Map<String, dynamic>.from(current),
+    };
+    for (final field in readerPresetModeKeys) {
+      values.remove(field);
+    }
+    if (scope == 'comic') values['readerModeOverride'] = 'default';
+    records[key] = values;
+    _data[container] = records;
+    notifyListeners();
+  }
+
   int _batchDepth = 0;
   bool _notificationPending = false;
   @override
@@ -620,9 +894,14 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
     'searchShortcuts': [],
     'comicLayoutDetections': <String, dynamic>{},
     'enableLongPressToZoom': true,
-    'webdav': [], // empty means not configured
+    'webdav': [], // legacy: empty means not configured
+    webDavConnectionKey: null, // shared {url, user, pass}; null = not migrated
+    webDavConnectionPendingConfirmationKey: false,
+    WebDavPurposes.dataSync: true,
+    WebDavPurposes.backup: true,
+    WebDavPurposes.library: true,
     'webdavProxyEnabled': true,
-    'backupWebdav': [], // empty means not configured
+    'backupWebdav': [], // legacy: empty means not configured
     'backupWebdavPath': '/venera_backup/',
     'backupWebdavSyncEnabled': false,
     'webdavComicLibrary': [], // empty means not configured
@@ -643,8 +922,9 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
   /// Legacy heterogeneous settings bridge; typed consumers use preference snapshots.
   @override
   dynamic operator [](String key) {
-    if (key == 'longPressAction') return _longPressAction(_data) ?? 'zoom';
-    return _data[key];
+    final global = _presets.layer(jsonEncode(['global']), _data);
+    if (key == 'longPressAction') return _longPressAction(global) ?? 'zoom';
+    return global[key];
   }
 
   @override
@@ -686,8 +966,9 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
         true;
   }
 
-  ReaderSettings get globalReaderSettings =>
-      ReaderSettings.resolve(global: _data);
+  ReaderSettings get globalReaderSettings => ReaderSettings.resolve(
+    global: _presets.layer(jsonEncode(['global']), _data),
+  );
 
   /// Resolve an immutable snapshot without changing stored settings or scopes.
   ReaderSettings readerSettings(String comicId, String sourceKey) {
@@ -698,11 +979,18 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
 
     final deviceId = _data['deviceId'];
     return ReaderSettings.resolve(
-      global: _data,
+      global: _presets.layer(jsonEncode(['global']), _data),
       device: deviceId is String && deviceId.isNotEmpty
-          ? record(_data['deviceSpecificSettings'], deviceId)
+          ? _presets.layer(
+              jsonEncode(['device', deviceId]),
+              record(_data['deviceSpecificSettings'], deviceId) ?? {},
+            )
           : null,
-      comic: record(_data['comicSpecificSettings'], '$comicId@$sourceKey'),
+      comic: _presets.layer(
+        jsonEncode(['comic', sourceKey, comicId]),
+        record(_data['comicSpecificSettings'], '$comicId@$sourceKey') ?? {},
+        comic: true,
+      ),
       layout: comicLayout(comicId, sourceKey),
     );
   }
@@ -710,18 +998,18 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
   @override
   dynamic getReaderSetting(String comicId, String sourceKey, String key) {
     if (key == 'readerMode') return resolveReaderMode(comicId, sourceKey);
+    final comicValues = _presets.layer(
+      jsonEncode(['comic', sourceKey, comicId]),
+      _scopeRecord('comicSpecificSettings', '$comicId@$sourceKey') ?? {},
+      comic: true,
+    );
     if (key == 'longPressAction' &&
         isComicSpecificSettingsEnabled(comicId, sourceKey)) {
-      final action = _longPressAction(
-        _scopeRecord('comicSpecificSettings', '$comicId@$sourceKey'),
-      );
+      final action = _longPressAction(comicValues);
       return action ?? getDeviceReaderSetting(key);
     }
     if (isComicSpecificSettingsEnabled(comicId, sourceKey)) {
-      var comicValue = _scopeRecord(
-        'comicSpecificSettings',
-        '$comicId@$sourceKey',
-      )?[key];
+      final comicValue = comicValues[key];
       if (comicValue != null) {
         return comicValue;
       }
@@ -732,8 +1020,11 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
   /// A mode override is independent of the switch for other comic settings.
   /// Legacy per-comic modes remain effective until explicitly changed.
   String? comicReaderModeOverride(String comicId, String sourceKey) {
-    final values = _scopeRecord('comicSpecificSettings', '$comicId@$sourceKey');
-    if (values is! Map) return null;
+    final values = _presets.layer(
+      jsonEncode(['comic', sourceKey, comicId]),
+      _scopeRecord('comicSpecificSettings', '$comicId@$sourceKey') ?? {},
+      comic: true,
+    );
     if (values.containsKey('readerModeOverride')) {
       final mode = values['readerModeOverride'];
       return mode is String && mode != 'default' ? mode : null;
@@ -750,6 +1041,9 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
     String sourceKey,
     String? mode,
   ) {
+    if (writePresetField('comic', comicId, sourceKey, 'readerMode', mode)) {
+      return;
+    }
     setReaderSetting(
       comicId,
       sourceKey,
@@ -843,6 +1137,23 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
 
   @override
   dynamic getDeviceReaderSetting(String key) {
+    if (readerPresetPreferences.any((p) => p.key == key)) {
+      final global = _presets.layer(jsonEncode(['global']), _data);
+      final device = _presets.layer(
+        jsonEncode(['device', _data['deviceId']]),
+        _scopeRecord('deviceSpecificSettings', _data['deviceId'].toString()) ??
+            {},
+      );
+      if (key == 'longPressAction') {
+        return (isDeviceSpecificSettingsEnabled()
+                ? _longPressAction(device)
+                : null) ??
+            _longPressAction(global) ??
+            'zoom';
+      }
+      return (isDeviceSpecificSettingsEnabled() ? device[key] : null) ??
+          global[key];
+    }
     if (key == 'longPressAction') {
       if (isDeviceSpecificSettingsEnabled()) {
         final action = _longPressAction(
@@ -863,6 +1174,15 @@ class Settings with ChangeNotifier implements ReaderPreferenceSettings {
   void setDeviceReaderSetting(String key, dynamic value) {
     var deviceId = _getOrCreateDeviceId();
     _writeScopeValue('deviceSpecificSettings', deviceId, key, value);
+  }
+
+  void resetGlobalReaderSettings() {
+    final defaults = ReaderPreferences.storageDefaults;
+    for (final entry in defaults.entries) {
+      _data[entry.key] = entry.value;
+    }
+    _data['enableLongPressToZoom'] = true;
+    notifyListeners();
   }
 
   void resetDeviceReaderSettings() {

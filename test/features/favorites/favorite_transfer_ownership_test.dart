@@ -1,4 +1,5 @@
 import 'package:venera_next/features/favorites/favorites_scope.dart';
+import 'package:venera_next/features/favorites/favorite_order.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'dart:async';
 import 'dart:io';
@@ -63,6 +64,8 @@ class _History extends Fake implements HistoryManager {
 }
 
 class _Manager extends Fake implements LocalFavoritesManager {
+  @override
+  String? orderScopeMode(FavoriteOrderScope scope) => null;
   @override
   int connectionGeneration = 1;
   final contents = {
@@ -226,7 +229,8 @@ class _Host {
     }
     await tester.pumpWidget(app());
     await pumpSidebar(tester);
-    grid.onLongPressed!(grid.comics.first, 0);
+    grid.onSelectionChanged!(grid.comics.first, true);
+    await pumpSidebar(tester);
     await pumpSidebar(tester);
   }
 

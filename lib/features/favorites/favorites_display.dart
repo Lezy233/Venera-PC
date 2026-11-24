@@ -10,7 +10,16 @@ import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/translations.dart';
 
 class FavoriteDisplayButton extends StatefulWidget {
-  const FavoriteDisplayButton({super.key});
+  const FavoriteDisplayButton({
+    super.key,
+    this.preference = FavoritePreferences.displayMode,
+    this.tooltip = 'Favorite display mode',
+    this.includeColumns = true,
+  });
+
+  final Preference<String> preference;
+  final String tooltip;
+  final bool includeColumns;
 
   @override
   State<FavoriteDisplayButton> createState() => _FavoriteDisplayButtonState();
@@ -20,9 +29,7 @@ class _FavoriteDisplayButtonState
     extends SettingsSaveState<FavoriteDisplayButton>
     with ContextMenuOwner {
   bool get _gallery =>
-      GlobalPreferenceStore(
-        appdata.settings,
-      ).read(FavoritePreferences.displayMode) ==
+      GlobalPreferenceStore(appdata.settings).read(widget.preference) ==
       'gallery';
   int get _columns => GlobalPreferenceStore(
     appdata.settings,
@@ -62,7 +69,7 @@ class _FavoriteDisplayButtonState
               : Icons.view_list,
         ),
         isLoading: savingSettings,
-        tooltip: (hasSettingsSaveError ? 'Retry' : 'Favorite display mode').tl,
+        tooltip: (hasSettingsSaveError ? 'Retry' : widget.tooltip).tl,
         onPressed: () {
           if (hasSettingsSaveError) {
             retrySettingsSave();
@@ -109,14 +116,14 @@ class _FavoriteDisplayButtonState
       MenuEntry(
         icon: gallery ? Icons.view_list : Icons.check,
         text: 'List'.tl,
-        onClick: () => select(FavoritePreferences.displayMode, 'list'),
+        onClick: () => select(widget.preference, 'list'),
       ),
       MenuEntry(
         icon: gallery ? Icons.check : Icons.grid_view,
         text: 'Gallery'.tl,
-        onClick: () => select(FavoritePreferences.displayMode, 'gallery'),
+        onClick: () => select(widget.preference, 'gallery'),
       ),
-      if (gallery) ...[
+      if (gallery && widget.includeColumns) ...[
         MenuEntry(
           icon: columns == FavoritePreferences.galleryColumns.defaultValue
               ? Icons.check

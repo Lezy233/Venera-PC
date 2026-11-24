@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/design_system/tokens.dart';
 
 class SliverGridViewWithFixedItemHeight extends StatelessWidget {
   const SliverGridViewWithFixedItemHeight({
@@ -85,11 +86,21 @@ class SliverGridDelegateWithComics extends SliverGridDelegate {
   SliverGridDelegateWithComics({
     this.galleryColumns,
     this.forceDetailed = false,
-  });
+    this.textScale = 1,
+    this.bookshelf = false,
+  }) : compactDensity =
+           bookshelf &&
+           GlobalPreferenceStore(
+                 appdata.settings,
+               ).read(FavoritePreferences.density) ==
+               'compact';
 
   final int? galleryColumns;
 
   final bool forceDetailed;
+  final double textScale;
+  final bool bookshelf;
+  final bool compactDensity;
 
   final bool useBriefMode =
       GlobalPreferenceStore(
@@ -116,15 +127,38 @@ class SliverGridDelegateWithComics extends SliverGridDelegate {
     SliverConstraints constraints,
     int configuredColumns,
   ) {
-    const maxItemWidth = 144.0;
-    const childAspectRatio = 0.64;
+    if (!bookshelf) {
+      // Existing gallery callers retain their original renderer geometry.
+      final count = configuredColumns > 0
+          ? configuredColumns
+          : math.max(1, (constraints.crossAxisExtent / 144).ceil());
+      final width = constraints.crossAxisExtent / count;
+      return SliverGridRegularTileLayout(
+        crossAxisCount: count,
+        mainAxisStride: width / 0.64,
+        crossAxisStride: width,
+        childMainAxisExtent: width / 0.64,
+        childCrossAxisExtent: width,
+        reverseCrossAxis: axisDirectionIsReversed(
+          constraints.crossAxisDirection,
+        ),
+      );
+    }
+    final maxItemWidth = compactDensity
+        ? AppSizes.compactCoverWidth
+        : AppSizes.comfortableCoverWidth;
     final width = constraints.crossAxisExtent;
     var crossAxisCount = configuredColumns;
     if (crossAxisCount <= 0) {
-      crossAxisCount = math.max(1, (width / maxItemWidth).ceil());
+      crossAxisCount = math.max(2, (width / maxItemWidth).ceil());
+    } else if (compactDensity) {
+      crossAxisCount++;
     }
     final childCrossAxisExtent = width / crossAxisCount;
-    final childMainAxisExtent = childCrossAxisExtent / childAspectRatio;
+    final childMainAxisExtent =
+        childCrossAxisExtent / AppSizes.coverAspectRatio +
+        AppFontSize.body * textScale * (textScale > 1 ? 3 : 2) +
+        AppSpacing.xl;
     return SliverGridRegularTileLayout(
       crossAxisCount: crossAxisCount,
       mainAxisStride: childMainAxisExtent,
@@ -189,7 +223,10 @@ class SliverGridDelegateWithComics extends SliverGridDelegate {
     if (oldDelegate.galleryColumns != galleryColumns ||
         oldDelegate.forceDetailed != forceDetailed ||
         oldDelegate.scale != scale ||
-        oldDelegate.useBriefMode != useBriefMode) {
+        oldDelegate.useBriefMode != useBriefMode ||
+        oldDelegate.textScale != textScale ||
+        oldDelegate.bookshelf != bookshelf ||
+        oldDelegate.compactDensity != compactDensity) {
       return true;
     }
     return false;

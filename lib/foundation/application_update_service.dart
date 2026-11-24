@@ -55,8 +55,8 @@ class ApplicationUpdateService {
       final includePrerelease = allowsPrereleaseUpdates(version);
       final response = await dio.get<Object?>(
         includePrerelease
-            ? 'https://api.github.com/repos/CyrilPeng/venera-next/releases?per_page=20'
-            : 'https://api.github.com/repos/CyrilPeng/venera-next/releases/latest',
+            ? 'https://api.github.com/repos/Lezy233/Venera-PC/releases?per_page=20'
+            : 'https://api.github.com/repos/Lezy233/Venera-PC/releases/latest',
         cancelToken: scope.cancelToken,
         options: Options(headers: {'Accept': 'application/vnd.github+json'}),
       );

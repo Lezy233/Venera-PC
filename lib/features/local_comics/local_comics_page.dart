@@ -338,12 +338,6 @@ class _LocalComicsPageState extends State<LocalComicsPage> {
           SliverGridComics(
             comics: comics,
             selections: selectedComics,
-            onLongPressed: (c, heroID) {
-              setState(() {
-                multiSelectMode = true;
-                selectedComics[c as LocalComic] = true;
-              });
-            },
             onTap: (c, heroID) {
               if (multiSelectMode) {
                 setState(() {
@@ -534,6 +528,10 @@ class _LocalComicsPageState extends State<LocalComicsPage> {
 
   Future<bool> archiveComics(List<LocalComic> comics) async {
     if (comics.isEmpty) return false;
+    if (!BackupConfig.enabled) {
+      context.showMessage(message: "WebDAV archive backup is disabled".tl);
+      return false;
+    }
     final config = BackupConfig.fromSettings();
     if (!config.isValid) {
       context.showMessage(message: "Invalid WebDAV archive configuration".tl);

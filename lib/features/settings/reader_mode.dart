@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:venera_next/components/select.dart';
 import 'package:venera_next/foundation/preferences.dart';
 import 'package:venera_next/foundation/reader_preferences.dart';
 import 'package:venera_next/foundation/reader_preference_store.dart';
+import 'package:venera_next/foundation/reader_presets.dart';
 import 'package:flutter/material.dart';
 import 'package:venera_next/features/reader/reader_mode_labels.dart';
 import 'package:venera_next/foundation/appdata.dart';
@@ -15,6 +19,7 @@ class ReaderModeSettings extends StatefulWidget {
     super.key,
     this.comicId,
     this.sourceKey,
+    this.scope = ReaderPreferenceScope.active,
     this.currentMode,
     this.isDetecting,
     this.onDetect,
@@ -23,6 +28,7 @@ class ReaderModeSettings extends StatefulWidget {
 
   final String? comicId;
   final String? sourceKey;
+  final ReaderPreferenceScope scope;
   final String Function()? currentMode;
   final bool Function()? isDetecting;
   final Future<void> Function()? onDetect;
@@ -51,70 +57,41 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
     if (mounted) setState(() {});
   }
 
-  ReaderPreferenceStore get _store =>
-      ReaderPreferenceStore(settings: appdata.settings);
+  ReaderPreferenceStore get _store => ReaderPreferenceStore(
+    settings: appdata.settings,
+    scope: widget.scope,
+    comicId: widget.comicId,
+    sourceKey: widget.sourceKey,
+  );
 
   Future<bool> _setPreference<T extends Object>(
     Preference<T> preference,
     T value,
   ) {
-    final target = (widget.comicId, widget.sourceKey);
+    final target = (widget.comicId, widget.sourceKey, widget.scope);
+    final owner = ReaderPresetStore(
+      scope: target.$3,
+      comicId: target.$1,
+      sourceKey: target.$2,
+    ).capture();
+    final selected = appdata.settings.readerPresetId(owner.selectionKey);
     return saveSetting(
       preference.key,
       () => appdata.updateSettings((draft) {
-        ReaderPreferenceStore(settings: draft).write(preference, value);
+        ReaderPreferenceStore(
+          settings: draft,
+          scope: owner.scope,
+          comicId: target.$1,
+          sourceKey: target.$2,
+        ).write(preference, value);
       }),
       onSaved: () => widget.onChanged?.call(),
-      isCurrent: () => target == (widget.comicId, widget.sourceKey),
+      requireCurrentForFeedback: true,
+      isCurrent: () =>
+          owner.isCurrent &&
+          target == (widget.comicId, widget.sourceKey, widget.scope) &&
+          appdata.settings.readerPresetId(owner.selectionKey) == selected,
     );
-  }
-
-  Future<void> _chooseMode({
-    required String title,
-    required String value,
-    required Future<bool> Function(String) onSelected,
-    bool allowDefault = false,
-  }) async {
-    if (!acceptsSettingsChanges) return;
-    final target = (widget.comicId, widget.sourceKey);
-    final options = {
-      if (allowDefault) 'default': 'Follow default'.tl,
-      ...readerModeLabels,
-    };
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(title),
-        children: options.entries.map((option) {
-          return SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, option.key),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            child: Row(
-              children: [
-                Icon(
-                  value == option.key
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: value == option.key
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                const SizedBox(width: 16),
-                Expanded(child: Text(option.value)),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-    if (mounted &&
-        selected != null &&
-        target == (widget.comicId, widget.sourceKey) &&
-        acceptsSettingsChanges &&
-        options.containsKey(selected)) {
-      await onSelected(selected);
-    }
   }
 
   Widget _preference(
@@ -123,19 +100,179 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
     String? description,
   }) {
     final value = _store.read(preference);
+    final keys = readerModeLabels.keys.toList();
     return ListTile(
       title: Text(title.tl),
-      subtitle: Text(
-        [
-          readerModeLabels[value] ?? value,
-          if (description != null) description.tl,
-        ].join('\n'),
+      subtitle: description == null ? null : Text(description.tl),
+      trailing: Select(
+        current: readerModeLabels[value] ?? value,
+        values: [for (final key in keys) readerModeLabels[key]!],
+        minWidth: 96,
+        onTap: (index) {
+          if (index < 0 || index >= keys.length) return;
+          unawaited(_setPreference(preference, keys[index]));
+        },
       ),
-      trailing: const Icon(Icons.expand_more),
-      onTap: () => _chooseMode(
-        title: title.tl,
-        value: value,
-        onSelected: (value) => _setPreference(preference, value),
+    );
+  }
+
+  String _pageUnitLabel(int value) {
+    final locale = Localizations.localeOf(context);
+    if (locale.languageCode != 'zh') return '$value';
+    final traditional =
+        locale.scriptCode == 'Hant' || locale.countryCode == 'TW';
+    return traditional ? '$value頁' : '$value页';
+  }
+
+  Widget _pagesPerScreen({String? cid, String? source}) {
+    final scoped = cid != null && source != null;
+    final scope = scoped ? ReaderPreferenceScope.comic : widget.scope;
+    final store = ReaderPreferenceStore(
+      settings: appdata.settings,
+      scope: scope,
+      comicId: cid,
+      sourceKey: source,
+    );
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    final preference = landscape
+        ? ReaderPreferences.readerScreenPicNumberForLandscape
+        : ReaderPreferences.readerScreenPicNumberForPortrait;
+    final current = store.read(preference).toInt();
+    final modified =
+        scoped &&
+        current !=
+            ReaderPreferenceStore(
+              settings: appdata.settings,
+              scope: ReaderPreferenceScope.global,
+            ).read(preference).toInt();
+    return _ModifiedRow(
+      modified: modified,
+      child: ListTile(
+        title: Text('Pages per screen'.tl),
+        trailing: Select(
+          current: _pageUnitLabel(current),
+          values: [_pageUnitLabel(1), _pageUnitLabel(2)],
+          minWidth: 64,
+          onTap: (index) {
+            if (index < 0 || index > 1) return;
+            if (scoped &&
+                (cid != widget.comicId || source != widget.sourceKey)) {
+              return;
+            }
+            final value = index + 1;
+            final owner = ReaderPresetStore(
+              scope: scope,
+              comicId: cid,
+              sourceKey: source,
+            ).capture();
+            final selected = appdata.settings.readerPresetId(
+              owner.selectionKey,
+            );
+            unawaited(
+              saveSetting(
+                (cid, source, 'pagesPerScreen'),
+                () => appdata.updateSettings((draft) {
+                  final target = ReaderPreferenceStore(
+                    settings: draft,
+                    scope: owner.scope,
+                    comicId: cid,
+                    sourceKey: source,
+                  );
+                  target.write(
+                    ReaderPreferences.readerScreenPicNumberForPortrait,
+                    value,
+                  );
+                  target.write(
+                    ReaderPreferences.readerScreenPicNumberForLandscape,
+                    value,
+                  );
+                }),
+                onSaved: () => widget.onChanged?.call(),
+                requireCurrentForFeedback: true,
+                isCurrent: () =>
+                    owner.isCurrent &&
+                    appdata.settings.readerPresetId(owner.selectionKey) ==
+                        selected &&
+                    (!scoped ||
+                        (cid == widget.comicId && source == widget.sourceKey)),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  ReaderPreferenceScope _thumbnailScope(String? cid, String? source) =>
+      cid != null && source != null
+      ? ReaderPreferenceScope.comic
+      : widget.scope;
+
+  int _pagesPerUnit(String? cid, String? source) {
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+    final preference = landscape
+        ? ReaderPreferences.readerScreenPicNumberForLandscape
+        : ReaderPreferences.readerScreenPicNumberForPortrait;
+    return ReaderPreferenceStore(
+      settings: appdata.settings,
+      scope: _thumbnailScope(cid, source),
+      comicId: cid,
+      sourceKey: source,
+    ).read(preference).toInt();
+  }
+
+  Widget _skipFirstPage({String? cid, String? source}) {
+    final scoped = cid != null && source != null;
+    final scope = _thumbnailScope(cid, source);
+    final store = ReaderPreferenceStore(
+      settings: appdata.settings,
+      scope: scope,
+      comicId: cid,
+      sourceKey: source,
+    );
+    final current = store.read(ReaderPreferences.showSingleImageOnFirstPage);
+    return ListTile(
+      title: Text('Skip first page'.tl),
+      trailing: Select(
+        current: (current ? 'Yes' : 'No').tl,
+        values: ['No'.tl, 'Yes'.tl],
+        minWidth: 64,
+        onTap: (index) {
+          if (index < 0 || index > 1) return;
+          if (scoped && (cid != widget.comicId || source != widget.sourceKey)) {
+            return;
+          }
+          final value = index == 1;
+          final owner = ReaderPresetStore(
+            scope: scope,
+            comicId: cid,
+            sourceKey: source,
+          ).capture();
+          final selected = appdata.settings.readerPresetId(owner.selectionKey);
+          unawaited(
+            saveSetting(
+              (cid, source, 'skipFirstPage'),
+              () => appdata.updateSettings((draft) {
+                ReaderPreferenceStore(
+                  settings: draft,
+                  scope: owner.scope,
+                  comicId: cid,
+                  sourceKey: source,
+                ).write(ReaderPreferences.showSingleImageOnFirstPage, value);
+              }),
+              onSaved: () => widget.onChanged?.call(),
+              requireCurrentForFeedback: true,
+              isCurrent: () =>
+                  owner.isCurrent &&
+                  appdata.settings.readerPresetId(owner.selectionKey) ==
+                      selected &&
+                  (!scoped ||
+                      (cid == widget.comicId && source == widget.sourceKey)),
+            ),
+          );
+        },
       ),
     );
   }
@@ -147,9 +284,8 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
     final cid = widget.comicId;
     final source = widget.sourceKey;
     if (cid == null || source == null) {
-      return Column(
+      final body = Column(
         children: [
-          settingsSaveStatus,
           SwitchListTile(
             title: Text('Choose reading mode automatically'.tl),
             subtitle: Text(
@@ -174,8 +310,11 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
                 ? 'Used when there are too few images or their proportions are mixed.'
                 : null,
           ),
+          _pagesPerScreen(),
+          if (_pagesPerUnit(null, null) == 2) _skipFirstPage(),
         ],
       );
+      return withSettingsSaveFeedback(body);
     }
 
     final override = settings.comicReaderModeOverride(cid, source);
@@ -188,42 +327,71 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
       ComicLayout.longStrip => 'Long-strip comic'.tl,
       ComicLayout.unknown => 'Not identified'.tl,
     };
-    return Column(
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        settingsSaveStatus,
-        ListTile(
-          title: Text('Reading mode for this comic'.tl),
-          subtitle: Text(
-            [
-              override == null
-                  ? 'Follow default'.tl
-                  : readerModeLabels[override] ?? override,
+        _ModifiedRow(
+          modified:
+              override != null &&
+              override != _store.read(ReaderPreferences.readerMode),
+          child: ListTile(
+            title: Text('Reading mode for this comic'.tl),
+            subtitle: Text(
               'Currently using: @mode'.tlParams({
                 'mode': readerModeLabels[current] ?? current,
               }),
-            ].join('\n'),
-          ),
-          trailing: const Icon(Icons.expand_more),
-          onTap: () => _chooseMode(
-            title: 'Reading mode for this comic'.tl,
-            value: override ?? 'default',
-            allowDefault: true,
-            onSelected: (value) => saveSetting(
-              (cid, source, 'readerMode'),
-              () => appdata.updateSettings((draft) {
-                draft.setComicReaderModeOverride(
-                  cid,
-                  source,
-                  value == 'default' ? null : value,
+            ),
+            trailing: Select(
+              current: override == null
+                  ? 'Follow default'.tl
+                  : readerModeLabels[override] ?? override,
+              values: [
+                'Follow default'.tl,
+                for (final key in readerModeLabels.keys) readerModeLabels[key]!,
+              ],
+              minWidth: 96,
+              onTap: (index) {
+                final keys = ['default', ...readerModeLabels.keys];
+                if (index < 0 || index >= keys.length) return;
+                // The menu can outlive a target change; do not write the old
+                // comic's setting in that case.
+                if (cid != widget.comicId || source != widget.sourceKey) return;
+                final value = keys[index];
+                final owner = ReaderPresetStore(
+                  scope: ReaderPreferenceScope.comic,
+                  comicId: cid,
+                  sourceKey: source,
+                ).capture();
+                final selected = appdata.settings.readerPresetId(
+                  owner.selectionKey,
                 );
-              }),
-              onSaved: () => widget.onChanged?.call(),
-              isCurrent: () =>
-                  cid == widget.comicId && source == widget.sourceKey,
+                unawaited(
+                  saveSetting(
+                    (cid, source, 'readerMode'),
+                    () => appdata.updateSettings((draft) {
+                      draft.setComicReaderModeOverride(
+                        cid,
+                        source,
+                        value == 'default' ? null : value,
+                      );
+                    }),
+                    onSaved: () => widget.onChanged?.call(),
+                    requireCurrentForFeedback: true,
+                    isCurrent: () =>
+                        owner.isCurrent &&
+                        appdata.settings.readerPresetId(owner.selectionKey) ==
+                            selected &&
+                        cid == widget.comicId &&
+                        source == widget.sourceKey,
+                  ),
+                );
+              },
             ),
           ),
         ),
+        _pagesPerScreen(cid: cid, source: source),
+        if (_pagesPerUnit(cid, source) == 2)
+          _skipFirstPage(cid: cid, source: source),
         if (auto) ...[
           ListTile(
             leading: Icon(switch (layout) {
@@ -269,17 +437,32 @@ class _ReaderModeSettingsState extends SettingsSaveState<ReaderModeSettings> {
               ),
             ),
         ],
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          child: Text(
-            'This selection only affects this comic. Change default preferences in Settings → Reader.'
-                .tl,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+      ],
+    );
+    return withSettingsSaveFeedback(body);
+  }
+}
+
+class _ModifiedRow extends StatelessWidget {
+  const _ModifiedRow({required this.modified, required this.child});
+
+  final bool modified;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: modified
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
+            width: 3,
           ),
         ),
-      ],
+      ),
+      child: child,
     );
   }
 }

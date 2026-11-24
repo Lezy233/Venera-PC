@@ -73,7 +73,21 @@ abstract final class NetworkPreferences {
   ];
 }
 
+abstract final class WorkspacePreferences {
+  static const closeTarget = ChoicePreference(
+    'workspaceCloseTarget',
+    'recent',
+    ['recent', 'right', 'left'],
+  );
+  static const startup = ChoicePreference('workspaceStartup', 'restore', [
+    'restore',
+    'fresh',
+  ]);
+  static const all = <Preference<Object>>[closeTarget, startup];
+}
+
 abstract final class AppearancePreferences {
+  static const reduceMotion = BoolPreference('reduceMotion', false);
   static const themeMode = ChoicePreference('theme_mode', 'system', [
     'system',
     'light',
@@ -92,14 +106,24 @@ abstract final class AppearancePreferences {
     'yellow',
     'cyan',
   ]);
-  static const all = <Preference<Object>>[themeMode, color];
+  static const all = <Preference<Object>>[themeMode, color, reduceMotion];
 }
 
 abstract final class DiscoveryPreferences {
+  static const comicDetailMode = ChoicePreference(
+    'comicDetailMode',
+    'information',
+    ['information', 'reading'],
+  );
   static const comicDisplayMode = ChoicePreference(
     'comicDisplayMode',
     'detailed',
     ['detailed', 'brief'],
+  );
+  static const searchDisplayMode = ChoicePreference(
+    'searchDisplayMode',
+    'gallery',
+    ['gallery', 'list'],
   );
   static const comicTileScale = NumericPreference(
     'comicTileScale',
@@ -149,7 +173,9 @@ abstract final class DiscoveryPreferences {
     'defaultSearchTarget',
   );
   static const all = <Preference<Object?>>[
+    comicDetailMode,
     comicDisplayMode,
+    searchDisplayMode,
     comicTileScale,
     showFavoriteStatusOnTile,
     showHistoryStatusOnTile,
@@ -173,10 +199,15 @@ abstract final class KeywordPreferences {
 }
 
 abstract final class FavoritePreferences {
-  static const displayMode = ChoicePreference('favoritesDisplayMode', 'list', [
-    'list',
-    'gallery',
+  static const density = ChoicePreference('favoritesDensity', 'comfortable', [
+    'comfortable',
+    'compact',
   ]);
+  static const displayMode = ChoicePreference(
+    'favoritesDisplayMode',
+    'gallery',
+    ['list', 'gallery'],
+  );
   static const galleryColumns = AutoCountPreference(
     'favoritesGalleryColumns',
     min: 2,
@@ -210,6 +241,7 @@ abstract final class FavoritePreferences {
     'followUpdatesFolder',
   );
   static const all = <Preference<Object?>>[
+    density,
     displayMode,
     galleryColumns,
     localFavoritesFirst,
@@ -220,6 +252,74 @@ abstract final class FavoritePreferences {
     onClickFavorite,
     readLaterFolder,
     followUpdatesFolder,
+  ];
+}
+
+abstract final class LayoutPreferences {
+  static const navSidebarWidth = NumericPreference(
+    'navSidebarWidth',
+    224,
+    min: 160,
+    max: 320,
+    step: 1,
+  );
+  static const navSidebarCollapsed = BoolPreference(
+    'navSidebarCollapsed',
+    false,
+  );
+  static const favoritesSidebarWidth = NumericPreference(
+    'favoritesSidebarWidth',
+    256,
+    min: 160,
+    max: 420,
+    step: 1,
+  );
+  static const favoritesSidebarCollapsed = BoolPreference(
+    'favoritesSidebarCollapsed',
+    false,
+  );
+  static const favoritesFilterPanelWidth = NumericPreference(
+    'favoritesFilterPanelWidth',
+    320,
+    min: 260,
+    max: 460,
+    step: 1,
+  );
+  static const favoritesFilterPanelOpen = BoolPreference(
+    'favoritesFilterPanelOpen',
+    false,
+  );
+  static const readerThumbnailWidth = NumericPreference(
+    'readerThumbnailWidth',
+    240,
+    min: 120,
+    max: 480,
+    step: 1,
+  );
+  static const readerThumbnailHeight = NumericPreference(
+    'readerThumbnailHeight',
+    140,
+    min: 100,
+    max: 320,
+    step: 1,
+  );
+  static const favoritesFilterAuthorShare = NumericPreference(
+    'favoritesFilterAuthorShare',
+    0.5,
+    min: 0.2,
+    max: 0.8,
+    step: 0.01,
+  );
+  static const all = <Preference<Object>>[
+    navSidebarWidth,
+    navSidebarCollapsed,
+    favoritesSidebarWidth,
+    favoritesSidebarCollapsed,
+    favoritesFilterPanelWidth,
+    favoritesFilterPanelOpen,
+    favoritesFilterAuthorShare,
+    readerThumbnailWidth,
+    readerThumbnailHeight,
   ];
 }
 
@@ -253,11 +353,13 @@ async function processImage(image, cid, eid, page, sourceKey) {
 Map<String, Object?> get applicationPreferenceDefaults => {
   for (final preference in [
     ...AppPreferences.all,
+    ...WorkspacePreferences.all,
     ...NetworkPreferences.all,
     ...AppearancePreferences.all,
     ...DiscoveryPreferences.all,
     ...KeywordPreferences.all,
     ...FavoritePreferences.all,
+    ...LayoutPreferences.all,
     ...ImageProcessingPreferences.all,
   ])
     preference.key: preference.storageDefault,

@@ -12,6 +12,7 @@ BUILD_LINUX_DIR = ROOT / "build" / "linux"
 BUNDLE_DIR = BUILD_LINUX_DIR / "x64" / "release" / "bundle"
 APP_DIR = BUILD_LINUX_DIR / "app"
 ARCH_DIR = BUILD_LINUX_DIR / "arch"
+BINARY_NAME = "venera-pc"
 
 
 class ArchBuildError(RuntimeError):
@@ -108,7 +109,7 @@ Comment={description}
 Terminal=false
 Type=Application
 Categories={categories}
-Exec=/usr/bin/{package_name}_pkg/{package_name}
+Exec=/usr/bin/{package_name}_pkg/{BINARY_NAME}
 Keywords={keywords}
 Icon={package_name}
 """.strip()
@@ -135,14 +136,15 @@ depends=({depends_value})
 
 package() {{
     cd "$srcdir"
-    install -Dm755 app/{package_name} "$pkgdir/usr/bin/{package_name}_pkg/{package_name}"
+    install -Dm755 app/{BINARY_NAME} "$pkgdir/usr/bin/{package_name}_pkg/{BINARY_NAME}"
     install -d "$pkgdir/usr/bin/{package_name}_pkg/lib"
     cp -r app/lib/* "$pkgdir/usr/bin/{package_name}_pkg/lib/"
     install -d "$pkgdir/usr/bin/{package_name}_pkg/data"
     cp -r app/data/* "$pkgdir/usr/bin/{package_name}_pkg/data/"
     install -Dm644 app/icon.png "$pkgdir/usr/share/icons/hicolor/64x64/apps/{package_name}.png"
     install -Dm644 app/app.desktop "$pkgdir/usr/share/applications/$pkgname.desktop"
-    ln -s "/usr/bin/{package_name}_pkg/{package_name}" "$pkgdir/usr/bin/{package_name}"
+    ln -s "/usr/bin/{package_name}_pkg/{BINARY_NAME}" "$pkgdir/usr/bin/{BINARY_NAME}"
+    ln -s "/usr/bin/{package_name}_pkg/{BINARY_NAME}" "$pkgdir/usr/bin/{package_name}"
 }}
 """.strip()
 
@@ -175,7 +177,7 @@ def _is_arch_linux() -> bool:
 
 
 def _make_app_archive(package_name: str, icon_path: str, desktop_content: str) -> None:
-    executable = BUNDLE_DIR / package_name
+    executable = BUNDLE_DIR / BINARY_NAME
     if not executable.exists():
         available = ", ".join(path.name for path in sorted(BUNDLE_DIR.iterdir())) if BUNDLE_DIR.exists() else "none"
         raise ArchBuildError(
@@ -227,7 +229,7 @@ def main() -> None:
     depends = _required_list(config, "depends")
 
     desktop_content = _desktop_file(
-        display_name="VeneraNext",
+        display_name="Venera-PC",
         description=description,
         package_name=package_name,
         categories=categories,

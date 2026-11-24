@@ -1,6 +1,10 @@
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/foundation/shortcuts/shortcut_registry.dart';
+import 'keyboard_shortcuts.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show listEquals;
@@ -14,6 +18,7 @@ import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/features/local_comics/local_comics.dart';
 import 'package:venera_next/features/reader/gesture_host.dart';
+import 'package:venera_next/features/reader/thumbnails.dart';
 import 'package:venera_next/features/reader/gesture_request.dart';
 import 'package:venera_next/features/reader/auto_reading.dart';
 import 'package:venera_next/features/reader/images_host.dart';
@@ -132,7 +137,111 @@ class Reader extends StatefulWidget {
 }
 
 class ReaderState extends State<Reader>
-    with ReaderImagePerPageHandler, WidgetsBindingObserver {
+    with
+        ReaderImagePerPageHandler,
+        WidgetsBindingObserver,
+        WorkspaceViewState<Reader>
+    implements ShortcutTarget {
+  bool _workspaceActive = true;
+  bool _workspacePresentationActive = true;
+  WorkspacePageBinding? _workspacePage;
+  VoidCallback? _resumeWorkspaceImages;
+  final _workspaceEffectsHold = Object();
+  int? _workspaceInitialPage;
+  int _workspaceImagePage = 1;
+  @override
+  String get workspaceViewKey => 'reader';
+  @override
+  Map<String, dynamic> captureWorkspaceView() {
+    // Detach also captures during unmount, when MediaQuery is unavailable.
+    // Retain the last source-image position instead of reading layout then.
+    if (!_stateDisposed && _isInitialized && images?.isNotEmpty == true) {
+      _workspaceImagePage = (pageLayout.imageRange(page, images!.length).$1 + 1)
+          .clamp(1, images!.length);
+    }
+    return {
+      'chapter': chapter,
+      'chapterId': widget.chapters?.ids.elementAtOrNull(chapter - 1),
+      'page': _workspaceImagePage,
+    };
+  }
+
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    final id = saved['chapterId'] as String?;
+    final index = id == null
+        ? -1
+        : widget.chapters?.ids.toList().indexOf(id) ?? -1;
+    controller.restoreChapter(
+      index >= 0 ? index + 1 : saved['chapter'] as int? ?? chapter,
+    );
+    _workspaceInitialPage = saved['page'] as int?;
+    _workspaceImagePage = _workspaceInitialPage ?? 1;
+    if (_workspaceInitialPage case final value?) controller.restorePage(value);
+  }
+
+  void _bindWorkspaceActivity() {
+    bindWorkspaceView();
+    final binding = WorkspacePageScope.watch(context);
+    // ReaderWithLoading already obtained this metadata for reading. Reuse it
+    // for the retained tab; a title must never start another details request.
+    if (binding != null &&
+        widget.name.trim().isNotEmpty &&
+        binding.record.arguments['title'] != widget.name) {
+      binding.record.arguments['title'] = widget.name;
+      binding.changed();
+    }
+    final rebound = !identical(binding, _workspacePage);
+    if (rebound) {
+      _workspacePage?.unregisterFocus('reader-canvas', focusNode);
+      _workspacePage = binding;
+      binding?.registerFocus('reader-canvas', focusNode);
+    }
+    final active = binding?.active ?? true;
+    final presentationActive = binding?.presentationActive ?? true;
+    if (rebound || presentationActive != _workspacePresentationActive) {
+      _workspacePresentationActive = presentationActive;
+      final window = _windowController;
+      if (window != null) {
+        _observeWindow(window.setHeld(!presentationActive));
+      }
+    }
+    if (!rebound && active == _workspaceActive) return;
+    _workspaceActive = active;
+    // A prepared pop already holds and drains this session. Route retirement
+    // must not create another foreground revision after that final snapshot.
+    if (!active &&
+        _session.isHeld &&
+        ModalRoute.of(context)?.isActive == false) {
+      return;
+    }
+    _session.setForeground(_volumeForeground && active);
+    if (active) {
+      _resumeWorkspaceImages?.call();
+      _resumeWorkspaceImages = null;
+    } else {
+      _resumeWorkspaceImages ??= imageWork.holdForExit();
+      imageViewController?.cancelKeyboardInput();
+      _shortcuts.clear();
+    }
+    final effects = _platformEffects;
+    if (effects != null) {
+      _observeWindow(effects.handle.hold(_workspaceEffectsHold, !active));
+    }
+    _observeVolume(_updateVolume());
+    if (binding != null && active) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_stateDisposed && _workspaceActive) {
+          binding.restoreFocus();
+          if (!focusNode.hasFocus && !shortcutTextInputFocused()) {
+            focusNode.requestFocus();
+          }
+        }
+      });
+    }
+  }
+
   final imageWork = ImageWork();
   late final imageFavorites = HistoryScope.readImages(context);
   final _targetValidity = ValueNotifier(0);
@@ -783,6 +892,42 @@ class ReaderState extends State<Reader>
   bool toPrevChapter({bool toLastPage = false}) =>
       toChapter(chapter - 1, toLastPage: toLastPage);
 
+  ReaderThumbnailRequest? createThumbnails() {
+    final imgs = images;
+    if (imgs == null || imgs.isEmpty) return null;
+    if (_sessionFrozen || controller.isDisposed) return null;
+    final comic = cid;
+    final chapterId = eid;
+    final layout = pageLayout;
+    final count = layout.pageCount(imgs.length);
+    final pages = <ReaderThumbnailPage>[];
+    for (var page = 1; page <= count; page++) {
+      final (start, end) = layout.imageRange(page, imgs.length);
+      if (start >= end) continue;
+      pages.add(
+        ReaderThumbnailPage(page, [
+          for (var i = start; i < end; i++) imgs[i],
+        ], start + 1),
+      );
+    }
+    if (pages.isEmpty) return null;
+    return ReaderThumbnailRequest(
+      pages: pages,
+      currentPage: () => page,
+      isCurrent: () =>
+          mounted &&
+          !_sessionFrozen &&
+          !controller.isDisposed &&
+          cid == comic &&
+          eid == chapterId &&
+          identical(images, imgs),
+      select: toPage,
+      sourceKey: ComicSource.find(type.sourceKey)?.key,
+      comicId: comic,
+      chapterId: chapterId,
+    );
+  }
+
   ReaderChapterMenuRequest? createChapterMenu() {
     final chapters = widget.chapters;
     if (chapters == null || _sessionFrozen || controller.isDisposed) {
@@ -811,6 +956,7 @@ class ReaderState extends State<Reader>
     );
   }
 
+  @override
   void update() {
     if (!_stateDisposed) _targetValidity.value++;
     if (_sessionClosing != null || _sessionFrozen) return;
@@ -859,7 +1005,11 @@ class ReaderState extends State<Reader>
   @override
   String get cid => widget.cid;
 
+  @override
   String get eid => widget.chapters?.ids.elementAtOrNull(chapter - 1) ?? '0';
+
+  @override
+  bool get layoutDisposed => _stateDisposed;
 
   @override
   List<String>? get images => controller.content.images;
@@ -889,7 +1039,8 @@ class ReaderState extends State<Reader>
     initialChapter: widget.initialChapter ?? 1,
     initialPage: widget.initialPage,
     currentChapter: () => chapter,
-    displayPage: (imagePage) => pageLayout.pageForImage(imagePage),
+    displayPage: (imagePage) =>
+        pageLayout.pageForImage(imagePage, imageCount: images?.length),
     restorePage: controller.restorePage,
   );
 
@@ -1295,11 +1446,13 @@ class ReaderState extends State<Reader>
 
   bool get isLoading => controller.content.isLoading;
 
+  final _shortcuts = ReaderShortcutSession();
   late final focusNode = FocusNode()..addListener(_keyboardFocusChanged);
 
   void _keyboardFocusChanged() {
     if (!_stateDisposed && !focusNode.hasPrimaryFocus) {
       imageViewController?.cancelKeyboardInput();
+      _shortcuts.clear();
     }
   }
 
@@ -1448,11 +1601,12 @@ class ReaderState extends State<Reader>
         frame?.trackExitTask != _exitFrame?.trackExitTask) {
       unawaited(_closeSession());
     }
+    _bindWorkspaceActivity();
     _volumeRoute = ModalRoute.of(context);
     _volumeCurrent = _volumeRoute?.isCurrent ?? true;
     _observeVolume(_updateVolume());
     if (!_isInitialized) {
-      initImagesPerPage(widget.initialPage ?? 1);
+      initImagesPerPage(_workspaceInitialPage ?? widget.initialPage ?? 1);
       _isInitialized = true;
     } else {
       // For orientation changed
@@ -1511,6 +1665,7 @@ class ReaderState extends State<Reader>
   bool get _canReceiveVolume =>
       supportsVolumeKeys &&
       _volumeRequested &&
+      _workspaceActive &&
       _volumeForeground &&
       _volumeCurrent &&
       (_volumeRoute?.isCurrent ?? true) &&
@@ -1590,6 +1745,9 @@ class ReaderState extends State<Reader>
   }
 
   Future<void Function()> _prepareReaderExit() async {
+    final workspaceRoute = workspaceBinding == null
+        ? null
+        : ModalRoute.of(context);
     final effects = _platformEffects?.prepareForExit();
     void Function()? release;
     final failures =
@@ -1628,6 +1786,10 @@ class ReaderState extends State<Reader>
       throw ReaderWindowFailure(failures);
     }
     return () {
+      // Child guards release their hold before this State is disposed. Once
+      // its workspace route has left, freeze first so that release cannot
+      // restart duration/inputs between the final drain and parent teardown.
+      if (workspaceRoute?.isActive == false) unawaited(_closeSession());
       effects?.release();
       release?.call();
     };
@@ -1644,6 +1806,7 @@ class ReaderState extends State<Reader>
 
   void updateSystemUi(bool menuOpen) {
     if (_sessionFrozen) return;
+    if (!menuOpen && _workspaceActive) focusNode.requestFocus();
     _platformEffects?.setSystemBarsVisible(
       menuOpen || preferences.showSystemStatusBar,
     );
@@ -1767,10 +1930,49 @@ class ReaderState extends State<Reader>
       ? _closeReaderWindow()
       : _windowController?.setHeld(true) ?? Future.value();
 
+  bool immersive = false;
+  final scaffoldKey = GlobalKey<ReaderScaffoldState>();
+
+  void _escapeReader() {
+    if (_sessionFrozen ||
+        !_workspaceActive ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    if (immersive) {
+      fullscreen();
+    } else if (scaffoldKey.currentState?.isOpen == false) {
+      scaffoldKey.currentState?.openOrClose();
+    }
+  }
+
   void fullscreen() {
-    if (_sessionFrozen) return;
+    if (_sessionFrozen || _stateDisposed || !mounted) {
+      return;
+    }
+    immersive = !immersive;
+    updateShell();
+    // Debug macOS runs can lose the VM connection while AppKit changes the
+    // native fullscreen window during a live Flutter session. Keep the
+    // reader's immersive chrome behavior in debug; defer native fullscreen
+    // verification to a release/profile build.
+    if (kDebugMode) {
+      return;
+    }
     final window = _windowController;
-    if (window != null) _observeWindow(window.toggle());
+    if (window != null) {
+      // Defer the native window transition until after the shell has rebuilt.
+      // Entering immersive changes the workspace chrome and the native frame
+      // in the same gesture; doing both synchronously can tear down the
+      // active reader surface on macOS.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            !_stateDisposed &&
+            identical(_windowController, window)) {
+          _observeWindow(window.toggle());
+        }
+      });
+    }
   }
 
   void disposeReaderWindow() => _observeWindow(_closeReaderWindow());
@@ -1815,6 +2017,9 @@ class ReaderState extends State<Reader>
     disposeReaderWindow();
     _targetValidity.dispose();
     _shellChanges.dispose();
+    _workspacePage?.unregisterFocus('reader-canvas', focusNode);
+    _resumeWorkspaceImages?.call();
+    _resumeWorkspaceImages = null;
     super.dispose();
   }
 
@@ -1829,7 +2034,9 @@ class ReaderState extends State<Reader>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _volumeForeground = state == AppLifecycleState.resumed;
-    _session.setForeground(state == AppLifecycleState.resumed);
+    _session.setForeground(
+      _workspaceActive && state == AppLifecycleState.resumed,
+    );
     _observeVolume(_updateVolume());
   }
 
@@ -1858,18 +2065,25 @@ class ReaderState extends State<Reader>
         excluding: _sessionFrozen,
         child: AbsorbPointer(
           absorbing: _sessionFrozen,
-          child: KeyboardListener(
-            focusNode: focusNode,
-            autofocus: true,
-            onKeyEvent: onKeyEvent,
-            child: Overlay.wrap(
-              child: ReaderShellHost(
-                reader: this,
-                child: ReaderGestureHost(
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): _escapeReader,
+            },
+            child: Focus(
+              focusNode: focusNode,
+              autofocus: true,
+              onKeyEvent: (_, event) => _dispatchShortcut(event),
+              child: Overlay.wrap(
+                child: ReaderShellHost(
                   reader: this,
-                  child: ReaderImagesHost(
+                  child: ReaderGestureHost(
                     reader: this,
-                    key: Key(mode.isWaterfall ? mode.key : chapter.toString()),
+                    child: ReaderImagesHost(
+                      reader: this,
+                      key: Key(
+                        mode.isWaterfall ? mode.key : chapter.toString(),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1880,19 +2094,83 @@ class ReaderState extends State<Reader>
     );
   }
 
-  void onKeyEvent(KeyEvent event) {
-    if (_sessionFrozen) return;
-    if (event.logicalKey == LogicalKeyboardKey.f12 && event is KeyUpEvent) {
+  void onKeyEvent(KeyEvent event) => _dispatchShortcut(event);
+
+  KeyEventResult _dispatchShortcut(KeyEvent event) {
+    if (_sessionFrozen || !_workspaceActive) return KeyEventResult.ignored;
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        !shortcutTextInputFocused() &&
+        ModalRoute.of(context)?.isCurrent == true &&
+        immersive) {
       fullscreen();
+      return KeyEventResult.handled;
     }
-    if (!focusNode.hasPrimaryFocus) return;
-    imageViewController?.handleKeyEvent(event);
+    final handled = _shortcuts.dispatch(
+      event,
+      overrides: appdata.settings['shortcutOverrides'],
+      macOS: App.isMacOS,
+      primaryFocus: focusNode.hasPrimaryFocus,
+      textInput: shortcutTextInputFocused(),
+      target: this,
+    );
+    if (handled) return KeyEventResult.handled;
+    // Preserve modifier state (Ctrl+wheel) and the legacy cancellation of
+    // gallery repeats on unrelated down/up events. Mask the trigger so cleared
+    // or remapped direction keys can never reactivate their old binding.
+    if (focusNode.hasPrimaryFocus && !shortcutTextInputFocused()) {
+      imageViewController?.handleKeyEvent(
+        ShortcutCodec.isModifier(event.logicalKey)
+            ? event
+            : shortcutDirectionEvent(event, LogicalKeyboardKey.unidentified),
+      );
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  void invokeShortcut(ShortcutCommand command, KeyEvent event) {
+    final direction = switch (command) {
+      ShortcutCommand.moveLeft => LogicalKeyboardKey.arrowLeft,
+      ShortcutCommand.moveRight => LogicalKeyboardKey.arrowRight,
+      ShortcutCommand.moveUp => LogicalKeyboardKey.arrowUp,
+      ShortcutCommand.moveDown => LogicalKeyboardKey.arrowDown,
+      _ => null,
+    };
+    if (direction != null) {
+      imageViewController?.handleKeyEvent(
+        shortcutDirectionEvent(event, direction),
+      );
+      return;
+    }
+    if (focusNode.hasPrimaryFocus) {
+      imageViewController?.handleKeyEvent(
+        shortcutDirectionEvent(event, LogicalKeyboardKey.unidentified),
+      );
+    }
+    if (command == ShortcutCommand.toggleFullscreen) {
+      if (event is KeyUpEvent) fullscreen();
+    } else if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      if (command == ShortcutCommand.nextPage ||
+          command == ShortcutCommand.prevPage) {
+        final forward = command == ShortcutCommand.nextPage;
+        final viewport = imageViewController;
+        if (viewport case ReaderKeyboardPagingViewport paging) {
+          paging.scrollKeyboardPage(forward);
+        } else if (forward) {
+          toNextPage();
+        } else {
+          toPrevPage();
+        }
+      }
+    }
   }
 
   int get maxChapter => widget.chapters?.length ?? 1;
 
   void onPageChanged() {
     updateHistory();
+    workspaceBinding?.changed();
     if (!_stateDisposed) _targetValidity.value++;
   }
 
@@ -1951,6 +2229,12 @@ abstract mixin class ReaderImagePerPageHandler {
 
   String get cid;
 
+  String get eid;
+
+  bool get layoutDisposed;
+
+  void update();
+
   ComicType get type;
 
   /// Images used to bound page remapping
@@ -1959,13 +2243,31 @@ abstract mixin class ReaderImagePerPageHandler {
   void initImagesPerPage(int initialPage) {
     _lastImagesPerPage = imagesPerPage;
     _lastOrientation = isPortrait;
-    if (imagesPerPage != 1) page = pageLayout.pageForImage(initialPage);
+    if (imagesPerPage != 1) {
+      page = pageLayout.pageForImage(initialPage, imageCount: images?.length);
+    }
   }
+
+  final Map<String, Set<int>> _spreadImages = {};
 
   ReaderPageLayout get pageLayout => ReaderPageLayout(
     imagesPerPage: imagesPerPage,
     singleImageOnFirstPage: showSingleImageOnFirstPage(),
+    spreadImages: _spreadImages[eid] ?? const {},
   );
+
+  /// Records an image that already contains two facing pages. In double-page
+  /// mode such an image gets a full display page of its own.
+  void reportImageSize(int imageNumber, Size size) {
+    if (imagesPerPage != 2) return;
+    if (size.width <= 0 || size.height <= 0) return;
+    if (size.width / size.height <= 1.15) return;
+    final spreads = _spreadImages.putIfAbsent(eid, () => <int>{});
+    if (!spreads.add(imageNumber)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!layoutDisposed) update();
+    });
+  }
 
   bool showSingleImageOnFirstPage() => appdata.settings
       .readerSettings(cid, type.sourceKey)

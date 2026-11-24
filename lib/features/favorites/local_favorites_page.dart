@@ -1,11 +1,15 @@
+import 'creator_platform_names_view.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/components/file_save_task.dart';
 import 'favorite_models.dart';
-import 'dart:convert';
+import 'favorite_order.dart';
+import 'author_shelf.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show listEquals;
@@ -18,11 +22,15 @@ import 'package:venera_next/components/message.dart';
 import 'package:venera_next/components/scroll.dart';
 import 'package:venera_next/components/select.dart';
 import 'package:venera_next/components/settings_save_state.dart';
+import 'package:venera_next/components/sidebar_resize_handle.dart';
 import 'package:venera_next/components/window_selection_task.dart';
 import 'package:venera_next/features/comic_details/comic_details.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
-import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/features/favorites/author_management_dialog.dart';
 import 'package:venera_next/features/favorites/favorite_actions.dart';
+import 'package:venera_next/features/favorites/favorite_filters.dart';
 import 'package:venera_next/features/favorites/favorites_display.dart';
 import 'package:venera_next/features/favorites/favorites_constants.dart';
 import 'package:venera_next/features/favorites/favorites_manager.dart';
@@ -31,6 +39,8 @@ import 'package:venera_next/features/favorites/folder_rename_dialog.dart';
 import 'package:venera_next/features/favorites/favorite_confirmation_dialog.dart';
 import 'package:venera_next/features/favorites/favorite_transfer_dialog.dart';
 import 'package:venera_next/features/favorites/favorite_metadata_dialog.dart';
+import 'package:venera_next/features/favorites/favorite_selection.dart';
+import 'package:venera_next/features/favorites/favorite_series.dart';
 import 'package:venera_next/features/local_comics/local_comics.dart';
 import 'package:venera_next/features/reader/reader.dart';
 import 'package:venera_next/foundation/app.dart';
@@ -42,7 +52,8 @@ import 'package:venera_next/foundation/log.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/comic_type.dart';
-import 'package:venera_next/foundation/consts.dart';
+import 'package:venera_next/design_system/breakpoints.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/opencc.dart';
 import 'package:venera_next/foundation/translations.dart';
@@ -79,7 +90,85 @@ class LocalFavoritesPage extends StatefulWidget {
   State<LocalFavoritesPage> createState() => _LocalFavoritesPageState();
 }
 
-class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
+class _LocalFavoritesPageState extends State<LocalFavoritesPage>
+    with WorkspaceViewState<LocalFavoritesPage> {
+  @override
+  String get workspaceViewKey => 'local-favorites';
+  void _workspaceScrollChanged() => workspaceBinding?.changed();
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'keyword': keyword,
+    'search': searchMode,
+    'readFilter': readFilterSelect,
+    'authors': authorFilters.toList(),
+    'tags': tagFilters.toList(),
+    'sort': sortMode,
+    'selection': [
+      for (final item in selectedComics.keys.whereType<FavoriteItem>())
+        {'id': item.id, 'sourceKey': item.sourceKey, 'type': item.type.value},
+    ],
+    'multiSelect': multiSelectMode,
+    'lastSelectedIndex': lastSelectedIndex,
+    'scroll': scrollController.hasClients
+        ? scrollController.offset
+        : scrollController.initialScrollOffset,
+    'filterPanelOpen': _filterPanelOpen,
+    'authorSection': _authorSectionExpanded,
+    'tagSection': _tagSectionExpanded,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    if (saved['keyword'] is String) keyword = saved['keyword'] as String;
+    searchMode = saved['search'] == true;
+    searchHasUpper = keyword.contains(RegExp(r'[A-Z]'));
+    if (saved['readFilter'] is String &&
+        readFilterList.contains(saved['readFilter'])) {
+      readFilterSelect = saved['readFilter'] as String;
+    }
+    if (saved['authors'] is List) {
+      authorFilters = (saved['authors'] as List).whereType<String>().toSet();
+    }
+    if (saved['tags'] is List) {
+      tagFilters = (saved['tags'] as List).whereType<String>().toSet();
+    }
+    if (saved['sort'] is String && _sortModes.contains(saved['sort'])) {
+      sortMode = saved['sort'] as String;
+    }
+    final selected = saved['selection'];
+    if (selected is List) {
+      final identities = {
+        for (final item in selected.whereType<Map>())
+          (item['id'], item['type']),
+      };
+      selectedComics = {
+        for (final item in manager.getAllComics())
+          if (identities.contains((item.id, item.type.value))) item: true,
+      };
+    }
+    multiSelectMode = saved['multiSelect'] == true && selectedComics.isNotEmpty;
+    lastSelectedIndex = saved['lastSelectedIndex'] is int
+        ? saved['lastSelectedIndex'] as int
+        : null;
+    final offset = saved['scroll'];
+    if (offset is num && offset.isFinite && offset >= 0) {
+      scrollController.dispose();
+      scrollController = ScrollController(
+        initialScrollOffset: offset.toDouble(),
+      );
+      scrollController.addListener(_workspaceScrollChanged);
+    }
+    if (saved['filterPanelOpen'] is bool) {
+      _filterPanelOpen = saved['filterPanelOpen'] as bool;
+    }
+    if (saved['authorSection'] is bool) {
+      _authorSectionExpanded = saved['authorSection'] as bool;
+    }
+    if (saved['tagSection'] is bool) {
+      _tagSectionExpanded = saved['tagSection'] as bool;
+    }
+  }
+
   late List<FavoriteItem> comics;
 
   String? networkSource;
@@ -94,6 +183,10 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
 
   bool multiSelectMode = false;
 
+  DesktopChromeController? _chrome;
+  late final VoidCallback _toggleRightCallback = _toggleFilterPanel;
+  late final ValueChanged<String> _searchQueryCallback = _applySearchQuery;
+
   int? lastSelectedIndex;
 
   bool get isAllFolder => widget.folder == localAllFolderLabel;
@@ -107,6 +200,24 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
   late final String _observedDataPath;
   WindowSelectionTask? _queryOwner;
   final _metadataTasks = <WindowSelectionTask>{};
+
+  int _creatorRevision = 0;
+
+  Widget _platformNames(Set<String> authors) => CreatorPlatformNamesView(
+    creators: Set.of(authors),
+    revision: _creatorRevision,
+    isCurrent: () => _canReadObservedFolder,
+  );
+
+  Map<String, String> get _authorAliases {
+    final stored = appdata.implicitData['local_favorites_author_aliases'];
+    if (stored is! Map) return const {};
+    return {
+      for (final entry in stored.entries)
+        if (entry.key is String && entry.value is String)
+          entry.key as String: entry.value as String,
+    };
+  }
 
   bool get _canReadObservedFolder =>
       mounted &&
@@ -123,7 +234,54 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
 
   late String readFilterSelect;
 
+  late Set<String> authorFilters;
+
+  late Set<String> tagFilters;
+
+  late String sortMode;
+
+  late double _filterPanelWidth;
+
+  late bool _filterPanelOpen;
+
+  late double _filterAuthorShare;
+
+  late bool _authorSectionExpanded;
+
+  late bool _tagSectionExpanded;
+
+  bool _resizingFilterPanel = false;
+
+  static const _kFilterPanelBreakpoint = 900.0;
+  static const _kFilterPanelMinWidth = 260.0;
+  static const _kFilterPanelMaxWidth = 460.0;
+
+  static Set<String> _readFilterValues(Object? value) =>
+      value is List ? value.whereType<String>().toSet() : <String>{};
+
+  String _storedSortMode() {
+    final scoped = manager.orderScopeMode(_orderScope);
+    if (isAllFolder && scoped == 'authorManual') return 'manual';
+    if (scoped != null && favoriteSortModes.contains(scoped)) return scoped;
+    final modes = appdata.implicitData['local_favorites_sort_modes'];
+    final stored = modes is Map ? modes[widget.folder] : null;
+    return stored is String &&
+            stored != 'authorManual' &&
+            favoriteSortModes.contains(stored)
+        ? stored
+        : favoriteSortModes.first;
+  }
+
   var searchResults = <FavoriteItem>[];
+
+  FavoriteOrderScope get _orderScope => isAllFolder
+      ? const FavoriteOrderScope.all()
+      : FavoriteOrderScope.folder(widget.folder);
+
+  List<String> get _sortModes => [
+    for (final mode in favoriteSortModes)
+      if (!isAllFolder || mode != 'authorManual') mode,
+  ];
 
   void updateSearchResult() {
     setState(() {
@@ -201,6 +359,16 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
 
   List<FavoriteItem> filterComics(List<FavoriteItem> curComics) {
     return curComics.where((comic) {
+      if (authorFilters.isNotEmpty &&
+          !favoriteAuthorValues(
+            comic,
+            aliases: _authorAliases,
+          ).any(authorFilters.contains)) {
+        return false;
+      }
+      if (tagFilters.isNotEmpty && !_matchesTagFilters(comic)) {
+        return false;
+      }
       var history = HistoryScope.read(
         context,
       ).find(comic.id, ComicType(comic.sourceKey.hashCode));
@@ -211,6 +379,457 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
       }
       return true;
     }).toList();
+  }
+
+  bool _matchesTagFilters(FavoriteItem comic) {
+    for (final tag in comic.tags) {
+      if (tagFilters.contains(favoriteTagValue(tag)) ||
+          tagFilters.contains(favoriteTagLabel(tag))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  List<String> _collectFilterValues(Iterable<String> values) {
+    final result = values.toSet().toList();
+    result.sort();
+    return result;
+  }
+
+  /// Keeps already selected values visible even when they are no longer in the
+  /// aggregated options (for example a tag hidden by the new tag rules).
+  List<String> _withSelected(List<String> available, Set<String> selected) =>
+      _collectFilterValues([...available, ...selected]);
+
+  void _applyAuthorAliases(Map<String, String> aliases) {
+    final cleaned = <String, String>{
+      for (final entry in aliases.entries)
+        if (entry.value.isNotEmpty && entry.key != entry.value)
+          entry.key: entry.value,
+    };
+    final before = appdata.implicitData['local_favorites_author_aliases'];
+    unawaited(
+      appdata
+          .updateImplicit((draft) {
+            if (!_canReadObservedFolder) throw const SelectionCancelled();
+            draft['local_favorites_author_aliases'] = cleaned;
+          })
+          .then<void>(
+            (_) {
+              if (!_canReadObservedFolder) return;
+              final mapped = authorFilters
+                  .map((value) => cleaned[value] ?? value)
+                  .toSet();
+              final changed =
+                  mapped.length != authorFilters.length ||
+                  !mapped.containsAll(authorFilters);
+              setState(() {
+                authorFilters = mapped;
+                _creatorRevision++;
+              });
+              if (changed) _persistFilters();
+            },
+            onError: (Object error, StackTrace stack) {
+              if (_canReadObservedFolder &&
+                  jsonEncode(
+                        appdata.implicitData['local_favorites_author_aliases'],
+                      ) ==
+                      jsonEncode(cleaned)) {
+                if (before == null) {
+                  appdata.implicitData.remove('local_favorites_author_aliases');
+                } else {
+                  appdata.implicitData['local_favorites_author_aliases'] =
+                      before;
+                }
+                if (mounted) {
+                  context.showMessage(
+                    message: 'Could not save platform names'.tl,
+                  );
+                }
+              }
+              Log.error('Favorite author aliases', error, stack);
+            },
+          ),
+    );
+  }
+
+  void _persistFilters() {
+    final readFilter = readFilterSelect;
+    final authors = authorFilters.toList();
+    final tags = tagFilters.toList();
+    unawaited(
+      appdata
+          .updateImplicit((draft) {
+            draft['local_favorites_read_filter'] = readFilter;
+            draft['local_favorites_author_filter'] = authors;
+            draft['local_favorites_tag_filter'] = tags;
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Favorites filter', error, stack);
+            },
+          ),
+    );
+  }
+
+  Future<void> _persistSortMode(String folder, String mode) =>
+      appdata.updateImplicit((draft) {
+        final stored = draft['local_favorites_sort_modes'];
+        draft['local_favorites_sort_modes'] = <String, Object?>{
+          if (stored is Map)
+            for (final entry in stored.entries) '${entry.key}': entry.value,
+          folder: mode,
+        };
+      });
+
+  void _setReadFilter(String value) {
+    setState(() => readFilterSelect = value);
+    _persistFilters();
+    updateComics();
+  }
+
+  void _setSortMode(String value) {
+    if (!_canReadObservedFolder) return;
+    final scope = _orderScope;
+    final folder = widget.folder;
+    final token = manager.orderScopeToken(scope);
+    unawaited(
+      AppDataOperations.instance
+          .access(() async {
+            if (!_canReadObservedFolder || widget.folder != folder) return;
+            if (manager.orderScopeToken(scope) != token) {
+              throw const FormatException(
+                'Favorite order target changed. Refresh and try again.',
+              );
+            }
+            await manager.setOrderScopeMode(scope, value);
+            await _persistSortMode(folder, value);
+          })
+          .then(
+            (_) {
+              if (!_canReadObservedFolder || widget.folder != folder) return;
+              setState(() => sortMode = value);
+            },
+            onError: (Object error) {
+              if (mounted &&
+                  _canReadObservedFolder &&
+                  widget.folder == folder) {
+                setState(
+                  () => sortMode = manager.orderScopeMode(scope) ?? sortMode,
+                );
+                context.showMessage(
+                  message: 'Could not save favorite order. Try again.'.tl,
+                );
+              }
+            },
+          ),
+    );
+  }
+
+  void _toggleTagFilter(String value) {
+    setState(() {
+      if (!tagFilters.remove(value)) tagFilters.add(value);
+    });
+    _persistFilters();
+  }
+
+  void _setAuthorFilters(Set<String> value) {
+    setState(() => authorFilters = Set<String>.of(value));
+    _persistFilters();
+  }
+
+  void _setTagFilters(Set<String> value) {
+    setState(() => tagFilters = Set<String>.of(value));
+    _persistFilters();
+  }
+
+  void _setFilterAuthorShare(double value) {
+    setState(() => _filterAuthorShare = value);
+    unawaited(
+      appdata
+          .updateSettings((draft) {
+            GlobalPreferenceStore(
+              draft,
+            ).write(LayoutPreferences.favoritesFilterAuthorShare, value);
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Favorites filter section share', error, stack);
+            },
+          ),
+    );
+  }
+
+  void _setAuthorSectionExpanded(bool value) {
+    setState(() => _authorSectionExpanded = value);
+    _persistSectionExpansion();
+  }
+
+  void _setTagSectionExpanded(bool value) {
+    setState(() => _tagSectionExpanded = value);
+    _persistSectionExpansion();
+  }
+
+  void _persistSectionExpansion() {
+    final author = _authorSectionExpanded;
+    final tag = _tagSectionExpanded;
+    unawaited(
+      appdata
+          .updateImplicit((draft) {
+            draft['local_favorites_author_expanded'] = author;
+            draft['local_favorites_tag_expanded'] = tag;
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Favorites filter sections', error, stack);
+            },
+          ),
+    );
+  }
+
+  void _toggleFilterPanel() {
+    setState(() => _filterPanelOpen = !_filterPanelOpen);
+    _persistFilterPanel();
+  }
+
+  void _resizeFilterPanel(double delta) {
+    setState(() {
+      _resizingFilterPanel = true;
+      if (!_filterPanelOpen) {
+        if (delta >= 0) return;
+        _filterPanelOpen = true;
+        _filterPanelWidth = _kFilterPanelMinWidth;
+        return;
+      }
+      final next = _filterPanelWidth - delta;
+      if (next < _kFilterPanelMinWidth) {
+        _filterPanelOpen = false;
+        _filterPanelWidth = _kFilterPanelMinWidth;
+        return;
+      }
+      _filterPanelWidth = next.clamp(
+        _kFilterPanelMinWidth,
+        _kFilterPanelMaxWidth,
+      );
+    });
+  }
+
+  void _finishFilterPanelResize() {
+    if (_resizingFilterPanel) {
+      setState(() => _resizingFilterPanel = false);
+    }
+    _persistFilterPanel();
+  }
+
+  void _persistFilterPanel() {
+    final width = _filterPanelWidth;
+    final open = _filterPanelOpen;
+    unawaited(
+      appdata
+          .updateSettings((draft) {
+            final store = GlobalPreferenceStore(draft);
+            store.write(LayoutPreferences.favoritesFilterPanelWidth, width);
+            store.write(LayoutPreferences.favoritesFilterPanelOpen, open);
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Favorites filter panel', error, stack);
+            },
+          ),
+    );
+  }
+
+  List<String> _availableAuthors() => _collectFilterValues([
+    for (final comic in comics)
+      ...favoriteAuthorValues(comic, aliases: _authorAliases),
+  ]);
+
+  List<String> _availableTags() {
+    final values = <String>[];
+    for (final comic in comics) {
+      for (final tag in comic.tags) {
+        final separator = tag.indexOf(':');
+        if (separator > 0 && isAuthorNamespace(tag.substring(0, separator))) {
+          continue;
+        }
+        final label = favoriteTagLabel(tag);
+        // Some sources use pure numeric tags; they are not useful filters.
+        if (RegExp(r'^\d+$').hasMatch(label)) continue;
+        values.add(label);
+      }
+    }
+    return _collectFilterValues(values);
+  }
+
+  Widget _buildFilterPanel() {
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _FilterSelectRow(
+                    title: "Sort",
+                    current: favoriteSortModeLabels[sortMode] ?? 'Manual',
+                    values: [
+                      for (final mode in _sortModes)
+                        favoriteSortModeLabels[mode] ?? 'Manual',
+                    ],
+                    enabled: true,
+                    onSelected: (index) => _setSortMode(_sortModes[index]),
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _FilterSelectRow(
+                    title: "Filter reading status",
+                    current: readFilterSelect,
+                    values: readFilterList,
+                    enabled: true,
+                    onSelected: (index) =>
+                        _setReadFilter(readFilterList[index]),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: _FilterSectionPanes(
+                    authorOptions: _withSelected(
+                      _availableAuthors(),
+                      authorFilters,
+                    ),
+                    tagOptions: _withSelected(_availableTags(), tagFilters),
+                    authors: authorFilters,
+                    tags: tagFilters,
+                    authorShare: _filterAuthorShare,
+                    authorExpanded: _authorSectionExpanded,
+                    tagExpanded: _tagSectionExpanded,
+                    onAuthorsChanged: _setAuthorFilters,
+                    onTagsChanged: _setTagFilters,
+                    onAuthorShareChanged: _setFilterAuthorShare,
+                    onAuthorExpandedChanged: _setAuthorSectionExpanded,
+                    onTagExpandedChanged: _setTagSectionExpanded,
+                    platformNames: _platformNames(authorFilters),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBodyWithFilterPanel(Widget body) {
+    final available = context.width > _kFilterPanelBreakpoint;
+    final open = available && _filterPanelOpen;
+    // The custom window title bar overlays the page; keep the panel and its
+    // handle below it so the top bar controls never cover the panel content.
+    final topInset = context.padding.top;
+    return Stack(
+      children: [
+        Positioned.fill(right: open ? _filterPanelWidth : 0, child: body),
+        if (open)
+          Positioned(
+            right: 0,
+            top: topInset,
+            bottom: 0,
+            width: _filterPanelWidth,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: context.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: _buildFilterPanel(),
+            ),
+          ),
+        if (available)
+          Positioned(
+            right: open ? _filterPanelWidth - SidebarResizeHandle.width / 2 : 0,
+            top: topInset,
+            bottom: 0,
+            width: SidebarResizeHandle.width,
+            child: SidebarResizeHandle(
+              mirror: true,
+              expanded: open,
+              onDrag: _resizeFilterPanel,
+              onDragEnd: _finishFilterPanelResize,
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showFilterSheet() {
+    final folder = widget.folder;
+    final request = ++_filterRequest;
+    bool isCurrent() =>
+        mounted && widget.folder == folder && request == _filterRequest;
+    final sheetAuthors = Set<String>.of(authorFilters);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, updateSheet) => SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: _FavoriteFilterEditor(
+                  allowShelves: !isAllFolder,
+                  readFilter: readFilterSelect,
+                  sortMode: sortMode,
+                  authors: sheetAuthors,
+                  platformNames: _platformNames(sheetAuthors),
+                  tags: tagFilters,
+                  authorOptions: _withSelected(
+                    _availableAuthors(),
+                    authorFilters,
+                  ),
+                  tagOptions: _withSelected(_availableTags(), tagFilters),
+                  editable: true,
+                  onReadFilter: (value) {
+                    if (!isCurrent()) return;
+                    _setReadFilter(value);
+                  },
+                  onSortMode: (value) {
+                    if (!isCurrent()) return;
+                    _setSortMode(value);
+                  },
+                  onAuthorToggle: (value) {
+                    if (!isCurrent()) return;
+                    updateSheet(() {
+                      if (!sheetAuthors.remove(value)) sheetAuthors.add(value);
+                    });
+                    _setAuthorFilters(sheetAuthors);
+                  },
+                  onTagToggle: (value) {
+                    if (!isCurrent()) return;
+                    _toggleTagFilter(value);
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   bool matchKeyword(String keyword, FavoriteItem comic) {
@@ -283,6 +902,25 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
     readFilterSelect =
         appdata.implicitData["local_favorites_read_filter"] ??
         readFilterList[0];
+    authorFilters = _readFilterValues(
+      appdata.implicitData['local_favorites_author_filter'],
+    );
+    tagFilters = _readFilterValues(
+      appdata.implicitData['local_favorites_tag_filter'],
+    );
+    sortMode = _storedSortMode();
+    final layout = GlobalPreferenceStore(appdata.settings);
+    _filterPanelWidth = layout
+        .read(LayoutPreferences.favoritesFilterPanelWidth)
+        .toDouble();
+    _filterPanelOpen = layout.read(LayoutPreferences.favoritesFilterPanelOpen);
+    _filterAuthorShare = layout
+        .read(LayoutPreferences.favoritesFilterAuthorShare)
+        .toDouble();
+    _authorSectionExpanded =
+        appdata.implicitData['local_favorites_author_expanded'] != false;
+    _tagSectionExpanded =
+        appdata.implicitData['local_favorites_tag_expanded'] == true;
     if (!isAllFolder) {
       var (a, b) = _observedManager.findLinked(widget.folder);
       networkSource = a;
@@ -293,11 +931,16 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
     }
     comics = [];
     _observedManager.addListener(updateComics);
+    scrollController.addListener(_workspaceScrollChanged);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    bindWorkspaceView();
+    workspaceBinding?.registerFocus('favorite-selection', _selectionFocusNode);
+    _chrome = DesktopChromeScope.maybeRead(context);
+    // build already schedules the complete chrome sync after this frame.
     if (_queryOwner != null) return;
     _queryOwner = WindowSelectionTask(context);
     updateComics();
@@ -320,6 +963,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
     if (oldWidget.folder != widget.folder) {
       _cancelMetadataUpdates();
       _filterRequest++;
+      sortMode = _storedSortMode();
       final linked = isAllFolder || !_canReadObservedFolder
           ? (null, null)
           : _observedManager.findLinked(widget.folder);
@@ -335,10 +979,17 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
 
   @override
   void dispose() {
+    _chrome?.setRightSidebar(available: false, expanded: false);
+    _chrome?.setFavoritesSearchQuery(null);
+    workspaceBinding?.unregisterFocus(
+      'favorite-selection',
+      _selectionFocusNode,
+    );
     _cancelMetadataUpdates();
     _retireUpdateFlyout();
     _observedManager.removeListener(updateComics);
     scrollController.dispose();
+    _selectionFocusNode.dispose();
     super.dispose();
   }
 
@@ -373,6 +1024,9 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
       }
     });
   }
+
+  bool _selectionIsCurrent() =>
+      _canReadObservedFolder && widget.folder.isNotEmpty && multiSelectMode;
 
   bool downloadComic(FavoriteItem c) {
     final library = LocalManager();
@@ -410,9 +1064,84 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
   }
 
   var scrollController = ScrollController();
+  late final FocusNode _selectionFocusNode = FocusNode(
+    debugLabel: 'local-favorites-selection',
+  );
+
+  void _syncChrome() {
+    final chrome = _chrome;
+    if (chrome == null) return;
+    final wide =
+        context.width > _kFilterPanelBreakpoint &&
+        !searchMode &&
+        !multiSelectMode;
+    chrome.setRightSidebar(
+      available: wide,
+      expanded: _filterPanelOpen,
+      toggle: _toggleRightCallback,
+    );
+    chrome.setFavoritesSearchQuery(_searchQueryCallback);
+  }
+
+  bool get _hasFilterSummary =>
+      readFilterSelect != readFilterList[0] ||
+      authorFilters.isNotEmpty ||
+      tagFilters.isNotEmpty;
+
+  Widget _buildFilterSummary() {
+    final chips = <Widget>[];
+    if (readFilterSelect != readFilterList[0]) {
+      chips.add(Chip(label: Text(readFilterSelect.tl)));
+    }
+    for (final author in authorFilters) {
+      chips.add(
+        Chip(
+          avatar: const Icon(Icons.person_outline, size: 16),
+          label: Text(author),
+        ),
+      );
+    }
+    for (final tag in tagFilters) {
+      chips.add(
+        Chip(
+          avatar: const Icon(Icons.label_outline, size: 16),
+          label: Text(tag),
+        ),
+      );
+    }
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.xs,
+          AppSpacing.lg,
+          AppSpacing.sm,
+        ),
+        child: Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: chips,
+        ),
+      ),
+    );
+  }
+
+  void _applySearchQuery(String query) {
+    if (!mounted) return;
+    setState(() {
+      keyword = query;
+      searchHasUpper = keyword.contains(RegExp(r'[A-Z]'));
+      searchMode = true;
+    });
+    updateSearchResult();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final workspaceActive = WorkspacePageScope.watch(context)?.active ?? true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncChrome();
+    });
     final target = widget;
     final selection = selectedComics.keys.cast<FavoriteItem>().toList();
     final selectedItems = selection.map((comic) => comic.detached()).toList();
@@ -431,7 +1160,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
       slivers: [
         if (!searchMode && !multiSelectMode)
           SliverAppbar(
-            style: context.width < changePoint
+            style: Breakpoints.isCompact(context)
                 ? AppbarStyle.shadow
                 : AppbarStyle.blur,
             leading: Tooltip(
@@ -513,54 +1242,79 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                   ),
                 ),
               const FavoriteDisplayButton(),
-              Tooltip(
-                message: "Filter".tl,
-                child: IconButton(
-                  icon: const Icon(Icons.sort_rounded),
-                  color: readFilterSelect != readFilterList[0]
-                      ? context.colorScheme.primaryContainer
-                      : null,
-                  onPressed: () {
-                    final folder = widget.folder;
-                    final request = ++_filterRequest;
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return _LocalFavoritesFilterDialog(
-                          initReadFilterSelect: readFilterSelect,
-                          updateConfig: (readFilter) {
-                            if (!mounted ||
-                                widget.folder != folder ||
-                                request != _filterRequest) {
-                              return;
-                            }
-                            setState(() {
-                              readFilterSelect = readFilter;
-                            });
-                            updateComics();
-                          },
-                        );
-                      },
-                    );
-                  },
+              // Narrow layouts no longer have the top-bar search box/panel
+              // toggle, so keep the original inline actions there.
+              if (context.width <= _kFilterPanelBreakpoint)
+                Tooltip(
+                  message: "Filter".tl,
+                  child: IconButton(
+                    icon: const Icon(Icons.sort_rounded),
+                    color:
+                        readFilterSelect != readFilterList[0] ||
+                            authorFilters.isNotEmpty ||
+                            tagFilters.isNotEmpty ||
+                            !isManualFavoriteSort(sortMode)
+                        ? context.colorScheme.primaryContainer
+                        : null,
+                    onPressed: () {
+                      if (App.isMobile) {
+                        _showFilterSheet();
+                        return;
+                      }
+                      final folder = widget.folder;
+                      final request = ++_filterRequest;
+                      final availableAuthors = _availableAuthors();
+                      final availableTags = _availableTags();
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return _LocalFavoritesFilterDialog(
+                            folder: folder,
+                            initReadFilterSelect: readFilterSelect,
+                            initSortMode: sortMode,
+                            initAuthors: authorFilters,
+                            initTags: tagFilters,
+                            availableAuthors: availableAuthors,
+                            availableTags: availableTags,
+                            platformNames: _platformNames,
+                            updateConfig:
+                                (readFilter, nextSortMode, authors, tags) {
+                                  if (!mounted ||
+                                      widget.folder != folder ||
+                                      request != _filterRequest) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    readFilterSelect = readFilter;
+                                    sortMode = nextSortMode;
+                                    authorFilters = authors;
+                                    tagFilters = tags;
+                                  });
+                                  updateComics();
+                                },
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              Tooltip(
-                message: "Search".tl,
-                child: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    setState(() {
-                      keyword = "";
-                      searchMode = true;
-                      updateSearchResult();
-                    });
-                  },
+              if (context.width <= _kFilterPanelBreakpoint)
+                Tooltip(
+                  message: "Search".tl,
+                  child: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      setState(() {
+                        keyword = "";
+                        searchMode = true;
+                        updateSearchResult();
+                      });
+                    },
+                  ),
                 ),
-              ),
-              if (!isAllFolder)
-                MenuButton(
-                  entries: [
+              MenuButton(
+                entries: [
+                  if (!isAllFolder) ...[
                     MenuEntry(
                       icon: Icons.edit_outlined,
                       text: "Rename".tl,
@@ -583,21 +1337,22 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                         );
                       },
                     ),
-                    MenuEntry(
-                      icon: Icons.reorder,
-                      text: "Reorder".tl,
-                      onClick: () {
-                        if (_queryOwner?.canPresent != true) return;
-                        reorderFavoriteComics(
-                          context,
-                          manager: _observedManager,
-                          folder: target.folder,
-                          isCurrent: () =>
-                              _canReadObservedFolder &&
-                              widget.folder == target.folder,
-                        );
-                      },
-                    ),
+                    if (isManualFavoriteSort(sortMode))
+                      MenuEntry(
+                        icon: Icons.reorder,
+                        text: "Reorder".tl,
+                        onClick: () {
+                          if (_queryOwner?.canPresent != true) return;
+                          reorderFavoriteComics(
+                            context,
+                            manager: _observedManager,
+                            folder: target.folder,
+                            isCurrent: () =>
+                                _canReadObservedFolder &&
+                                widget.folder == target.folder,
+                          );
+                        },
+                      ),
                     MenuEntry(
                       icon: Icons.upload_file,
                       text: "Export".tl,
@@ -627,6 +1382,22 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                           return;
                         }
                         _refreshMetadata(context, target.folder);
+                      },
+                    ),
+                    MenuEntry(
+                      icon: Icons.people_outline,
+                      text: "Manage authors".tl,
+                      onClick: () {
+                        if (_queryOwner?.canPresent != true) return;
+                        showFavoriteAuthorManagementDialog(
+                          context: context,
+                          comics: _observedManager.getAllComics(),
+                          aliases: _authorAliases,
+                          isCurrent: () =>
+                              _canReadObservedFolder &&
+                              widget.folder == target.folder,
+                          onChanged: _applyAuthorAliases,
+                        );
                       },
                     ),
                     MenuEntry(
@@ -661,12 +1432,18 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                       },
                     ),
                   ],
-                ),
+                  MenuEntry(
+                    icon: Icons.check_box_outlined,
+                    text: 'Select comics'.tl,
+                    onClick: _enterMultiSelect,
+                  ),
+                ],
+              ),
             ],
           )
         else if (multiSelectMode)
           SliverAppbar(
-            style: context.width < changePoint
+            style: Breakpoints.isCompact(context)
                 ? AppbarStyle.shadow
                 : AppbarStyle.blur,
             leading: Tooltip(
@@ -727,6 +1504,11 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                         );
                       },
                     ),
+                  MenuEntry(
+                    icon: Icons.collections_bookmark_outlined,
+                    text: 'Add to series'.tl,
+                    onClick: _addSelectionToSeries,
+                  ),
                   MenuEntry(
                     icon: Icons.select_all,
                     text: "Select All".tl,
@@ -817,7 +1599,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
           )
         else if (searchMode)
           SliverAppbar(
-            style: context.width < changePoint
+            style: Breakpoints.isCompact(context)
                 ? AppbarStyle.shadow
                 : AppbarStyle.blur,
             leading: Tooltip(
@@ -825,27 +1607,30 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
               child: IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () {
+                  _chrome?.searchController.clear();
                   setState(() {
-                    setState(() {
-                      searchMode = false;
-                    });
+                    searchMode = false;
                   });
                 },
               ),
             ),
-            title: TextField(
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: "Search".tl,
-                border: UnderlineInputBorder(),
-              ),
-              onChanged: (v) {
-                keyword = v;
-                searchHasUpper = keyword.contains(RegExp(r'[A-Z]'));
-                updateSearchResult();
-              },
-            ).paddingBottom(8).paddingRight(8),
+            title: context.width > _kFilterPanelBreakpoint
+                ? Text("Search".tl)
+                : TextField(
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: "Search".tl,
+                      border: UnderlineInputBorder(),
+                    ),
+                    onChanged: (v) {
+                      keyword = v;
+                      searchHasUpper = keyword.contains(RegExp(r'[A-Z]'));
+                      updateSearchResult();
+                    },
+                  ).paddingBottom(8).paddingRight(8),
           ),
+        if (!searchMode && !multiSelectMode && _hasFilterSummary)
+          _buildFilterSummary(),
         if (_loadError != null)
           SliverToBoxAdapter(
             child: Column(
@@ -863,12 +1648,66 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
             ),
           )
         else
-          SliverGridComics(
-            comics: searchMode ? searchResults : filterComics(comics),
+          FavoriteFolderComics(
+            folder: widget.folder,
+            shelves: !isAllFolder && sortMode == 'authorManual',
+            members:
+                !isAllFolder &&
+                    sortMode == 'authorManual' &&
+                    _canReadObservedFolder &&
+                    manager.existsFolder(widget.folder)
+                ? manager.getFolderComics(widget.folder)
+                : comics,
+            aliases: _authorAliases,
+            isCurrent: () => _canReadObservedFolder,
+            comics:
+                !isAllFolder &&
+                    sortMode == 'authorManual' &&
+                    _canReadObservedFolder &&
+                    manager.existsFolder(widget.folder)
+                ? filterComics(manager.getFolderComics(widget.folder))
+                      .where(
+                        (item) =>
+                            !searchMode ||
+                            matchKeyword(keyword, item) ||
+                            matchKeywordT(keyword, item) ||
+                            matchKeywordS(keyword, item),
+                      )
+                      .toList()
+                : sortFavoriteItems(
+                    filterComics(searchMode ? searchResults : comics),
+                    sortMode,
+                    aliases: _authorAliases,
+                  ),
             selections: selectedComics,
+            onSelectionChanged: (comic, selected) {
+              setState(() {
+                if (selected) {
+                  selectedComics[comic] = true;
+                  multiSelectMode = true;
+                } else {
+                  selectedComics.remove(comic);
+                  _checkExitSelectMode();
+                }
+                lastSelectedIndex = comics.indexOf(comic as FavoriteItem);
+              });
+            },
+            onClearSelection: _cancel,
             useFavoriteDisplaySettings: true,
             menuBuilder: (c) {
+              final authors = favoriteAuthorValues(c);
               return [
+                if (authors.isNotEmpty)
+                  MenuEntry(
+                    icon: Icons.person_search,
+                    text: "Filter by author".tl,
+                    onClick: () {
+                      setState(() {
+                        authorFilters = authors.toSet();
+                      });
+                      _persistFilters();
+                    },
+                  ),
                 if (!isAllFolder)
                   MenuEntry(
                     icon: Icons.delete,
@@ -957,17 +1796,7 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
               ];
             },
             onTap: (c, heroID) {
-              if (multiSelectMode) {
-                setState(() {
-                  if (selectedComics.containsKey(c as FavoriteItem)) {
-                    selectedComics.remove(c);
-                    _checkExitSelectMode();
-                  } else {
-                    selectedComics[c] = true;
-                  }
-                  lastSelectedIndex = comics.indexOf(c);
-                });
-              } else if (GlobalPreferenceStore(
+              if (GlobalPreferenceStore(
                     appdata.settings,
                   ).read(FavoritePreferences.onClickFavorite) ==
                   "viewDetail") {
@@ -985,40 +1814,6 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
                   () => ReaderWithLoading(id: c.id, sourceKey: c.sourceKey),
                 );
               }
-            },
-            onLongPressed: (c, heroID) {
-              setState(() {
-                if (!multiSelectMode) {
-                  multiSelectMode = true;
-                  if (!selectedComics.containsKey(c as FavoriteItem)) {
-                    selectedComics[c] = true;
-                  }
-                  lastSelectedIndex = comics.indexOf(c);
-                } else {
-                  if (lastSelectedIndex != null) {
-                    int start = lastSelectedIndex!;
-                    int end = comics.indexOf(c as FavoriteItem);
-                    if (start > end) {
-                      int temp = start;
-                      start = end;
-                      end = temp;
-                    }
-
-                    for (int i = start; i <= end; i++) {
-                      if (i == lastSelectedIndex) continue;
-
-                      var comic = comics[i];
-                      if (selectedComics.containsKey(comic)) {
-                        selectedComics.remove(comic);
-                      } else {
-                        selectedComics[comic] = true;
-                      }
-                    }
-                  }
-                  lastSelectedIndex = comics.indexOf(c as FavoriteItem);
-                }
-                _checkExitSelectMode();
-              });
             },
           ),
       ],
@@ -1047,13 +1842,166 @@ class _LocalFavoritesPageState extends State<LocalFavoritesPage> {
           });
         }
       },
-      child: body,
+      child: Focus(
+        focusNode: _selectionFocusNode,
+        canRequestFocus: multiSelectMode && workspaceActive,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (consumeFavoriteSelectionEscape(
+            event,
+            active: multiSelectMode,
+            onExit: _cancel,
+          )) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: _buildBodyWithFilterPanel(body),
+      ),
     );
   }
 
   void _cancelMetadataUpdates() {
     for (final task in _metadataTasks.toList()) {
       task.cancel();
+    }
+  }
+
+  void _enterMultiSelect() {
+    if (multiSelectMode) return;
+    setState(() => multiSelectMode = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && workspaceBinding?.active != false && multiSelectMode) {
+        _selectionFocusNode.requestFocus();
+      }
+    });
+  }
+
+  Future<String?> _askSeriesName() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Create series'.tl),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: 'New Name'.tl),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'.tl),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text('Save'.tl),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<String?> _chooseSeries() {
+    final series = _observedManager.series;
+    var selected = series.first.id;
+    return showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Add to series'.tl),
+          content: SizedBox(
+            width: 360,
+            child: RadioGroup<String>(
+              groupValue: selected,
+              onChanged: (value) {
+                if (value == null) return;
+                setDialogState(() => selected = value);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final item in series)
+                    RadioListTile<String>(
+                      value: item.id,
+                      title: Text(item.name),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'.tl),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, selected),
+              child: Text('Add'.tl),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addSelectionToSeries() async {
+    if (!_selectionIsCurrent() || selectedComics.isEmpty) return;
+    final available = _observedManager.series;
+    String? seriesId;
+    if (available.isEmpty) {
+      final create = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Add to series'.tl),
+          content: Text('No series available. Create a series first.'.tl),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'.tl),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('Create series'.tl),
+            ),
+          ],
+        ),
+      );
+      if (create != true || !mounted) return;
+      final name = await _askSeriesName();
+      if (name == null || name.trim().isEmpty || !mounted) return;
+      try {
+        final created = await _observedManager.createSeries(name);
+        seriesId = created.id;
+      } catch (error) {
+        if (mounted) {
+          context.showMessage(message: favoriteSeriesErrorMessage(error));
+        }
+        return;
+      }
+    } else {
+      seriesId = await _chooseSeries();
+    }
+    if (seriesId == null || !mounted || !_selectionIsCurrent()) return;
+    final validIdentities = _observedManager
+        .getAllComics()
+        .map((comic) => (comic.id, comic.type.value))
+        .toSet();
+    final selected = selectedComics.keys
+        .cast<FavoriteItem>()
+        .map((comic) => comic.detached())
+        .where(
+          (comic) => validIdentities.contains((comic.id, comic.type.value)),
+        )
+        .toList();
+    if (selected.isEmpty) return;
+    await _observedManager.addToSeries(seriesId, selected);
+    if (mounted) {
+      context.showMessage(
+        message: 'Added @c comics to series'.tlParams({'c': selected.length}),
+      );
     }
   }
 
@@ -1230,12 +2178,32 @@ class _FavoriteFolderSyncPanelState
 
 class _LocalFavoritesFilterDialog extends StatefulWidget {
   const _LocalFavoritesFilterDialog({
+    required this.folder,
     required this.initReadFilterSelect,
+    required this.initSortMode,
+    required this.initAuthors,
+    required this.initTags,
+    required this.availableAuthors,
+    required this.availableTags,
     required this.updateConfig,
+    required this.platformNames,
   });
 
+  final Widget Function(Set<String>) platformNames;
+  final String folder;
   final String initReadFilterSelect;
-  final ValueChanged<String> updateConfig;
+  final String initSortMode;
+  final Set<String> initAuthors;
+  final Set<String> initTags;
+  final List<String> availableAuthors;
+  final List<String> availableTags;
+  final void Function(
+    String readFilter,
+    String sortMode,
+    Set<String> authors,
+    Set<String> tags,
+  )
+  updateConfig;
 
   @override
   State<_LocalFavoritesFilterDialog> createState() =>
@@ -1244,12 +2212,53 @@ class _LocalFavoritesFilterDialog extends StatefulWidget {
 
 const readFilterList = ['All', 'UnCompleted', 'Completed'];
 
+const favoriteSortModeLabels = {
+  'manual': 'Manual',
+  'timeNewest': 'Added (newest)',
+  'timeOldest': 'Added (oldest)',
+  'authorAsc': 'Author (A-Z)',
+  'authorDesc': 'Author (Z-A)',
+  'authorManual': 'Author shelves',
+};
+
 class _LocalFavoritesFilterDialogState
     extends SettingsSaveState<_LocalFavoritesFilterDialog> {
+  late final FavoriteStoreBinding _store;
+  late final int _generation;
+  late final String _dataPath;
+  late final FavoriteOrderScope _scope;
+  late final String? _scopeToken;
+  @override
+  void initState() {
+    super.initState();
+    _store = FavoritesScope.capture(context);
+    _generation = _store.manager.connectionGeneration;
+    _dataPath = App.dataPath;
+    _scope = widget.folder == localAllFolderLabel
+        ? const FavoriteOrderScope.all()
+        : FavoriteOrderScope.folder(widget.folder);
+    _scopeToken = _store.manager.orderScopeToken(_scope);
+  }
+
   List<String> optionTypes = ['Filter'];
   late var readFilter = widget.initReadFilterSelect;
+  late var sortMode = widget.initSortMode;
+  late final authors = <String>{...widget.initAuthors};
+  late final tags = <String>{...widget.initTags};
+
+  bool get _editable =>
+      acceptsSettingsChanges && !savingSettings && !hasSettingsSaveError;
+
+  List<String> _options(List<String> available, Set<String> selected) {
+    final values = <String>{...available, ...selected}.toList();
+    values.sort();
+    return values;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authorOptions = _options(widget.availableAuthors, authors);
+    final tagOptions = _options(widget.availableTags, tags);
     Widget tabBar = Material(
       borderRadius: BorderRadius.circular(8),
       child: AppTabBar(
@@ -1267,30 +2276,24 @@ class _LocalFavoritesFilterDialogState
               tabBar,
               TabViewBody(
                 children: [
-                  Column(
-                    children: [
-                      ListTile(
-                        title: Text("Filter reading status".tl),
-                        trailing: Select(
-                          current: readFilter.tl,
-                          values: readFilterList.map((e) => e.tl).toList(),
-                          minWidth: 64,
-                          onTap: (index) {
-                            if (!mounted ||
-                                !acceptsSettingsChanges ||
-                                savingSettings ||
-                                hasSettingsSaveError ||
-                                index < 0 ||
-                                index >= readFilterList.length) {
-                              return;
-                            }
-                            setState(() {
-                              readFilter = readFilterList[index];
-                            });
-                          },
-                        ),
-                      ),
-                    ],
+                  _FavoriteFilterEditor(
+                    allowShelves: widget.folder != localAllFolderLabel,
+                    readFilter: readFilter,
+                    sortMode: sortMode,
+                    authors: authors,
+                    tags: tags,
+                    authorOptions: authorOptions,
+                    tagOptions: tagOptions,
+                    editable: _editable,
+                    platformNames: widget.platformNames(authors),
+                    onReadFilter: (value) => setState(() => readFilter = value),
+                    onSortMode: (value) => setState(() => sortMode = value),
+                    onAuthorToggle: (value) => setState(() {
+                      if (!authors.remove(value)) authors.add(value);
+                    }),
+                    onTagToggle: (value) => setState(() {
+                      if (!tags.remove(value)) tags.add(value);
+                    }),
                   ),
                 ],
               ),
@@ -1299,18 +2302,73 @@ class _LocalFavoritesFilterDialogState
         ),
         actions: [
           settingsSaveStatus,
+          TextButton(
+            onPressed: savingSettings || hasSettingsSaveError
+                ? null
+                : () {
+                    setState(() {
+                      readFilter = readFilterList[0];
+                      authors.clear();
+                      tags.clear();
+                    });
+                  },
+            child: Text("Clear".tl),
+          ),
           FilledButton(
             onPressed: savingSettings || hasSettingsSaveError
                 ? null
                 : () {
                     final value = readFilter;
+                    final selectedSortMode = sortMode;
+                    final selectedAuthors = Set<String>.of(authors);
+                    final selectedTags = Set<String>.of(tags);
                     saveSetting(
-                      'local_favorites_read_filter',
-                      () => appdata.updateImplicit((draft) {
-                        draft['local_favorites_read_filter'] = value;
+                      'local_favorites_filter',
+                      () => AppDataOperations.instance.access(() async {
+                        if (!_store.isCurrent ||
+                            _store.manager.connectionGeneration !=
+                                _generation ||
+                            App.dataPath != _dataPath) {
+                          throw const FormatException(
+                            'Favorite order target changed. Refresh and try again.',
+                          );
+                        }
+                        if (selectedSortMode != widget.initSortMode) {
+                          if (_store.manager.orderScopeToken(_scope) !=
+                              _scopeToken) {
+                            throw const FormatException(
+                              'Favorite order target changed. Refresh and try again.',
+                            );
+                          }
+                          await _store.manager.setOrderScopeMode(
+                            _scope,
+                            selectedSortMode,
+                          );
+                        }
+                        await appdata.updateImplicit((draft) {
+                          final storedModes =
+                              draft['local_favorites_sort_modes'];
+                          final sortModes = <String, Object?>{
+                            if (storedModes is Map)
+                              for (final entry in storedModes.entries)
+                                '${entry.key}': entry.value,
+                            widget.folder: selectedSortMode,
+                          };
+                          draft['local_favorites_read_filter'] = value;
+                          draft['local_favorites_author_filter'] =
+                              selectedAuthors.toList();
+                          draft['local_favorites_tag_filter'] = selectedTags
+                              .toList();
+                          draft['local_favorites_sort_modes'] = sortModes;
+                        });
                       }),
                       onSaved: () {
-                        widget.updateConfig(value);
+                        widget.updateConfig(
+                          value,
+                          selectedSortMode,
+                          selectedAuthors,
+                          selectedTags,
+                        );
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (mounted) leaveSettings();
                         });
@@ -1321,6 +2379,566 @@ class _LocalFavoritesFilterDialogState
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Shared presentation for the filter dialog, the right side panel and the
+/// mobile bottom sheet. Hosts own persistence; this widget only edits values.
+
+/// Shared presentation for the filter dialog, the right side panel and the
+/// mobile bottom sheet. Hosts own persistence; this widget only edits values.
+class _FavoriteFilterEditor extends StatelessWidget {
+  const _FavoriteFilterEditor({
+    required this.readFilter,
+    required this.sortMode,
+    required this.authors,
+    required this.tags,
+    required this.authorOptions,
+    required this.tagOptions,
+    required this.editable,
+    required this.onReadFilter,
+    required this.onSortMode,
+    required this.onAuthorToggle,
+    required this.onTagToggle,
+    this.platformNames,
+    this.allowShelves = false,
+  });
+
+  final Widget? platformNames;
+  final bool allowShelves;
+  final String readFilter;
+  final String sortMode;
+  final Set<String> authors;
+  final Set<String> tags;
+  final List<String> authorOptions;
+  final List<String> tagOptions;
+  final bool editable;
+  final ValueChanged<String> onReadFilter;
+  final ValueChanged<String> onSortMode;
+  final ValueChanged<String> onAuthorToggle;
+  final ValueChanged<String> onTagToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final sortModes = [
+      for (final mode in favoriteSortModes)
+        if (allowShelves || mode != 'authorManual') mode,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _FilterSelectRow(
+          title: "Sort",
+          current: favoriteSortModeLabels[sortMode] ?? 'Manual',
+          values: [
+            for (final mode in sortModes)
+              favoriteSortModeLabels[mode] ?? 'Manual',
+          ],
+          enabled: editable,
+          onSelected: (index) => onSortMode(sortModes[index]),
+        ),
+        _FilterSelectRow(
+          title: "Filter reading status",
+          current: readFilter,
+          values: readFilterList,
+          enabled: editable,
+          onSelected: (index) => onReadFilter(readFilterList[index]),
+        ),
+        _CollapsibleFilterChips(
+          title: "Author",
+          options: authorOptions,
+          selected: authors,
+          editable: editable,
+          onToggle: onAuthorToggle,
+        ),
+        ?platformNames,
+        _CollapsibleFilterChips(
+          title: "Tags",
+          options: tagOptions,
+          selected: tags,
+          editable: editable,
+          onToggle: onTagToggle,
+        ),
+      ],
+    );
+  }
+}
+
+/// One labelled dropdown row; sort and reading status share this shape.
+const _kFilterHeadingStyle = TextStyle(
+  fontSize: 13,
+  fontWeight: FontWeight.w600,
+);
+
+class _FilterSelectRow extends StatelessWidget {
+  const _FilterSelectRow({
+    required this.title,
+    required this.current,
+    required this.values,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  final String title;
+  final String current;
+  final List<String> values;
+  final bool enabled;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      minTileHeight: 48,
+      title: Text(title.tl, style: _kFilterHeadingStyle),
+      trailing: Select(
+        current: current.tl,
+        values: values.map((value) => value.tl).toList(),
+        minWidth: 96,
+        onTap: (index) {
+          if (!enabled || index < 0 || index >= values.length) return;
+          onSelected(index);
+        },
+      ),
+    );
+  }
+}
+
+/// A titled chip section that can be folded away independently.
+class _CollapsibleFilterChips extends StatefulWidget {
+  const _CollapsibleFilterChips({
+    required this.title,
+    required this.options,
+    required this.selected,
+    required this.editable,
+    required this.onToggle,
+  });
+
+  final String title;
+  final List<String> options;
+  final Set<String> selected;
+  final bool editable;
+  final ValueChanged<String> onToggle;
+
+  @override
+  State<_CollapsibleFilterChips> createState() =>
+      _CollapsibleFilterChipsState();
+}
+
+class _CollapsibleFilterChipsState extends State<_CollapsibleFilterChips> {
+  bool expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.options.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(widget.title.tl),
+          trailing: IconButton(
+            tooltip: (expanded ? 'Collapse' : 'Expand').tl,
+            icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
+            onPressed: () => setState(() => expanded = !expanded),
+          ),
+        ),
+        if (expanded)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240),
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final option in widget.options)
+                      FilterChip(
+                        label: Text(option),
+                        selected: widget.selected.contains(option),
+                        // Selected state is conveyed by colour, without a tick.
+                        showCheckmark: false,
+                        selectedColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                        visualDensity: VisualDensity.compact,
+                        onSelected: widget.editable
+                            ? (_) => widget.onToggle(option)
+                            : null,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Two VSCode Explorer style sections for the right panel: collapsible headers,
+/// a draggable splitter when both are open, per-section search and bulk select.
+class _FilterSectionPanes extends StatefulWidget {
+  const _FilterSectionPanes({
+    required this.authorOptions,
+    required this.tagOptions,
+    required this.authors,
+    required this.tags,
+    required this.authorShare,
+    required this.authorExpanded,
+    required this.tagExpanded,
+    required this.onAuthorsChanged,
+    required this.onTagsChanged,
+    required this.onAuthorShareChanged,
+    required this.onAuthorExpandedChanged,
+    required this.onTagExpandedChanged,
+    required this.platformNames,
+  });
+
+  final Widget platformNames;
+  final List<String> authorOptions;
+  final List<String> tagOptions;
+  final Set<String> authors;
+  final Set<String> tags;
+  final double authorShare;
+  final bool authorExpanded;
+  final bool tagExpanded;
+  final ValueChanged<Set<String>> onAuthorsChanged;
+  final ValueChanged<Set<String>> onTagsChanged;
+  final ValueChanged<double> onAuthorShareChanged;
+  final ValueChanged<bool> onAuthorExpandedChanged;
+  final ValueChanged<bool> onTagExpandedChanged;
+
+  @override
+  State<_FilterSectionPanes> createState() => _FilterSectionPanesState();
+}
+
+class _FilterSectionPanesState extends State<_FilterSectionPanes> {
+  static const _headerHeight = 48.0;
+  static const _splitterHeight = 8.0;
+  static const _minShare = 0.2;
+  static const _maxShare = 0.8;
+
+  late double share = widget.authorShare.clamp(_minShare, _maxShare);
+  final authorSearch = TextEditingController();
+  final tagSearch = TextEditingController();
+  String authorQuery = '';
+  String tagQuery = '';
+
+  @override
+  void didUpdateWidget(covariant _FilterSectionPanes oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.authorShare != widget.authorShare) {
+      share = widget.authorShare.clamp(_minShare, _maxShare);
+    }
+  }
+
+  @override
+  void dispose() {
+    authorSearch.dispose();
+    tagSearch.dispose();
+    super.dispose();
+  }
+
+  List<String> _filtered(List<String> options, String query) {
+    final keyword = query.trim().toLowerCase();
+    if (keyword.isEmpty) return options;
+    return options
+        .where((option) => option.toLowerCase().contains(keyword))
+        .toList();
+  }
+
+  void _resize(double delta, double available) {
+    if (available <= 0) return;
+    setState(() {
+      share = (share + delta / available).clamp(_minShare, _maxShare);
+    });
+  }
+
+  void _endResize() => widget.onAuthorShareChanged(share);
+
+  @override
+  Widget build(BuildContext context) {
+    final authorVisible = _filtered(widget.authorOptions, authorQuery);
+    final tagVisible = _filtered(widget.tagOptions, tagQuery);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final total = constraints.maxHeight;
+        final bothExpanded = widget.authorExpanded && widget.tagExpanded;
+        final double authorHeight;
+        final double tagHeight;
+        if (bothExpanded) {
+          final available = math.max(
+            0.0,
+            total - 2 * _headerHeight - _splitterHeight,
+          );
+          final authorBody = available * share;
+          authorHeight = _headerHeight + authorBody;
+          tagHeight = _headerHeight + (available - authorBody);
+        } else if (widget.authorExpanded) {
+          authorHeight = math.max(_headerHeight, total - _headerHeight);
+          tagHeight = _headerHeight;
+        } else if (widget.tagExpanded) {
+          authorHeight = _headerHeight;
+          tagHeight = math.max(_headerHeight, total - _headerHeight);
+        } else {
+          authorHeight = _headerHeight;
+          tagHeight = _headerHeight;
+        }
+        return Column(
+          children: [
+            _authorSection(
+              expanded: widget.authorExpanded,
+              onToggle: () =>
+                  widget.onAuthorExpandedChanged(!widget.authorExpanded),
+              options: authorVisible,
+              controller: authorSearch,
+              onQueryChanged: (value) => setState(() => authorQuery = value),
+              height: authorHeight,
+              divider: !bothExpanded,
+            ),
+            if (bothExpanded)
+              MouseRegion(
+                cursor: SystemMouseCursors.resizeUpDown,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragUpdate: (details) => _resize(
+                    details.delta.dy,
+                    math.max(1.0, total - 2 * _headerHeight - _splitterHeight),
+                  ),
+                  onVerticalDragEnd: (_) => _endResize(),
+                  onVerticalDragCancel: _endResize,
+                  child: SizedBox(
+                    height: _splitterHeight,
+                    child: Center(
+                      child: Container(
+                        height: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            _section(
+              title: "Tags",
+              expanded: widget.tagExpanded,
+              onToggle: () => widget.onTagExpandedChanged(!widget.tagExpanded),
+              options: tagVisible,
+              selected: widget.tags,
+              controller: tagSearch,
+              onQueryChanged: (value) => setState(() => tagQuery = value),
+              onChanged: widget.onTagsChanged,
+              height: tagHeight,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _authorSection({
+    required bool expanded,
+    required VoidCallback onToggle,
+    required List<String> options,
+    required TextEditingController controller,
+    required ValueChanged<String> onQueryChanged,
+    required double height,
+    required bool divider,
+  }) {
+    final section = _section(
+      title: "Author",
+      expanded: expanded,
+      onToggle: onToggle,
+      options: options,
+      selected: widget.authors,
+      controller: controller,
+      onQueryChanged: onQueryChanged,
+      onChanged: widget.onAuthorsChanged,
+      height: height,
+      footer: widget.platformNames,
+    );
+    if (!divider) return section;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+      ),
+      child: section,
+    );
+  }
+
+  Widget _section({
+    required String title,
+    required bool expanded,
+    required VoidCallback onToggle,
+    required List<String> options,
+    required Set<String> selected,
+    required TextEditingController controller,
+    required ValueChanged<String> onQueryChanged,
+    required ValueChanged<Set<String>> onChanged,
+    required double height,
+    Widget? footer,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: height,
+      child: Column(
+        children: [
+          SizedBox(
+            height: _headerHeight,
+            child: Row(
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  iconSize: 18,
+                  tooltip: (expanded ? 'Collapse' : 'Expand').tl,
+                  icon: Icon(
+                    expanded ? Icons.expand_more : Icons.chevron_right,
+                  ),
+                  onPressed: onToggle,
+                ),
+                Expanded(
+                  child: Text(
+                    title.tl,
+                    style: _kFilterHeadingStyle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (selected.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      '${selected.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 28,
+                    height: 28,
+                  ),
+                  iconSize: 16,
+                  tooltip: 'Select all'.tl,
+                  icon: const Icon(Icons.select_all),
+                  onPressed: !expanded
+                      ? null
+                      : () {
+                          final next = Set<String>.of(selected)
+                            ..addAll(options);
+                          onChanged(next);
+                        },
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 28,
+                    height: 28,
+                  ),
+                  iconSize: 16,
+                  tooltip: 'Deselect all'.tl,
+                  icon: const Icon(Icons.deselect),
+                  onPressed: !expanded || selected.isEmpty
+                      ? null
+                      : () => onChanged(<String>{}),
+                ),
+              ],
+            ),
+          ),
+          if (expanded)
+            Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+                    child: TextField(
+                      controller: controller,
+                      style: const TextStyle(fontSize: 12),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'Search'.tl,
+                        hintStyle: const TextStyle(fontSize: 12),
+                        prefixIcon: const Icon(Icons.search, size: 16),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 4,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      onChanged: onQueryChanged,
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          options.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    'No search results found'.tl,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                )
+                              : Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: [
+                                    for (final option in options)
+                                      _chip(option, selected, onChanged),
+                                  ],
+                                ),
+                          ?footer,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(
+    String option,
+    Set<String> selected,
+    ValueChanged<Set<String>> onChanged,
+  ) {
+    return FilterChip(
+      label: Text(option, style: const TextStyle(fontSize: 12)),
+      selected: selected.contains(option),
+      showCheckmark: false,
+      selectedColor: Theme.of(context).colorScheme.primaryContainer,
+      visualDensity: VisualDensity.compact,
+      onSelected: (_) {
+        final next = Set<String>.of(selected);
+        if (!next.remove(option)) next.add(option);
+        onChanged(next);
+      },
     );
   }
 }

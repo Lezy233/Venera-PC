@@ -3,19 +3,29 @@ import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
 import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/settings_save_state.dart';
+import 'package:venera_next/components/sidebar_resize_handle.dart';
 import 'package:venera_next/foundation/appdata.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/context.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
+import 'package:venera_next/foundation/log.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 import 'package:venera_next/features/favorites/favorites_constants.dart';
 import 'package:venera_next/features/favorites/local_favorites_page.dart';
+import 'package:venera_next/features/favorites/local_favorite_series_page.dart';
 import 'package:venera_next/features/favorites/network_favorites_page.dart';
 import 'package:venera_next/features/favorites/side_bar.dart';
+import 'package:venera_next/features/favorites/sidebar_sections.dart';
 
-const _kLeftBarWidth = 256.0;
+const _kLeftBarMinWidth = 160.0;
+
+const _kLeftBarMaxWidth = 420.0;
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -24,19 +34,102 @@ class FavoritesPage extends StatefulWidget {
   State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
+class _FavoritesPageState extends SettingsSaveState<FavoritesPage>
+    with WorkspaceViewState<FavoritesPage> {
+  @override
+  String get workspaceViewKey => 'favorites';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {
+    'folder': folder,
+    'seriesId': seriesId,
+    'network': isNetwork,
+    'sidebarCollapsed': leftBarCollapsed,
+    'sidebarWidth': _leftBarWidth,
+  };
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    if (saved.isEmpty) return;
+    final name = saved['folder'];
+    final network = saved['network'] == true;
+    folder =
+        name is String &&
+            (network || FavoritesScope.read(context).existsFolder(name))
+        ? name
+        : null;
+    isNetwork = network;
+    final series = saved['seriesId'];
+    seriesId =
+        series is String &&
+            FavoritesScope.read(context).seriesById(series) != null
+        ? series
+        : null;
+    if (saved['sidebarCollapsed'] is bool) {
+      leftBarCollapsed = saved['sidebarCollapsed'] as bool;
+    }
+    final width = saved['sidebarWidth'];
+    if (width is num && width.isFinite) {
+      _leftBarWidth = width.toDouble().clamp(
+        _kLeftBarMinWidth,
+        _kLeftBarMaxWidth,
+      );
+    }
+  }
+
   Route<void>? _folderSelector;
+  late final FavoriteSidebarSections _sections;
+  final _sectionFeedback = ValueNotifier<int>(0);
+
+  @override
+  Future<void> retrySettingsSave() async {
+    final retried = super.retrySettingsSave();
+    if (mounted) _sectionFeedback.value++;
+    await retried;
+    if (mounted) _sectionFeedback.value++;
+  }
+
+  void _setSection(FavoriteSidebarSection section, bool expanded) {
+    if (!acceptsSettingsChanges || _sections.expanded(section) == expanded) {
+      return;
+    }
+    _sections.setExpanded(section, expanded);
+    final snapshot = Map<String, bool>.of(_sections.value);
+    final saved = saveSetting(
+      FavoriteSidebarSections.storageKey,
+      () => appdata.updateImplicit(
+        (draft) => FavoriteSidebarSections.merge(draft, snapshot),
+      ),
+      showSavedFeedback: false,
+    );
+    _sectionFeedback.value++;
+    unawaited(
+      saved.whenComplete(() {
+        if (mounted) _sectionFeedback.value++;
+      }),
+    );
+  }
+
   String? folder;
+  String? seriesId;
 
   bool isNetwork = false;
 
   FolderList? folderList;
+
+  late double _leftBarWidth;
+
+  bool leftBarCollapsed = false;
+
+  bool _resizingLeftBar = false;
+
+  DesktopChromeController? _chrome;
+  late final VoidCallback _toggleLeftCallback = _toggleLeftBar;
 
   void setFolder(bool isNetwork, String? folder) {
     if (!acceptsSettingsChanges) return;
     setState(() {
       this.isNetwork = isNetwork;
       this.folder = folder;
+      seriesId = null;
     });
     folderList?.update();
     saveSetting(
@@ -47,8 +140,24 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
     );
   }
 
+  void setSeries(String? id) {
+    if (!acceptsSettingsChanges) return;
+    setState(() {
+      seriesId = id;
+      folder = null;
+      isNetwork = false;
+    });
+    saveSetting(
+      'favoriteSeries',
+      () => appdata.updateImplicit((draft) => draft['favoriteSeries'] = id),
+    );
+  }
+
   @override
   void initState() {
+    _sections = FavoriteSidebarSections(
+      appdata.implicitData[FavoriteSidebarSections.storageKey],
+    );
     var data = appdata.implicitData['favoriteFolder'];
     if (data != null) {
       folder = data['name'];
@@ -59,15 +168,54 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
         !FavoritesScope.read(context).existsFolder(folder!)) {
       folder = null;
     }
+    final storedSeries = appdata.implicitData['favoriteSeries'];
+    if (storedSeries is String &&
+        FavoritesScope.read(context).seriesById(storedSeries) != null) {
+      seriesId = storedSeries;
+    }
+    final preferences = GlobalPreferenceStore(appdata.settings);
+    _leftBarWidth = preferences
+        .read(LayoutPreferences.favoritesSidebarWidth)
+        .toDouble();
+    leftBarCollapsed = preferences.read(
+      LayoutPreferences.favoritesSidebarCollapsed,
+    );
     super.initState();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+    _chrome = DesktopChromeScope.maybeRead(context);
+    // build schedules the complete chrome sync after dependency/layout changes.
+  }
+
+  void _syncChrome() {
+    final chrome = _chrome;
+    if (chrome == null) return;
+    // favoritesActive is owned by MainPage: it depends on the selected tab and
+    // the inner navigator's route stack, not on this page's mount lifecycle.
+    chrome.setLeftSidebar(
+      available: context.width > favoritesTwoPanelChangeWidth,
+      expanded: !leftBarCollapsed,
+      toggle: _toggleLeftCallback,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return protectSettings(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncChrome();
+    });
+    final twoPanel = context.width > favoritesTwoPanelChangeWidth;
+    final leftBarOffset = !twoPanel
+        ? -_leftBarWidth
+        : (leftBarCollapsed ? -_leftBarWidth : 0.0);
+    final bodyLeft = twoPanel && !leftBarCollapsed ? _leftBarWidth : 0.0;
+    final body = protectSettings(
       Column(
         children: [
-          if (savingSettings || hasSettingsSaveError) settingsSaveStatus,
           Expanded(
             child: IconTheme(
               data: IconThemeData(
@@ -76,36 +224,103 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
               child: Stack(
                 children: [
                   AnimatedPositioned(
-                    left: context.width <= favoritesTwoPanelChangeWidth
-                        ? -_kLeftBarWidth
-                        : 0,
+                    left: leftBarOffset,
                     top: 0,
                     bottom: 0,
-                    duration: const Duration(milliseconds: 200),
+                    duration: _resizingLeftBar
+                        ? Duration.zero
+                        : const Duration(milliseconds: 200),
                     child: FavoritesFolderSidebar(
+                      sections: _sections,
+                      onSectionChanged: _setSection,
                       selectedFolder: folder,
+                      selectedSeries: seriesId,
                       isNetworkSelected: isNetwork,
                       onFolderSelected: setFolder,
+                      onSeriesSelected: setSeries,
                       onFolderListReady: (list) {
                         folderList = list;
                       },
-                    ).fixWidth(_kLeftBarWidth),
+                    ).fixWidth(_leftBarWidth),
                   ),
                   Positioned(
                     top: 0,
-                    left: context.width <= favoritesTwoPanelChangeWidth
-                        ? 0
-                        : _kLeftBarWidth,
+                    left: bodyLeft,
                     right: 0,
                     bottom: 0,
                     child: buildBody(),
                   ),
+                  if (twoPanel)
+                    Positioned(
+                      left: leftBarCollapsed
+                          ? 0
+                          : _leftBarWidth - SidebarResizeHandle.width / 2,
+                      top: 0,
+                      bottom: 0,
+                      width: SidebarResizeHandle.width,
+                      child: SidebarResizeHandle(
+                        expanded: !leftBarCollapsed,
+                        onDrag: _resizeLeftBar,
+                        onDragEnd: _finishLeftBarResize,
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+    return withSettingsSaveFeedback(body);
+  }
+
+  void _toggleLeftBar() {
+    setState(() => leftBarCollapsed = !leftBarCollapsed);
+    _persistLeftBar();
+  }
+
+  void _resizeLeftBar(double delta) {
+    setState(() {
+      _resizingLeftBar = true;
+      if (leftBarCollapsed) {
+        if (delta <= 0) return;
+        leftBarCollapsed = false;
+        _leftBarWidth = _kLeftBarMinWidth;
+        return;
+      }
+      final next = _leftBarWidth + delta;
+      if (next < _kLeftBarMinWidth) {
+        leftBarCollapsed = true;
+        _leftBarWidth = _kLeftBarMinWidth;
+        return;
+      }
+      _leftBarWidth = next.clamp(_kLeftBarMinWidth, _kLeftBarMaxWidth);
+    });
+  }
+
+  void _finishLeftBarResize() {
+    if (_resizingLeftBar) {
+      setState(() => _resizingLeftBar = false);
+    }
+    _persistLeftBar();
+  }
+
+  void _persistLeftBar() {
+    final width = _leftBarWidth;
+    final collapsed = leftBarCollapsed;
+    unawaited(
+      appdata
+          .updateSettings((draft) {
+            final store = GlobalPreferenceStore(draft);
+            store.write(LayoutPreferences.favoritesSidebarWidth, width);
+            store.write(LayoutPreferences.favoritesSidebarCollapsed, collapsed);
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Favorites sidebar settings', error, stack);
+            },
+          ),
     );
   }
 
@@ -124,25 +339,34 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
           child: Material(
             child: SizedBox(
               width: min(300, context.width - 16),
-              child: FavoritesFolderSidebar(
-                withAppbar: true,
-                selectedFolder: folder,
-                isNetworkSelected: isNetwork,
-                onFolderSelected: (network, name) {
-                  if (mounted &&
-                      identical(ModalRoute.of(this.context), origin)) {
-                    setFolder(network, name);
-                  }
-                },
-                onFolderListReady: (list) {
-                  folderList = list;
-                },
-                onSelected: () {
-                  if (context.mounted &&
-                      ModalRoute.of(context)?.isCurrent == true) {
-                    Navigator.of(context).maybePop();
-                  }
-                },
+              child: AnimatedBuilder(
+                animation: _sectionFeedback,
+                builder: (context, _) => withSettingsSaveFeedback(
+                  FavoritesFolderSidebar(
+                    withAppbar: true,
+                    sections: _sections,
+                    onSectionChanged: _setSection,
+                    selectedFolder: folder,
+                    selectedSeries: seriesId,
+                    isNetworkSelected: isNetwork,
+                    onFolderSelected: (network, name) {
+                      if (mounted &&
+                          identical(ModalRoute.of(this.context), origin)) {
+                        setFolder(network, name);
+                      }
+                    },
+                    onSeriesSelected: setSeries,
+                    onFolderListReady: (list) {
+                      folderList = list;
+                    },
+                    onSelected: () {
+                      if (context.mounted &&
+                          ModalRoute.of(context)?.isCurrent == true) {
+                        Navigator.of(context).maybePop();
+                      }
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -169,6 +393,9 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
 
   @override
   void dispose() {
+    // MainPage watches the tab and route stack; only the page-owned sidebar
+    // registration is cleared here.
+    _chrome?.setLeftSidebar(available: false, expanded: true);
     final route = _folderSelector;
     _folderSelector = null;
     scheduleMicrotask(() {
@@ -177,10 +404,19 @@ class _FavoritesPageState extends SettingsSaveState<FavoritesPage> {
         navigator!.removeRoute(route);
       }
     });
+    _sections.dispose();
+    _sectionFeedback.dispose();
     super.dispose();
   }
 
   Widget buildBody() {
+    if (seriesId != null) {
+      return LocalFavoriteSeriesPage(
+        seriesId: seriesId!,
+        key: PageStorageKey('series_$seriesId'),
+        showFolders: showFolderSelector,
+      );
+    }
     if (folder == null) {
       return CustomScrollView(
         slivers: [

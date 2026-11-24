@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/scroll.dart';
 import 'package:venera_next/features/settings/setting_components.dart';
+import 'package:venera_next/features/settings/debug.dart';
+import 'package:venera_next/features/settings/logs.dart';
 import 'package:venera_next/features/settings/sponsors.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/context.dart';
@@ -87,7 +89,7 @@ class _AboutSettingsState extends State<AboutSettings> {
             const SizedBox(height: 8),
             Text("V${App.version}", style: const TextStyle(fontSize: 16)),
             Text(
-              "VeneraNext is a free and open-source app for comic reading.".tl,
+              "Venera-PC is a free and open-source app for comic reading.".tl,
             ),
             const SizedBox(height: 8),
           ],
@@ -122,7 +124,7 @@ class _AboutSettingsState extends State<AboutSettings> {
           title: const Text("Github"),
           trailing: const Icon(Icons.open_in_new),
           onTap: () {
-            launchUrlString("https://github.com/CyrilPeng/venera-next");
+            launchUrlString("https://github.com/Lezy233/Venera-PC");
           },
         ).toSliver(),
         ListTile(
@@ -130,6 +132,27 @@ class _AboutSettingsState extends State<AboutSettings> {
           trailing: const Icon(Icons.keyboard_arrow_right),
           onTap: () {
             context.to(() => const SponsorsPage());
+          },
+        ).toSliver(),
+        SettingPartTitle(title: "Advanced".tl, icon: Icons.build),
+        CallbackSetting(
+          title: "Debug".tl,
+          subtitle:
+              "Run JavaScript and inspect comic source behavior. Intended for troubleshooting."
+                  .tl,
+          actionTitle: "Open".tl,
+          callback: () {
+            context.to(() => const DebugPage());
+          },
+        ).toSliver(),
+        CallbackSetting(
+          title: "Logs".tl,
+          subtitle:
+              "Inspect application logs and share them when reporting a problem."
+                  .tl,
+          actionTitle: "Open".tl,
+          callback: () {
+            context.to(() => const LogsPage());
           },
         ).toSliver(),
       ],

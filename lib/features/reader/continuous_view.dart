@@ -80,8 +80,10 @@ class ReaderContinuousView extends StatefulWidget {
 }
 
 class ContinuousModeState extends State<ReaderContinuousView>
+    with TickerProviderStateMixin
     implements
         ReaderImageViewController,
+        ReaderKeyboardPagingViewport,
         AutoReadingViewport,
         AutoReadingImageViewport {
   late var _imageDownloads = ReaderImageDownloads(work: widget.imageWork);
@@ -103,6 +105,7 @@ class ContinuousModeState extends State<ReaderContinuousView>
   bool _positionUpdateScheduled = false;
   ScrollController? _scrollController;
   bool _disposed = false;
+  VelocityTracker? _panVelocityTracker;
   Timer? _initialCacheTimer;
   Timer? _scrollActivityTimer;
   ScrollPosition? _smoothPosition;
@@ -710,17 +713,55 @@ class ContinuousModeState extends State<ReaderContinuousView>
 
   void onPointerSignal(PointerSignalEvent event) {
     if (_disposed || !mounted) return;
-    if (event is PointerScrollEvent) {
-      if (!_isMouseScrolling) {
-        setState(() {
-          _isMouseScrolling = true;
-        });
-      }
-      if (isCTRLPressed) {
-        return;
-      }
-      smoothTo(event.scrollDelta.dy);
+    if (event is! PointerScrollEvent) return;
+    if (disableScroll) return;
+    if (!_isMouseScrolling) {
+      setState(() {
+        _isMouseScrolling = true;
+      });
     }
+    if (isCTRLPressed) return;
+    // Other screens let Flutter's Scrollable apply trackpad deltas directly.
+    // This view disables drag physics while pointer-scrolling and used to
+    // animate every event, which made the page lag behind the fingers and
+    // jump when the gesture ended. Apply the axis delta immediately instead.
+    final delta = data.vertical ? event.scrollDelta.dy : event.scrollDelta.dx;
+    if (delta != 0) _scrollDirect(data.reverse ? -delta : delta);
+  }
+
+  /// Trackpads emit small, dense deltas. Animating each one made the view lag
+  /// behind the fingers and jump after the gesture ended, so dense input is
+  /// applied immediately while isolated wheel notches keep the smooth path.
+  void _scrollDirect(double delta) {
+    final position = _scrollController?.position;
+    if (position == null ||
+        !position.hasPixels ||
+        !position.hasContentDimensions) {
+      return;
+    }
+    _futurePosition = null;
+    final target = (position.pixels + delta * data.scrollSpeed).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (target != position.pixels) position.jumpTo(target);
+  }
+
+  /// Continues the gesture with the same deceleration the native scrollable
+  /// would use, so trackpad momentum is preserved without per-event animation.
+  void _fling(double velocity) {
+    final position = _scrollController?.position;
+    if (position is! ScrollPositionWithSingleContext || !position.hasPixels) {
+      return;
+    }
+    if (velocity.abs() < 50) return;
+    final simulation = ClampingScrollSimulation(
+      position: position.pixels,
+      velocity: velocity,
+    );
+    position.beginActivity(
+      BallisticScrollActivity(position, simulation, this, false),
+    );
   }
 
   void _predownload(WaterfallImageRef image) {
@@ -1020,10 +1061,31 @@ class ContinuousModeState extends State<ReaderContinuousView>
           });
         }
       },
+      onPointerPanZoomStart: (event) {
+        _panVelocityTracker = VelocityTracker.withKind(
+          PointerDeviceKind.trackpad,
+        )..addPosition(event.timeStamp, Offset.zero);
+      },
       onPointerPanZoomUpdate: (event) {
-        if (event.scale == 1.0) {
-          smoothTo(0 - event.panDelta.dy);
-        }
+        // macOS trackpads report two-finger scrolling as pan/zoom with
+        // scale == 1. Apply the movement on the active axis immediately so it
+        // follows the fingers instead of animating behind them.
+        if (event.scale != 1.0 || disableScroll || isCTRLPressed) return;
+        _panVelocityTracker?.addPosition(event.timeStamp, event.pan);
+        final delta = data.vertical
+            ? 0 - event.panDelta.dy
+            : 0 - event.panDelta.dx;
+        if (delta != 0) _scrollDirect(data.reverse ? -delta : delta);
+      },
+      onPointerPanZoomEnd: (event) {
+        final tracker = _panVelocityTracker;
+        _panVelocityTracker = null;
+        if (tracker == null || disableScroll) return;
+        final velocity = tracker.getVelocity().pixelsPerSecond;
+        final axisVelocity = data.vertical ? -velocity.dy : -velocity.dx;
+        _fling(
+          (data.reverse ? -axisVelocity : axisVelocity) * data.scrollSpeed,
+        );
       },
       onPointerMove: (event) {
         Offset value = event.delta;
@@ -1107,28 +1169,36 @@ class ContinuousModeState extends State<ReaderContinuousView>
       },
       child: widget,
     );
-    var width = this.widget.readerSize().width;
-    var height = this.widget.readerSize().height;
-    if (data.limitImageWidth && width / height > 0.7 && data.vertical) {
-      width = height * 0.7;
-    }
-    if (data.vertical) {
-      final margin = data.sideMargin;
-      final percent = margin;
-      // Resize the flow itself so images retain their aspect ratio and scroll
-      // extents match the visible content, including waterfall and auto-reading.
-      width *= 1 - percent * 2 / 100;
-    }
+    // Use the body viewport after the desktop title-bar safe area is consumed.
+    // The route size includes that inset and would center/clip an oversized flow.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var width = constraints.maxWidth;
+        var height = constraints.maxHeight;
+        if (data.limitImageWidth && width / height > 0.7 && data.vertical) {
+          width = height * 0.7;
+        }
+        if (data.vertical) {
+          final margin = data.sideMargin;
+          final percent = margin;
+          // Resize the flow itself so images retain their aspect ratio and scroll
+          // extents match the visible content, including waterfall and auto-reading.
+          width *= 1 - percent * 2 / 100;
+        }
 
-    return PhotoView.customChild(
-      backgroundDecoration: BoxDecoration(color: context.colorScheme.surface),
-      childSize: Size(width, height),
-      minScale: 1.0,
-      maxScale: 2.5,
-      strictScale: true,
-      controller: photoViewController,
-      onScaleUpdate: onScaleUpdate,
-      child: SizedBox(width: width, height: height, child: widget),
+        return PhotoView.customChild(
+          backgroundDecoration: BoxDecoration(
+            color: context.colorScheme.surface,
+          ),
+          childSize: Size(width, height),
+          minScale: 1.0,
+          maxScale: 2.5,
+          strictScale: true,
+          controller: photoViewController,
+          onScaleUpdate: onScaleUpdate,
+          child: SizedBox(width: width, height: height, child: widget),
+        );
+      },
     );
   }
 
@@ -1243,6 +1313,30 @@ class ContinuousModeState extends State<ReaderContinuousView>
     if (!_disposed && mounted && isCTRLPressed) {
       setState(() => isCTRLPressed = false);
     }
+  }
+
+  @override
+  void scrollKeyboardPage(bool forward) {
+    final controller = _scrollController;
+    if (_disposed || !mounted || controller == null || !controller.hasClients) {
+      return;
+    }
+    final position = controller.position;
+    if ((forward && position.pixels >= position.maxScrollExtent) ||
+        (!forward && position.pixels <= position.minScrollExtent)) {
+      return;
+    }
+    // Match the legacy directional handler's height-based scroll unit,
+    // including horizontal continuous modes (D2 specifies one viewport high).
+    final target = (position.pixels + (forward ? 1 : -1) * context.height)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
+    if (target == position.pixels) return;
+    controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.ease,
+    );
   }
 
   @override

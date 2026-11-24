@@ -1,3 +1,6 @@
+import 'package:venera_next/foundation/app_page_route.dart';
+import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/components/file_save_task.dart';
@@ -24,9 +27,12 @@ import 'package:venera_next/features/comic_details/comments_preview.dart';
 import 'package:venera_next/features/comic_details/cover_viewer.dart';
 import 'package:venera_next/features/comic_details/thumbnails.dart';
 import 'package:venera_next/foundation/app_locale.dart';
+import 'package:venera_next/foundation/appdata.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/features/comic_source/comic_source.dart';
 import 'package:venera_next/foundation/comic_type.dart';
-import 'package:venera_next/foundation/consts.dart';
+import 'package:venera_next/design_system/breakpoints.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/foundation/image_provider/cached_image.dart';
@@ -87,7 +93,27 @@ class ComicPage extends StatefulWidget {
 }
 
 class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
-    with ComicPageActions, ContextMenuOwner {
+    with ComicPageActions, ContextMenuOwner, WorkspaceViewState<ComicPage> {
+  double _workspaceOffset = 0;
+  @override
+  String get workspaceViewKey => 'comic-details';
+  @override
+  Map<String, dynamic> captureWorkspaceView() => {'scroll': _workspaceOffset};
+  @override
+  void restoreWorkspaceView(Map<String, dynamic> saved) {
+    _workspaceOffset = (saved['scroll'] as num?)?.toDouble() ?? 0;
+    scrollController.removeListener(onScroll);
+    scrollController.dispose();
+    scrollController = ScrollController(initialScrollOffset: _workspaceOffset)
+      ..addListener(onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    bindWorkspaceView();
+  }
+
   @override
   Object? get contextMenuIdentity => data;
   late final _saves = ImageSaveWork(
@@ -197,6 +223,8 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   ComicDetails get comic => data!;
 
   void onScroll() {
+    _workspaceOffset = scrollController.offset;
+    workspaceBinding?.changed();
     var offset =
         scrollController.position.pixels -
         scrollController.position.minScrollExtent;
@@ -222,9 +250,15 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   }
 
   var isFirst = true;
+  bool _detailsExpanded = false;
 
   @override
   Widget buildContent(BuildContext context, ComicDetails data) {
+    final readingFirst =
+        GlobalPreferenceStore(
+          appdata.settings,
+        ).read(DiscoveryPreferences.comicDetailMode) ==
+        'reading';
     return Scaffold(
       floatingActionButton: showFAB
           ? FloatingActionButton(
@@ -243,8 +277,17 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
         slivers: [
           ...buildTitle(),
           buildActions(),
-          buildDescription(),
-          buildInfo(),
+          if (!readingFirst || _detailsExpanded) ...[
+            buildDescription(),
+            buildInfo(),
+          ] else
+            SliverToBoxAdapter(
+              child: ListTile(
+                title: Text("Works details and sources".tl),
+                trailing: const Icon(Icons.expand_more),
+                onTap: () => setState(() => _detailsExpanded = true),
+              ),
+            ),
           buildChapters(),
           buildComments(),
           buildThumbnails(),
@@ -272,23 +315,27 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
         Future.microtask(() {
           if (!pageContext.mounted || scope.isCancelled) return;
           final onClosed = ReaderSessionScope.onClosedOf(pageContext);
-          replaceWithRootPage(pageContext, (_) {
-            return Reader(
-              onClosed: onClosed,
-              type: ComicType.local,
-              cid: localComic.id,
-              name: localComic.title,
-              chapters: localComic.chapters,
-              initialPage: history?.page,
-              initialChapter: history?.ep,
-              initialChapterGroup: history?.group,
-              history:
-                  history ??
-                  History.fromModel(model: localComic, ep: 0, page: 0),
-              author: localComic.subTitle ?? '',
-              tags: localComic.tags,
-            );
-          });
+          Widget buildReader(BuildContext _) => Reader(
+            onClosed: onClosed,
+            type: ComicType.local,
+            cid: localComic.id,
+            name: localComic.title,
+            chapters: localComic.chapters,
+            initialPage: history?.page,
+            initialChapter: history?.ep,
+            initialChapterGroup: history?.group,
+            history:
+                history ?? History.fromModel(model: localComic, ep: 0, page: 0),
+            author: localComic.subTitle ?? '',
+            tags: localComic.tags,
+          );
+          if (WorkspacePageScope.read(pageContext) != null) {
+            Navigator.of(
+              pageContext,
+            ).pushReplacement(AppPageRoute(builder: buildReader));
+          } else {
+            replaceWithRootPage(pageContext, buildReader);
+          }
         });
         isFirst = false;
       }
@@ -328,7 +375,13 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
   }
 
   Iterable<Widget> buildTitle() sync* {
+    // Sources may expose the author only as a namespaced tag.
+    final subtitle = comic.subTitle ?? comic.findAuthor();
+
     yield SliverAppbar(
+      leading: DesktopChromeScope.maybeOf(context) == null
+          ? null
+          : const SizedBox.shrink(),
       title: AnimatedOpacity(
         opacity: showAppbarTitle ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 200),
@@ -389,11 +442,8 @@ class _ComicPageState extends LoadingState<ComicPage, ComicDetails>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SelectableText(comic.title, style: ts.s18),
-                if (comic.subTitle != null)
-                  SelectableText(
-                    comic.subTitle!,
-                    style: ts.s14,
-                  ).paddingVertical(4),
+                if (subtitle != null)
+                  SelectableText(subtitle, style: ts.s14).paddingVertical(4),
                 Text(
                   (ComicSource.find(comic.sourceKey)?.name) ?? '',
                   style: ts.s12,
@@ -977,7 +1027,7 @@ class _ComicPageLoadingPlaceHolder extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          if (context.width < changePoint)
+          if (Breakpoints.isCompact(context))
             Row(
               children: [
                 Expanded(child: buildContainer(null, 36, radius: 18)),

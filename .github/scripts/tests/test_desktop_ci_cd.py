@@ -1,0 +1,149 @@
+import re
+import unittest
+from pathlib import Path
+
+import yaml
+
+
+ROOT = Path(__file__).resolve().parents[3]
+WORKFLOWS = ROOT / ".github/workflows"
+BUILD_YML = WORKFLOWS / "build.yml"
+MAIN_YML = WORKFLOWS / "main.yml"
+
+
+def load_workflow(path):
+    # GitHub Actions workflows may use non-standard YAML tags such as
+    # `on:`; parse with a tolerant loader that treats them as plain maps.
+    class ActionsLoader(yaml.SafeLoader):
+        pass
+
+    def unknown(loader, tag_suffix, node):
+        if isinstance(node, yaml.MappingNode):
+            return loader.construct_mapping(node)
+        if isinstance(node, yaml.SequenceNode):
+            return loader.construct_sequence(node)
+        return loader.construct_scalar(node)
+
+    ActionsLoader.add_multi_constructor("", unknown)
+    ActionsLoader.add_multi_constructor("tag:yaml.org,2002:", unknown)
+    data = yaml.load(path.read_text(encoding="utf-8"), Loader=ActionsLoader)
+    if "on" not in data and True in data:
+        # YAML 1.1 resolves the bare key `on` to boolean true.
+        data["on"] = data.pop(True)
+    return data
+
+
+class DesktopBuildWorkflowTests(unittest.TestCase):
+    def test_only_desktop_inputs_are_exposed(self):
+        on = load_workflow(BUILD_YML)["on"]
+        for trigger in ("workflow_call", "workflow_dispatch"):
+            inputs = on[trigger].get("inputs", {})
+            self.assertEqual(
+                sorted(inputs),
+                ["build_linux_arm64", "build_linux_x64", "build_macos", "build_windows"],
+                f"{trigger} inputs should only cover desktop platforms",
+            )
+
+    def test_mobile_signing_secrets_are_removed(self):
+        workflow = load_workflow(BUILD_YML)
+        secrets = workflow["on"]["workflow_call"].get("secrets", {})
+        self.assertEqual(secrets, {})
+
+    def test_only_desktop_jobs_remain(self):
+        workflow = load_workflow(BUILD_YML)
+        self.assertEqual(
+            sorted(workflow["jobs"]),
+            [
+                "Build_Linux_ARM64",
+                "Build_Linux_x64",
+                "Build_MacOS",
+                "Build_Windows",
+            ],
+        )
+
+    def test_no_mobile_references_in_build_workflow(self):
+        text = BUILD_YML.read_text(encoding="utf-8")
+        for pattern in (r"android", r"ios", r"apk", r"\bipa\b", r"keystore"):
+            self.assertIsNone(
+                re.search(pattern, text, re.IGNORECASE),
+                f"build.yml still references mobile content: {pattern}",
+            )
+
+
+class DesktopReleaseWorkflowTests(unittest.TestCase):
+    def test_build_call_only_passes_desktop_inputs(self):
+        workflow = load_workflow(MAIN_YML)
+        build = workflow["jobs"]["Build"]
+        self.assertEqual(
+            sorted(build["with"]),
+            ["build_linux_arm64", "build_linux_x64", "build_macos", "build_windows"],
+        )
+        self.assertNotIn("secrets", build)
+
+    def test_release_downloads_only_desktop_artifacts(self):
+        text = MAIN_YML.read_text(encoding="utf-8")
+        self.assertNotIn("ios_build", text)
+        self.assertNotIn("apk-", text)
+        for artifact in (
+            "macos_build",
+            "windows_build",
+            "deb_build",
+            "arch_build",
+            "deb_arm64_build",
+            "linux_extra_",
+        ):
+            self.assertIn(artifact, text)
+
+    def test_release_file_globs_exclude_mobile_assets(self):
+        workflow = load_workflow(MAIN_YML)
+        script = None
+        for step in workflow["jobs"]["Release"]["steps"]:
+            if "创建草稿 Release 并上传资产" in (step.get("name") or ""):
+                script = step["run"]
+                break
+        self.assertIsNotNone(script)
+        self.assertIn("outputs/*.dmg", script)
+        self.assertIn("outputs/*.AppImage", script)
+        for glob in ("outputs/*.apk", "outputs/*.ipa"):
+            self.assertNotIn(glob, script)
+
+
+PR_BUILD_YML = WORKFLOWS / "pr_build.yml"
+ANALYZE_YML = WORKFLOWS / "analyze.yml"
+
+
+class PullRequestGateWorkflowTests(unittest.TestCase):
+    def test_android_job_and_gate_dependency_are_removed(self):
+        workflow = load_workflow(PR_BUILD_YML)
+        self.assertEqual(
+            sorted(workflow["jobs"]),
+            ["changes", "platform_gate", "windows"],
+        )
+        self.assertEqual(
+            workflow["jobs"]["platform_gate"]["needs"],
+            ["changes", "windows"],
+        )
+
+    def test_gate_summary_keeps_windows_smoke_checks(self):
+        text = PR_BUILD_YML.read_text(encoding="utf-8")
+        self.assertNotIn("ANDROID_RESULT", text)
+        self.assertIn("WINDOWS_RESULT", text)
+        self.assertIn("windows-pr-startup-logs", text)
+        self.assertIn("test_windows_startup.ps1", text)
+        self.assertIn("platform_gate", text)
+
+
+class QualityWorkflowTests(unittest.TestCase):
+    def test_ios_only_check_is_removed_and_desktop_checks_stay(self):
+        workflow = load_workflow(ANALYZE_YML)
+        self.assertEqual(
+            sorted(workflow["jobs"]),
+            ["analyze", "apple-directory-access", "flutter-tests", "rhttp-native"],
+        )
+        text = ANALYZE_YML.read_text(encoding="utf-8")
+        self.assertIn("swift test --package-path apple", text)
+        self.assertNotIn("rhttp-ios", text)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,14 @@
+你是 executor，继续 UX1 change `ux1-bookshelf-workspace`，本轮只实现 tasks 5.11。owner反馈：桌面卡片长按仍触发移动端遗留的上下文菜单；并要求 4.4/5.7/5.10 的操作逻辑全局统一到收藏、搜索、本地漫画、历史和作者栏入口。
+
+先读 AGENTS.md、proposal/design/spec/tasks、delivery-batch-7.md。不得提交、归档或 push；不得改 proposal/design/spec/design-spec.md、正式 openspec/specs/**、pubspec.lock。
+
+先建立真实生产红灯：桌面测试/生产控件中对 ComicTile 主体长按，断言旧行为弹出 ContextMenu；对同一卡片真实 secondary pointer/button，断言仍能打开相同菜单。检查 ComicTile 的所有调用者（搜索、网络/本地收藏、历史、作者 shelf），列出哪些使用独立作者排序/手柄或详情页专用长按。提出并验证 3–5 个根因假设，不能把右键菜单删除成所有平台都失效。
+
+最小修复：在桌面平台卡片主体长按不显示上下文菜单；真实鼠标右键/secondary pointer 仍显示同一菜单。移动端既有行为按项目平台契约处理，不能引入不支持的 Platform/web 编译问题。作者 shelf 的卡片长按排序与独立手柄、ComicPage quickFavorite 等专用长按不改。
+
+随后用真实生产控件验证全局一致性：
+- 收藏主网格/网络收藏/本地漫画/搜索/历史：checkbox 选择、菜单、单卡拖标签、多选拖标签、Escape 和主体点击不回退；5.10 首页切换自动保存仍无 spinner/Saved，失败 Retry 仍在。
+- 作者 shelf：卡片长按仍仅栏内排序，独立手柄仍选集拖出。
+- 4.4/5.7/5.10 若原有实现已全局复用，补证据而不重复改；发现局部特例才最小修正。
+
+每完成 5.11 立即勾 tasks.md 写根因、红绿命令、通过/失败/skip、全局入口覆盖与局限。新增真实生产控件测试；跑 F2/F5/F8/F10/F11/B4 相关保护、analyze raw/unique 对比 50=38+12、diff-check、OpenSpec validate、正常构建。回传改动文件、平台边界、GUI局限，等待 architect 独立复核，不提交。

@@ -5,15 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/app.dart';
-import 'package:venera_next/foundation/consts.dart';
-import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
 import 'package:venera_next/foundation/translations.dart';
-import 'package:venera_next/foundation/widget_utils.dart';
+import 'package:venera_next/app_shell/desktop_top_bar.dart';
+import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/overlay_host.dart';
 import 'package:window_manager/window_manager.dart';
-
-const _kTitleBarHeight = 36.0;
 
 class WindowFrameController extends InheritedWidget {
   /// Reads the live host state, including when this controller was retained
@@ -102,7 +101,6 @@ typedef WindowFinalizer = Future<void> Function(Future<void> Function() drain);
 
 class _WindowFrameState extends State<WindowFrame> with WindowListener {
   bool isWindowFrameHidden = false;
-  bool useDarkTheme = false;
   var closeListeners = <WindowCloseListener>[];
   final _exitTasks = <Future<void> Function()>[];
   final _pendingExitTasks = <Future<void>>{};
@@ -374,6 +372,8 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
   Widget build(BuildContext context) {
     if (App.isMobile) return widget.child;
 
+    final scheme = Theme.of(context).colorScheme;
+    final chrome = DesktopChromeScope.maybeOf(context);
     Widget body = Stack(
       children: [
         Positioned.fill(
@@ -381,58 +381,74 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
             data: MediaQuery.of(context).copyWith(
               padding: isWindowFrameHidden
                   ? null
-                  : const EdgeInsets.only(top: _kTitleBarHeight),
+                  : const EdgeInsets.only(top: AppSizes.titleBarHeight),
             ),
             child: widget.child,
           ),
         ),
         if (!isWindowFrameHidden)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: Theme(
-                data: Theme.of(
-                  context,
-                ).copyWith(brightness: useDarkTheme ? Brightness.dark : null),
-                child: Builder(
-                  builder: (context) {
-                    return SizedBox(
-                      height: _kTitleBarHeight,
-                      child: Row(
-                        children: [
-                          if (App.isMacOS)
-                            const DragToMoveArea(
-                              child: SizedBox(
-                                height: double.infinity,
-                                width: 16,
+          Positioned.fill(
+            child: OverlayHost(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: scheme.shellBorder,
+                      width: AppSizes.hairline,
+                    ),
+                  ),
+                ),
+                child: Material(
+                  color: scheme.shellSurface,
+                  child: SizedBox(
+                    height: AppSizes.titleBarHeight,
+                    child: Stack(
+                      children: [
+                        Row(
+                          children: [
+                            if (App.isMacOS)
+                              const DragToMoveArea(
+                                child: SizedBox(
+                                  height: double.infinity,
+                                  width: AppSizes.macTrafficLightsWidth,
+                                ),
+                              )
+                            else
+                              const SizedBox(width: AppSpacing.sm),
+                            if (!App.isMacOS) const DesktopInlineMenuBar(),
+                            if (App.isMacOS)
+                              const SizedBox(width: AppSpacing.md),
+                            const DesktopBookshelfToggle(),
+                            if (chrome != null)
+                              IconButton(
+                                tooltip: 'Back'.tl,
+                                onPressed: chrome.goBack,
+                                icon: const Icon(Icons.arrow_back),
                               ),
-                            ).paddingRight(52)
-                          else
-                            const SizedBox(width: 12),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DragToMoveArea(
-                              child: _WindowBrand(
-                                showTitle: context.width >= changePoint2,
-                                dark:
-                                    useDarkTheme ||
-                                    context.brightness == Brightness.dark,
+                            if (chrome?.favoritesActive == true)
+                              const DesktopLayoutControls(),
+                            if (chrome?.workspaceTabsBuilder != null)
+                              Expanded(
+                                child: chrome!.workspaceTabsBuilder!(context),
+                              )
+                            else
+                              const Expanded(
+                                child: DragToMoveArea(child: SizedBox.expand()),
                               ),
-                            ),
-                          ),
-                          if (kDebugMode && widget.debugAction != null)
-                            TextButton(
-                              onPressed: widget.debugAction,
-                              child: Text('Debug'),
-                            ),
-                          if (!App.isMacOS) _WindowButtons(onClose: _onClose),
-                        ],
-                      ),
-                    );
-                  },
+                            if (kDebugMode && widget.debugAction != null)
+                              TextButton(
+                                onPressed: widget.debugAction,
+                                child: Text('Debug'),
+                              ),
+                            if (!App.isMacOS) _WindowButtons(onClose: _onClose),
+                          ],
+                        ),
+                        // Keep the command center at the exact window
+                        // centre instead of centring inside the remaining
+                        // space after the menus/buttons.
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -541,50 +557,6 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
   }
 }
 
-class _WindowBrand extends StatelessWidget {
-  const _WindowBrand({required this.showTitle, required this.dark});
-
-  final bool showTitle;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    final foreground = dark ? Colors.white : Colors.black;
-    final title = Text(
-      'VeneraNext',
-      style: TextStyle(fontSize: 13, color: foreground),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-    );
-    final logo = Image.asset(
-      'assets/app_icon.png',
-      width: 24,
-      height: 24,
-      filterQuality: FilterQuality.medium,
-    );
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Semantics(
-        label: 'VeneraNext',
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 32),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              logo,
-              if (showTitle) ...[
-                const SizedBox(width: 8),
-                Flexible(child: title),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _WindowButtons extends StatefulWidget {
   const _WindowButtons({required this.onClose});
 
@@ -634,13 +606,13 @@ class _WindowButtonsState extends State<_WindowButtons> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final color = dark ? Colors.white : Colors.black;
-    final hoverColor = dark ? Colors.white30 : Colors.black12;
+    final scheme = Theme.of(context).colorScheme;
+    final color = scheme.shellForegroundMuted;
+    final hoverColor = scheme.shellSurfaceHover;
 
     return SizedBox(
-      width: 138,
-      height: _kTitleBarHeight,
+      width: AppSizes.windowButtonsWidth,
+      height: AppSizes.titleBarHeight,
       child: Row(
         children: [
           WindowButton(
@@ -673,8 +645,8 @@ class _WindowButtonsState extends State<_WindowButtons> with WindowListener {
             ),
           WindowButton(
             icon: CloseIcon(color: color),
-            hoverIcon: CloseIcon(color: !dark ? Colors.white : Colors.black),
-            hoverColor: Colors.red,
+            hoverIcon: CloseIcon(color: scheme.onDanger),
+            hoverColor: scheme.danger,
             onPressed: widget.onClose,
           ),
         ],
@@ -719,7 +691,7 @@ class _WindowButtonState extends State<WindowButton> {
       child: GestureDetector(
         onTap: widget.onPressed,
         child: Container(
-          width: 46,
+          width: AppSizes.windowControlWidth,
           height: double.infinity,
           decoration: BoxDecoration(
             color: isHovering ? widget.hoverColor : null,
@@ -847,7 +819,13 @@ class _AlignedPaint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.center,
-      child: CustomPaint(size: const Size(10, 10), painter: painter),
+      child: CustomPaint(
+        size: const Size(
+          AppSizes.windowControlIconSize,
+          AppSizes.windowControlIconSize,
+        ),
+        painter: painter,
+      ),
     );
   }
 }
@@ -887,16 +865,13 @@ class _VirtualWindowFrameState extends State<VirtualWindowFrame>
   }
 
   Widget _buildVirtualWindowFrame(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(_isMaximized ? 0 : 8),
-        color: Colors.transparent,
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.toOpacity(_isFocused ? 0.4 : 0.2),
-            blurRadius: 4,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(_isMaximized ? 0 : AppRadius.md),
+        boxShadow: _isMaximized
+            ? null
+            : AppShadows.floating(scheme, focused: _isFocused),
       ),
       clipBehavior: Clip.antiAlias,
       child: widget.child,
@@ -908,7 +883,7 @@ class _VirtualWindowFrameState extends State<VirtualWindowFrame>
     return DragToResizeArea(
       enableResizeEdges: (_isMaximized || _isFullScreen) ? [] : null,
       child: Padding(
-        padding: EdgeInsets.all(_isMaximized ? 0 : 4),
+        padding: EdgeInsets.all(_isMaximized ? 0 : AppSpacing.xs),
         child: _buildVirtualWindowFrame(context),
       ),
     );

@@ -132,7 +132,7 @@ def create_pr(
             "base": base_branch,
             "body": (
                 f"- Adds CyrilPeng.VeneraNext {version}\n"
-                "- Generated from the venera-next release workflow artifact.\n"
+                "- Generated from the Venera-PC release workflow artifact.\n"
             ),
         },
     )

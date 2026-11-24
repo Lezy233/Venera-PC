@@ -27,6 +27,10 @@ class AppPageRoute<T> extends PageRoute<T> with _AppRouteTransitionMixin {
   /// Builds the primary contents of the route.
   final WidgetBuilder builder;
 
+  /// A workspace installs route-local state without changing the page builder
+  /// used by ordinary navigation and existing identity/route tests.
+  Widget Function(Widget child)? workspaceWrapper;
+
   String? label;
 
   @override
@@ -36,7 +40,7 @@ class AppPageRoute<T> extends PageRoute<T> with _AppRouteTransitionMixin {
   Widget buildContent(BuildContext context) {
     var widget = builder(context);
     label = widget.runtimeType.toString();
-    return widget;
+    return workspaceWrapper?.call(widget) ?? widget;
   }
 
   @override

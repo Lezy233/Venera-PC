@@ -1,4 +1,7 @@
 import 'dart:math' as math;
+import 'package:venera_next/app_shell/workspace/workspace_navigation_scope.dart';
+import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/foundation/keyword_settings_store.dart';
@@ -15,6 +18,7 @@ import 'package:venera_next/components/select.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import 'package:venera_next/foundation/app_locale.dart';
+import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/extensions.dart';
@@ -22,6 +26,8 @@ import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
 
 import 'rating.dart';
+import 'comic_preview.dart';
+import 'comic_selection_drag.dart';
 
 typedef ComicPageBuilder =
     Widget Function({
@@ -30,6 +36,13 @@ typedef ComicPageBuilder =
       String? cover,
       String? title,
       int? heroID,
+    });
+
+typedef ComicReaderBuilder =
+    Widget Function({
+      required String id,
+      required String sourceKey,
+      String? title,
     });
 
 typedef AddComicFavoriteHandler =
@@ -73,6 +86,7 @@ class ComicFavoriteDisplayState {
 }
 
 ComicPageBuilder? _comicPageBuilder;
+ComicReaderBuilder? _comicReaderBuilder;
 
 AddComicFavoriteHandler? _addComicFavoriteHandler;
 ComicTileStateResolver? _comicTileStateResolver;
@@ -83,6 +97,7 @@ ComicFavoriteDisplayStateResolver? _comicFavoriteDisplayStateResolver;
 
 void configureComicWidgets({
   ComicPageBuilder? comicPageBuilder,
+  ComicReaderBuilder? comicReaderBuilder,
   AddComicFavoriteHandler? addFavorite,
   ComicTileStateResolver? tileStateResolver,
   ComicTileImageProviderResolver? tileImageProviderResolver,
@@ -91,6 +106,7 @@ void configureComicWidgets({
   ComicFavoriteDisplayStateResolver? favoriteDisplayStateResolver,
 }) {
   _comicPageBuilder = comicPageBuilder;
+  _comicReaderBuilder = comicReaderBuilder;
   _addComicFavoriteHandler = addFavorite;
   _comicTileStateResolver = tileStateResolver;
   _comicTileImageProviderResolver = tileImageProviderResolver;
@@ -152,6 +168,32 @@ void _openComicPage({
   );
 }
 
+void _openComicBody(Comic comic, {BuildContext? context, int? heroID}) {
+  if (GlobalPreferenceStore(
+        appdata.settings,
+      ).read(FavoritePreferences.onClickFavorite) ==
+      'read') {
+    final builder =
+        _comicReaderBuilder ??
+        (throw StateError('Comic reader builder is not configured.'));
+    final targetContext =
+        context ?? appNavigation.mainNavigatorKey?.currentContext;
+    targetContext?.to(
+      () =>
+          builder(id: comic.id, sourceKey: comic.sourceKey, title: comic.title),
+    );
+    return;
+  }
+  _openComicPage(
+    context: context,
+    id: comic.id,
+    sourceKey: comic.sourceKey,
+    cover: comic.cover,
+    title: comic.title,
+    heroID: heroID,
+  );
+}
+
 Future<void> _addComicToFavorites(BuildContext context, List<Comic> comics) {
   final handler =
       _addComicFavoriteHandler ??
@@ -190,7 +232,37 @@ class ComicTile extends StatelessWidget {
     this.onBlocked,
     this.heroID,
     this.displayMode,
+    this.hoverColor,
+    this.bookshelf = false,
+    this.previewGroup,
+    this.selected = false,
+    this.onSelectionChanged,
+    this.clearSelection,
+    this.selectedGroup = const [],
+    this.enableSelectionDrag = true,
+    this.compactContent,
   });
+
+  final bool bookshelf;
+  final List<Comic>? previewGroup;
+  final bool selected;
+  final ValueChanged<bool>? onSelectionChanged;
+  final VoidCallback? clearSelection;
+  final List<Comic> selectedGroup;
+  final bool enableSelectionDrag;
+
+  /// Keeps an existing compact surface while sharing card input behavior.
+  final Widget? compactContent;
+
+  WorkspaceRouteRecord _backgroundRoute(Comic target) => WorkspaceRouteRecord(
+    kind: WorkspacePageKind.comic,
+    arguments: {
+      'id': target.id,
+      'sourceKey': target.sourceKey,
+      'cover': target.cover,
+      'title': target.title,
+    },
+  );
 
   final Comic comic;
 
@@ -210,18 +282,16 @@ class ComicTile extends StatelessWidget {
 
   final ComicTileDisplayMode? displayMode;
 
+  /// Optional paint override for the primary ink response, without changing
+  /// the inherited theme used by independent controls or context menus.
+  final Color? hoverColor;
+
   void _onTap() {
     if (onTap != null) {
       onTap!();
       return;
     }
-    _openComicPage(
-      id: comic.id,
-      sourceKey: comic.sourceKey,
-      cover: comic.cover,
-      title: comic.title,
-      heroID: heroID,
-    );
+    _openComicBody(comic, heroID: heroID);
   }
 
   void _onLongPressed(BuildContext context) {
@@ -229,6 +299,10 @@ class ComicTile extends StatelessWidget {
       onLongPressed!();
       return;
     }
+    // Desktop cards use the secondary pointer for their context menu. Keep
+    // the mobile long-press affordance, while avoiding the legacy mobile menu
+    // on a desktop primary-pointer hold.
+    if (App.isDesktop) return;
     onLongPress(context);
   }
 
@@ -246,7 +320,18 @@ class ComicTile extends StatelessWidget {
   }
 
   void showMenu(Offset location, BuildContext context) {
+    final workspace = WorkspaceNavigationScope.maybeOf(context);
     ContextMenuRegion.of(context).show(context, location, [
+      if (workspace != null && selectedGroup.isNotEmpty)
+        MenuEntry(
+          icon: Icons.tab_outlined,
+          text: 'Open selected in background tabs'.tl,
+          onClick: () {
+            for (final target in selectedGroup) {
+              workspace.openBackground(_backgroundRoute(target));
+            }
+          },
+        ),
       MenuEntry(
         icon: Icons.chrome_reader_mode_outlined,
         text: 'Details'.tl,
@@ -259,6 +344,22 @@ class ComicTile extends StatelessWidget {
           );
         },
       ),
+      if (workspace != null)
+        MenuEntry(
+          icon: Icons.tab_outlined,
+          text: 'Open in background tab'.tl,
+          onClick: () => workspace.openBackground(
+            WorkspaceRouteRecord(
+              kind: WorkspacePageKind.comic,
+              arguments: {
+                'id': comic.id,
+                'sourceKey': comic.sourceKey,
+                'cover': comic.cover,
+                'title': comic.title,
+              },
+            ),
+          ),
+        ),
       MenuEntry(
         icon: Icons.copy,
         text: 'Copy Title'.tl,
@@ -284,12 +385,91 @@ class ComicTile extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ContextMenuRegion(
-    identity: comic,
-    builder: (context, _) => _build(context),
+  Widget build(BuildContext context) => ComicSelectionDrag(
+    routes:
+        enableSelectionDrag && WorkspaceNavigationScope.maybeOf(context) != null
+        ? (selectedGroup.isEmpty ? [comic] : selectedGroup)
+              .map(_backgroundRoute)
+              .toList()
+        : const [],
+    child: Focus(
+      skipTraversal: compactContent == null,
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        final background = WorkspaceNavigationScope.maybeOf(
+          context,
+        )?.openBackground;
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            (HardwareKeyboard.instance.isControlPressed ||
+                HardwareKeyboard.instance.isMetaPressed) &&
+            background != null) {
+          for (final target
+              in selectedGroup.isEmpty ? [comic] : selectedGroup) {
+            background(_backgroundRoute(target));
+          }
+          return KeyEventResult.handled;
+        }
+        if (FocusManager.instance.primaryFocus?.context
+                ?.findAncestorWidgetOfExactType<Checkbox>() !=
+            null) {
+          return KeyEventResult.ignored;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.enter &&
+            compactContent != null) {
+          _onTap();
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey != LogicalKeyboardKey.space) {
+          return KeyEventResult.ignored;
+        }
+        showComicPreview(
+          context: context,
+          comic: comic,
+          group: previewGroup ?? [comic],
+          imageProvider: _findImageProvider,
+          openCurrent: (target) => _openComicPage(
+            context: context,
+            id: target.id,
+            sourceKey: target.sourceKey,
+            cover: target.cover,
+            title: target.title,
+          ),
+          openBackground: background == null
+              ? null
+              : (target) => background(
+                  WorkspaceRouteRecord(
+                    kind: WorkspacePageKind.comic,
+                    arguments: {
+                      'id': target.id,
+                      'sourceKey': target.sourceKey,
+                      'cover': target.cover,
+                      'title': target.title,
+                    },
+                  ),
+                ),
+        );
+        return KeyEventResult.handled;
+      },
+      child: _ComicSelectionControl(
+        title: comic.title,
+        selected: selected,
+        onChanged: onSelectionChanged,
+        clear: clearSelection,
+        child: ContextMenuRegion(
+          identity: comic,
+          builder: (context, _) => _build(context),
+        ),
+      ),
+    ),
   );
 
   Widget _build(BuildContext context) {
+    if (compactContent != null) {
+      return GestureDetector(
+        onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
+        child: compactContent,
+      );
+    }
     final state = _tileState(comic);
     final type = switch (displayMode) {
       ComicTileDisplayMode.detailed => 'detailed',
@@ -305,6 +485,15 @@ class ComicTile extends StatelessWidget {
       _ => _buildBriefMode(context, state),
     };
 
+    Widget interactive(Widget content) => ClickInkWell(
+      hoverColor: hoverColor,
+      borderRadius: BorderRadius.circular(type == 'detailed' ? 12 : 8),
+      onTap: _onTap,
+      onLongPress: enableLongPressed ? () => _onLongPressed(context) : null,
+      onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
+      child: content,
+    );
+
     final isFavorite = state.isFavorite;
     final progressInDescription =
         type != 'gallery' && state.descriptionOverride != null;
@@ -319,102 +508,110 @@ class ComicTile extends StatelessWidget {
     final hasUpdate = state.hasNewUpdate;
 
     if (!isFavorite && historyPage == null && !hasUpdate) {
-      return child;
+      return interactive(child);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = type == 'gallery' && constraints.maxWidth < 88;
-        final badgeSize = compact ? 18.0 : 24.0;
-        final separateProgress =
-            historyDescription != null &&
-            state.historyCompactDescription != null;
-        // Keep multi-line progress over the cover, not over the comic title.
-        return Stack(
-          children: [
-            Positioned.fill(child: child),
-            Positioned(
-              left: type == 'detailed'
-                  ? 16
-                  : compact
-                  ? 4
-                  : 6,
-              top: compact ? 6 : 8,
-              right: type == 'detailed'
-                  ? separateProgress
-                        ? math.max(
-                            16.0,
-                            constraints.maxWidth -
-                                16 -
-                                (constraints.maxHeight - 16) * 0.68,
-                          )
-                        : 16
-                  : compact
-                  ? 4
-                  : 6,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (isFavorite || hasUpdate || !separateProgress)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isFavorite)
-                            Container(
-                              height: badgeSize,
-                              width: badgeSize,
-                              color: Colors.green,
-                              child: Icon(
-                                Icons.bookmark_rounded,
-                                size: badgeSize * 2 / 3,
-                                color: Colors.white,
-                              ),
-                            ),
-                          if (!separateProgress && historyDescription != null)
-                            Flexible(
-                              child: _ReadingProgressBadge(
-                                historyDescription,
-                                tooltip: state.historyTooltipDescription,
-                              ),
-                            ),
-                          if (historyPage != null && historyDescription == null)
-                            Container(
-                              height: badgeSize,
-                              color: Colors.blue.toOpacity(0.9),
-                              constraints: BoxConstraints(minWidth: badgeSize),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: compact ? 2 : 4,
-                              ),
-                              child: CustomPaint(
-                                painter: _ReadingHistoryPainter(
-                                  historyPage,
-                                  state.historyMaxPage,
+    return interactive(
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final compact =
+              (type == 'gallery' || type == 'brief') &&
+              constraints.maxWidth < 88;
+          final badgeSize = compact ? 18.0 : 24.0;
+          final compactGallery = type == 'gallery' && compact;
+          final separateProgress =
+              historyDescription != null &&
+              state.historyCompactDescription != null;
+          // Keep multi-line progress over the cover, not over the comic title.
+          return Stack(
+            children: [
+              Positioned.fill(child: child),
+              Positioned(
+                left: type == 'detailed'
+                    ? 16
+                    : compactGallery
+                    ? 4
+                    : 6,
+                top: compactGallery ? 6 : 8,
+                right: type == 'detailed'
+                    ? separateProgress
+                          ? math.max(
+                              16.0,
+                              constraints.maxWidth -
+                                  16 -
+                                  (constraints.maxHeight - 16) * 0.68,
+                            )
+                          : 16
+                    : compactGallery
+                    ? 4
+                    : 6,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isFavorite || hasUpdate || !separateProgress)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isFavorite)
+                              Container(
+                                height: badgeSize,
+                                width: badgeSize,
+                                color: Colors.green,
+                                child: Icon(
+                                  Icons.bookmark_rounded,
+                                  size: badgeSize * 2 / 3,
+                                  color: Colors.white,
                                 ),
                               ),
-                            ),
-                          if (hasUpdate)
-                            _buildUpdateBadge(context, size: badgeSize),
-                        ],
-                      ),
-                    if (separateProgress)
-                      _ReadingProgressBadge(
-                        historyDescription,
-                        tooltip: state.historyTooltipDescription,
-                        compactDescription: state.historyCompactDescription,
-                      ),
-                  ],
+                            if (!separateProgress && historyDescription != null)
+                              Flexible(
+                                child: _ReadingProgressBadge(
+                                  historyDescription,
+                                  tooltip: state.historyTooltipDescription,
+                                ),
+                              ),
+                            if (historyPage != null &&
+                                historyDescription == null)
+                              Container(
+                                height: badgeSize,
+                                color: Colors.blue.toOpacity(0.9),
+                                constraints: BoxConstraints(
+                                  minWidth: badgeSize,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: compactGallery ? 2 : 4,
+                                ),
+                                child: CustomPaint(
+                                  painter: _ReadingHistoryPainter(
+                                    historyPage,
+                                    state.historyMaxPage,
+                                  ),
+                                ),
+                              ),
+                            if (hasUpdate)
+                              _buildUpdateBadge(context, size: badgeSize),
+                          ],
+                        ),
+                      if (separateProgress)
+                        _ReadingProgressBadge(
+                          historyDescription,
+                          tooltip: state.historyTooltipDescription,
+                          compactDescription: state.historyCompactDescription,
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -425,7 +622,7 @@ class ComicTile extends StatelessWidget {
     }
     return AnimatedImage(
       image: image,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
     );
@@ -458,40 +655,32 @@ class ComicTile extends StatelessWidget {
           image = Hero(tag: "cover$heroID", child: image);
         }
 
-        return ClickInkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _onTap,
-          onLongPress: enableLongPressed ? () => _onLongPressed(context) : null,
-          onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 24, 8),
-            child: Row(
-              children: [
-                image,
-                SizedBox.fromSize(size: const Size(16, 5)),
-                Expanded(
-                  child: _ComicDescription(
-                    title: comic.maxPage == null
-                        ? comic.title.replaceAll("\n", "")
-                        : "[${comic.maxPage}P]${comic.title.replaceAll("\n", "")}",
-                    subtitle: comic.subtitle ?? '',
-                    description: state.descriptionOverride ?? comic.description,
-                    descriptionTooltip:
-                        state.historyTooltipDescription ??
-                        state.descriptionOverride,
-                    badge: badge ?? comic.language,
-                    tags: comic.tags,
-                    maxLines: 2,
-                    enableTranslate:
-                        ComicSource.find(
-                          comic.sourceKey,
-                        )?.enableTagsTranslate ??
-                        false,
-                    rating: comic.stars,
-                  ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 24, 8),
+          child: Row(
+            children: [
+              image,
+              SizedBox.fromSize(size: const Size(16, 5)),
+              Expanded(
+                child: _ComicDescription(
+                  title: comic.maxPage == null
+                      ? comic.title.replaceAll("\n", "")
+                      : "[${comic.maxPage}P]${comic.title.replaceAll("\n", "")}",
+                  subtitle: comic.subtitle ?? '',
+                  description: state.descriptionOverride ?? comic.description,
+                  descriptionTooltip:
+                      state.historyTooltipDescription ??
+                      state.descriptionOverride,
+                  badge: badge ?? comic.language,
+                  tags: comic.tags,
+                  maxLines: 2,
+                  enableTranslate:
+                      ComicSource.find(comic.sourceKey)?.enableTagsTranslate ??
+                      false,
+                  rating: comic.stars,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -521,115 +710,110 @@ class ComicTile extends StatelessWidget {
           image = Hero(tag: "cover$heroID", child: image);
         }
 
-        return ClickInkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: _onTap,
-          onLongPress: enableLongPressed ? () => _onLongPressed(context) : null,
-          onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(child: image),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: (() {
-                        final subtitle = comic.subtitle
-                            ?.replaceAll('\n', '')
-                            .trim();
-                        final description = state.descriptionOverride == null
-                            ? comic.description
-                            : state.historyCompactDescription ??
-                                  state.descriptionOverride!;
-                        final text = description.isNotEmpty
-                            ? description.split('|').join('\n')
-                            : (subtitle?.isNotEmpty == true ? subtitle : null);
-                        final fortSize = constraints.maxWidth < 80
-                            ? 8.0
-                            : constraints.maxWidth < 150
-                            ? 10.0
-                            : 12.0;
+        return Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: image),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: (() {
+                      final subtitle = comic.subtitle
+                          ?.replaceAll('\n', '')
+                          .trim();
+                      final description = state.descriptionOverride == null
+                          ? comic.description
+                          : state.historyCompactDescription ??
+                                state.descriptionOverride!;
+                      final text = description.isNotEmpty
+                          ? description.split('|').join('\n')
+                          : (subtitle?.isNotEmpty == true ? subtitle : null);
+                      final fortSize = constraints.maxWidth < 80
+                          ? 8.0
+                          : constraints.maxWidth < 150
+                          ? 10.0
+                          : 12.0;
 
-                        if (text == null) {
-                          return const SizedBox();
-                        }
+                      if (text == null) {
+                        return const SizedBox();
+                      }
 
-                        var children = <Widget>[];
-                        var lines = text.split('\n');
-                        lines.removeWhere((e) => e.trim().isEmpty);
-                        if (lines.length > 3) {
-                          lines = lines.sublist(0, 3);
-                        }
-                        for (var line in lines) {
-                          children.add(
-                            Container(
-                              margin: const EdgeInsets.fromLTRB(2, 0, 2, 2),
-                              padding: constraints.maxWidth < 80
-                                  ? const EdgeInsets.fromLTRB(3, 1, 3, 1)
-                                  : constraints.maxWidth < 150
-                                  ? const EdgeInsets.fromLTRB(4, 2, 4, 2)
-                                  : const EdgeInsets.fromLTRB(5, 2, 5, 2),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: Colors.black.toOpacity(0.5),
-                              ),
-                              constraints: BoxConstraints(
-                                maxWidth: constraints.maxWidth,
-                              ),
-                              child: Text(
-                                line,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: fortSize,
-                                  color: Colors.white,
-                                ),
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                      var children = <Widget>[];
+                      var lines = text.split('\n');
+                      lines.removeWhere((e) => e.trim().isEmpty);
+                      if (lines.length > 3) {
+                        lines = lines.sublist(0, 3);
+                      }
+                      for (var line in lines) {
+                        children.add(
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(2, 0, 2, 2),
+                            padding: constraints.maxWidth < 80
+                                ? const EdgeInsets.fromLTRB(3, 1, 3, 1)
+                                : constraints.maxWidth < 150
+                                ? const EdgeInsets.fromLTRB(4, 2, 4, 2)
+                                : const EdgeInsets.fromLTRB(5, 2, 5, 2),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.black.toOpacity(0.5),
                             ),
-                          );
-                        }
-                        final labels = Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: children,
-                        );
-                        if (state.descriptionOverride == null) return labels;
-                        final tooltip =
-                            state.historyTooltipDescription ??
-                            state.descriptionOverride!;
-                        return Tooltip(
-                          message: tooltip,
-                          child: Semantics(
-                            label: tooltip,
-                            excludeSemantics: true,
-                            child: labels,
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth,
+                            ),
+                            child: Text(
+                              line,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: fortSize,
+                                color: Colors.white,
+                              ),
+                              textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         );
-                      })(),
-                    ),
-                  ],
-                ),
+                      }
+                      final labels = Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: children,
+                      );
+                      if (state.descriptionOverride == null) return labels;
+                      final tooltip =
+                          state.historyTooltipDescription ??
+                          state.descriptionOverride!;
+                      return Tooltip(
+                        message: tooltip,
+                        child: Semantics(
+                          label: tooltip,
+                          excludeSemantics: true,
+                          child: labels,
+                        ),
+                      );
+                    })(),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-                child: Text(
-                  comic.title.replaceAll('\n', ''),
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+              child: Text(
+                comic.title.replaceAll('\n', ''),
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-            ],
-          ).paddingHorizontal(6).paddingVertical(8),
-        );
+            ),
+          ],
+        ).paddingHorizontal(6).paddingVertical(8);
       },
     );
   }
 
   Widget _buildGalleryMode(BuildContext context) {
+    if (bookshelf) return _buildBookshelfMode(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 88;
@@ -653,34 +837,111 @@ class ComicTile extends StatelessWidget {
           image = Hero(tag: 'cover$heroID', child: image);
         }
 
-        return ClickInkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: _onTap,
-          onLongPress: enableLongPressed ? () => _onLongPressed(context) : null,
-          onSecondaryTapDown: (detail) => onSecondaryTap(detail, context),
-          child: Padding(
-            padding: compact
-                ? const EdgeInsets.fromLTRB(4, 5, 4, 4)
-                : const EdgeInsets.fromLTRB(6, 8, 6, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: image),
-                SizedBox(height: compact ? 3 : 5),
-                SizedBox(
-                  height: compact ? 24 : 36,
+        return Padding(
+          padding: compact
+              ? const EdgeInsets.fromLTRB(4, 5, 4, 4)
+              : const EdgeInsets.fromLTRB(6, 8, 6, 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: image),
+              SizedBox(height: compact ? 3 : 5),
+              SizedBox(
+                height: compact ? 24 : 36,
+                child: Text(
+                  comic.title.replaceAll('\n', ''),
+                  maxLines: compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: compact ? 10 : 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBookshelfMode(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const titleStyle = TextStyle(
+          fontSize: AppFontSize.body,
+          fontWeight: FontWeight.w500,
+        );
+        final painter = TextPainter(
+          text: TextSpan(
+            text: comic.title.replaceAll('\n', ''),
+            style: titleStyle,
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final truncated = painter.width > constraints.maxWidth - AppSpacing.lg;
+        painter.dispose();
+        final largeText =
+            MediaQuery.textScalerOf(context).scale(AppFontSize.body) >
+            AppFontSize.body;
+        final compact =
+            GlobalPreferenceStore(
+              appdata.settings,
+            ).read(FavoritePreferences.density) ==
+            'compact';
+        Widget image = Container(
+          decoration: BoxDecoration(
+            color: context.colorScheme.contentSurfaceRaised,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: buildImage(context),
+        );
+
+        if (heroID != null) {
+          image = Hero(tag: 'cover$heroID', child: image);
+        }
+
+        return Padding(
+          padding: compact
+              ? const EdgeInsets.all(AppSpacing.xs)
+              : const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: image),
+              const SizedBox(height: AppSpacing.xs),
+              SizedBox(
+                height:
+                    MediaQuery.textScalerOf(context).scale(AppFontSize.body) *
+                    (largeText ? 2 : 1) *
+                    1.3,
+                child: Tooltip(
+                  message: truncated ? comic.title : '',
+                  triggerMode: TooltipTriggerMode.manual,
                   child: Text(
                     comic.title.replaceAll('\n', ''),
-                    maxLines: compact ? 1 : 2,
+                    maxLines: largeText ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: compact ? 10 : 13,
+                      fontSize: AppFontSize.body,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              Text(
+                comic.subtitle ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: AppFontSize.bodySmall,
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -766,6 +1027,95 @@ class ComicTile extends StatelessWidget {
             ? dialog
             : SettingsSaveScope(work: work, child: dialog);
       },
+    );
+  }
+}
+
+class _ComicSelectionControl extends StatefulWidget {
+  const _ComicSelectionControl({
+    required this.title,
+    required this.selected,
+    required this.onChanged,
+    required this.clear,
+    required this.child,
+  });
+  final String title;
+  final bool selected;
+  final ValueChanged<bool>? onChanged;
+  final VoidCallback? clear;
+  final Widget child;
+  @override
+  State<_ComicSelectionControl> createState() => _ComicSelectionControlState();
+}
+
+class _ComicSelectionControlState extends State<_ComicSelectionControl> {
+  bool hovered = false, focused = false;
+  final focus = FocusNode(debugLabel: 'comic-card-selection');
+  @override
+  void dispose() {
+    focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onChanged == null) return widget.child;
+    final visible = hovered || focused || widget.selected;
+    return Focus(
+      focusNode: focus,
+      skipTraversal: true,
+      onFocusChange: (value) {
+        setState(() => focused = value);
+      },
+      onKeyEvent: (_, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            widget.clear != null) {
+          widget.clear!();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: MouseRegion(
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: widget.selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0),
+              width: AppSizes.hairline,
+            ),
+          ),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              widget.child,
+              if (visible)
+                Positioned(
+                  top: AppSpacing.xs,
+                  right: AppSpacing.xs,
+                  child: Material(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: Checkbox(
+                      semanticLabel: 'Select @title'.tlParams({
+                        'title': widget.title,
+                      }),
+                      value: widget.selected,
+                      onChanged: (value) {
+                        focus.requestFocus();
+                        widget.onChanged!(value ?? false);
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1117,6 +1467,9 @@ class _ReadingProgressBadge extends StatelessWidget {
   Widget build(BuildContext context) => Tooltip(
     message: tooltip ?? description,
     child: Semantics(
+      // Keep progress independently readable when the card's InkWell includes
+      // the overlay as well as the title.
+      container: true,
       label: tooltip ?? description,
       excludeSemantics: true,
       child: Container(
@@ -1153,6 +1506,11 @@ class SimpleComicTile extends StatelessWidget {
     this.withTitle = false,
     this.heroID,
     this.gaplessPlayback = false,
+    this.previewGroup,
+    this.selected = false,
+    this.onSelectionChanged,
+    this.clearSelection,
+    this.selectedGroup = const [],
   });
 
   final Comic comic;
@@ -1164,6 +1522,11 @@ class SimpleComicTile extends StatelessWidget {
   final int? heroID;
 
   final bool gaplessPlayback;
+  final List<Comic>? previewGroup;
+  final bool selected;
+  final ValueChanged<bool>? onSelectionChanged;
+  final VoidCallback? clearSelection;
+  final List<Comic> selectedGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -1175,7 +1538,7 @@ class SimpleComicTile extends StatelessWidget {
             image: image,
             width: double.infinity,
             height: double.infinity,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             filterQuality: FilterQuality.medium,
             gaplessPlayback: gaplessPlayback,
           );
@@ -1231,41 +1594,40 @@ class SimpleComicTile extends StatelessWidget {
 
     child = AnimatedTapRegion(
       borderRadius: 8,
+      footer: withTitle
+          ? Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: SizedBox(
+                width: 92,
+                child: Center(
+                  child: Text(
+                    comic.title.replaceAll('\n', ''),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            )
+          : null,
       onTap:
           onTap ??
           () {
-            _openComicPage(
-              context: context,
-              id: comic.id,
-              sourceKey: comic.sourceKey,
-              cover: comic.cover,
-              title: comic.title,
-              heroID: heroID,
-            );
+            _openComicBody(comic, context: context, heroID: heroID);
           },
       child: child,
     );
 
-    if (withTitle) {
-      child = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          child,
-          const SizedBox(height: 4),
-          SizedBox(
-            width: 92,
-            child: Center(
-              child: Text(
-                comic.title.replaceAll('\n', ''),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return child;
+    return ComicTile(
+      comic: comic,
+      onTap: onTap,
+      heroID: heroID,
+      enableLongPressed: false,
+      compactContent: child,
+      previewGroup: previewGroup,
+      selected: selected,
+      onSelectionChanged: onSelectionChanged,
+      clearSelection: clearSelection,
+      selectedGroup: selectedGroup,
+    );
   }
 }

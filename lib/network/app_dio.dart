@@ -326,7 +326,7 @@ class RHttpAdapter implements HttpClientAdapter {
   void _setUserAgent(RequestOptions options) {
     if (options.headers['User-Agent'] == null &&
         options.headers['user-agent'] == null) {
-      options.headers['User-Agent'] = "VeneraNext/v${App.version}";
+      options.headers['User-Agent'] = "Venera-PC/v${App.version}";
     }
   }
 

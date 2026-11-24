@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:venera_next/components/settings_save_state.dart';
 
+import 'package:venera_next/app_shell/desktop_chrome.dart';
 import 'package:venera_next/features/reader/status_info.dart';
 import 'package:flutter/material.dart';
 import 'package:venera_next/features/reader/progress_bar.dart';
@@ -8,6 +9,7 @@ import 'package:venera_next/features/reader/bottom_actions.dart';
 import 'package:venera_next/features/reader/top_bar.dart';
 import 'package:venera_next/components/message.dart';
 import 'package:venera_next/features/reader/sidebar_binding.dart';
+import 'package:venera_next/features/reader/thumbnails.dart';
 import 'package:venera_next/features/history/history_api.dart'
     show ImageFavoriteResult;
 import 'package:venera_next/features/reader/image_favorite_controller.dart';
@@ -27,6 +29,7 @@ import 'package:venera_next/features/reader/platform_effects_controller.dart';
 import 'shell_data.dart';
 import 'progress_navigation.dart';
 import 'package:venera_next/foundation/context.dart';
+import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/features/reader/image_export.dart';
 import 'package:venera_next/features/reader/image_export_binding.dart';
 import 'package:venera_next/foundation/image_work.dart';
@@ -34,7 +37,13 @@ import 'package:venera_next/features/reader/settings_effects.dart';
 import 'package:venera_next/features/reader/settings_panel.dart';
 import 'package:venera_next/features/reader/image_selection.dart';
 import 'package:venera_next/features/reader/image_picker.dart';
+import 'package:venera_next/components/sidebar_resize_handle.dart';
+import 'package:venera_next/foundation/appdata.dart';
+import 'package:venera_next/foundation/application_preferences.dart';
+import 'package:venera_next/foundation/global_preference_store.dart';
 import 'package:venera_next/foundation/log.dart';
+import 'package:venera_next/foundation/reader_preference_store.dart';
+import 'package:venera_next/foundation/reader_preferences.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/routing/settings.dart';
 
@@ -53,6 +62,7 @@ class ReaderScaffold extends StatefulWidget {
     required this.onRotate,
     required this.onSystemUiChanged,
     required this.createChapterMenu,
+    this.createThumbnails,
     required this.favoriteChanges,
     required this.createFavoriteQuery,
     required this.createImageFavorite,
@@ -75,6 +85,7 @@ class ReaderScaffold extends StatefulWidget {
   final VoidCallback? onRotate;
   final void Function(bool menuOpen) onSystemUiChanged;
   final ReaderChapterMenuRequest? Function() createChapterMenu;
+  final ReaderThumbnailRequest? Function()? createThumbnails;
   final Listenable favoriteChanges;
   final ReaderImageFavoriteQuery? Function() createFavoriteQuery;
   final ReaderImageFavoriteRequest? Function() createImageFavorite;
@@ -90,6 +101,19 @@ class ReaderScaffold extends StatefulWidget {
 
 class ReaderScaffoldState extends State<ReaderScaffold> {
   var _brightnessPreview = ReaderBrightnessPreview();
+
+  late double _thumbnailWidth;
+  late double _thumbnailHeight;
+  DesktopChromeController? _chrome;
+  DesktopReaderActions? _desktopReaderActions;
+  bool? _thumbnailCollapsedOverride;
+  final _chapterQuery = ValueNotifier<String>('');
+  ReaderChapterMenuRequest? _chapterSearchRequest;
+  ReaderSidebarHandle? _chapterSearchHandle;
+
+  bool get _thumbnailCollapsed =>
+      _thumbnailCollapsedOverride ??
+      widget.data.preferences.readerThumbnailState == 'collapsed';
 
   bool _isOpen = false;
 
@@ -123,12 +147,57 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   @override
   void initState() {
     super.initState();
+    final layout = GlobalPreferenceStore(appdata.settings);
+    _thumbnailWidth = layout
+        .read(LayoutPreferences.readerThumbnailWidth)
+        .toDouble();
+    _thumbnailHeight = layout
+        .read(LayoutPreferences.readerThumbnailHeight)
+        .toDouble();
     _brightnessPreview.addListener(update);
     widget.favoriteChanges.addListener(_imageFavoritesChanged);
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncDesktopActions();
+  }
+
+  void _syncDesktopActions() {
+    final chrome = DesktopChromeScope.maybeOf(context);
+    final actions = _desktopReaderActions ??= DesktopReaderActions(
+      openSettings: openSetting,
+      openChapters: openChapterDrawer,
+      toggleThumbnails: _toggleThumbnail,
+      filterChapters: _filterChapters,
+      submitChapterSearch: _submitChapterSearch,
+      toggleFullscreen: widget.onFullscreen,
+      immersive: widget.data.immersive,
+    );
+    if (identical(chrome, _chrome) &&
+        identical(chrome?.readerActions, actions)) {
+      return;
+    }
+    final previous = _chrome;
+    _chrome = chrome;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (previous != chrome && identical(previous?.readerActions, actions)) {
+        DesktopChromeScope.setReaderActions(previous, null);
+      }
+      if (mounted && identical(_chrome, chrome)) {
+        DesktopChromeScope.setReaderActions(chrome, actions);
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    final actions = _desktopReaderActions;
+    if (actions != null && identical(_chrome?.readerActions, actions)) {
+      DesktopChromeScope.setReaderActions(_chrome, null);
+    }
+    _chapterQuery.dispose();
     _brightnessPreview.dispose();
     widget.favoriteChanges.removeListener(_imageFavoritesChanged);
     unawaited(_favorites.dispose());
@@ -145,6 +214,10 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   @override
   void didUpdateWidget(ReaderScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.immersive != widget.data.immersive) {
+      _desktopReaderActions = null;
+      _syncDesktopActions();
+    }
     if (!identical(oldWidget.favoriteChanges, widget.favoriteChanges)) {
       oldWidget.favoriteChanges.removeListener(_imageFavoritesChanged);
       widget.favoriteChanges.addListener(_imageFavoritesChanged);
@@ -211,11 +284,269 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
     _eInkRefreshController.reset();
   }
 
+  void _persistThumbnailSettings() {
+    final width = _thumbnailWidth;
+    final height = _thumbnailHeight;
+    unawaited(
+      appdata
+          .updateSettings((draft) {
+            final store = GlobalPreferenceStore(draft);
+            store.write(LayoutPreferences.readerThumbnailWidth, width);
+            store.write(LayoutPreferences.readerThumbnailHeight, height);
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Reader thumbnail settings', error, stack);
+            },
+          ),
+    );
+  }
+
+  void _persistThumbnailState(bool collapsed) {
+    unawaited(
+      appdata
+          .updateSettings((draft) {
+            ReaderPreferenceStore(
+              settings: draft,
+              scope: ReaderPreferenceScope.active,
+              comicId: widget.data.comicId,
+              sourceKey: widget.data.sourceKey,
+            ).write(
+              ReaderPreferences.readerThumbnailState,
+              collapsed ? 'collapsed' : 'expanded',
+            );
+          })
+          .then<void>(
+            (_) {},
+            onError: (Object error, StackTrace stack) {
+              Log.error('Reader thumbnail state', error, stack);
+            },
+          ),
+    );
+  }
+
+  void _toggleThumbnail() {
+    final next = !_thumbnailCollapsed;
+    setState(() => _thumbnailCollapsedOverride = next);
+    _persistThumbnailState(next);
+  }
+
+  void _resizeThumbnails({required bool vertical, required double delta}) {
+    final wasCollapsed = _thumbnailCollapsed;
+    var becameCollapsed = wasCollapsed;
+    setState(() {
+      if (vertical) {
+        if (!wasCollapsed || delta > 0) {
+          _thumbnailCollapsedOverride = false;
+          final next = (_thumbnailWidth + delta).clamp(120.0, 480.0);
+          if (next <= 130 && wasCollapsed) {
+            _thumbnailCollapsedOverride = true;
+            becameCollapsed = true;
+          } else {
+            _thumbnailWidth = next;
+          }
+        }
+      } else {
+        if (!wasCollapsed || delta > 0) {
+          _thumbnailCollapsedOverride = false;
+          final next = (_thumbnailHeight + delta).clamp(100.0, 320.0);
+          if (next <= 110 && wasCollapsed) {
+            _thumbnailCollapsedOverride = true;
+            becameCollapsed = true;
+          } else {
+            _thumbnailHeight = next;
+          }
+        }
+      }
+    });
+    if (becameCollapsed != wasCollapsed) {
+      _persistThumbnailState(becameCollapsed);
+    }
+  }
+
+  void _finishThumbnailResize() => _persistThumbnailSettings();
+
+  // Loading can make a thumbnail panel available. Keep the reader subtree
+  // when it moves into that layout so the same chapter is not fetched again.
+  final _contentKey = GlobalKey();
+  Widget _buildBody() {
+    final content = KeyedSubtree(
+      key: _contentKey,
+      child: AbsorbPointer(
+        absorbing: widget.data.animating,
+        child: widget.child,
+      ),
+    );
+    // Thumbnail strips target wide (desktop) layouts; narrow readers keep the
+    // full page area and no overlay.
+    if (context.width < 900 || widget.data.onCommentsPage) return content;
+    final request = widget.createThumbnails?.call();
+    if (request == null || request.isEmpty) return content;
+    final settings = widget.data.preferences;
+    final position = settings.readerThumbnailPosition;
+    final vertical = position != 'bottom';
+    final floating = settings.readerThumbnailMode == 'floating';
+    final readingReversed =
+        settings.readerMode == 'galleryRightToLeft' ||
+        settings.readerMode == 'continuousRightToLeft';
+    // Bottom strips follow the reading order; top-to-bottom reading can choose
+    // its own horizontal direction.
+    final reverse =
+        !vertical &&
+        (widget.data.vertical
+            ? settings.readerThumbnailScrollDirection == 'rightToLeft'
+            : readingReversed);
+    final size = vertical ? _thumbnailWidth : _thumbnailHeight;
+    final collapsed = _thumbnailCollapsed;
+
+    void select(int page) {
+      if (!request.isCurrent()) return;
+      request.select(page);
+    }
+
+    Widget handle({required bool expanded}) {
+      if (vertical) {
+        return SidebarResizeHandle(
+          expanded: expanded,
+          mirror: position == 'right',
+          onToggle: _toggleThumbnail,
+          onDrag: (delta) => _resizeThumbnails(
+            vertical: true,
+            delta: position == 'right' ? -delta : delta,
+          ),
+          onDragEnd: _finishThumbnailResize,
+        );
+      }
+      return _BottomResizeHandle(
+        expanded: expanded,
+        onToggle: _toggleThumbnail,
+        onDrag: (delta) => _resizeThumbnails(vertical: false, delta: delta),
+        onDragEnd: _finishThumbnailResize,
+      );
+    }
+
+    if (collapsed) {
+      return Stack(
+        children: [
+          Positioned.fill(child: content),
+          if (vertical)
+            Positioned(
+              left: position == 'left' ? 0 : null,
+              right: position == 'right' ? 0 : null,
+              top: 0,
+              bottom: 0,
+              child: handle(expanded: false),
+            )
+          else
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 14,
+              child: handle(expanded: false),
+            ),
+        ],
+      );
+    }
+
+    final panel = ReaderThumbnailsView(
+      request: request,
+      vertical: vertical,
+      reverse: reverse,
+      size: size,
+      onSelect: select,
+    );
+
+    if (floating) {
+      return Stack(
+        children: [
+          Positioned.fill(child: content),
+          Positioned(
+            left: vertical ? (position == 'left' ? 0 : null) : 0,
+            right: vertical ? (position == 'right' ? 0 : null) : 0,
+            top: vertical ? 0 : null,
+            bottom: 0,
+            width: vertical ? size : null,
+            height: vertical ? null : size,
+            child: panel,
+          ),
+          if (vertical)
+            Positioned(
+              left: position == 'left' ? size - 7 : null,
+              right: position == 'right' ? size - 7 : null,
+              top: 0,
+              bottom: 0,
+              child: handle(expanded: true),
+            )
+          else
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: size - 7,
+              height: 14,
+              child: handle(expanded: true),
+            ),
+        ],
+      );
+    }
+
+    final Widget fixed;
+    if (position == 'left') {
+      fixed = Row(
+        children: [
+          SizedBox(width: size, child: panel),
+          Expanded(child: content),
+        ],
+      );
+    } else if (position == 'right') {
+      fixed = Row(
+        children: [
+          Expanded(child: content),
+          SizedBox(width: size, child: panel),
+        ],
+      );
+    } else {
+      fixed = Column(
+        children: [
+          Expanded(child: content),
+          SizedBox(height: size, child: panel),
+        ],
+      );
+    }
+    return Stack(
+      children: [
+        Positioned.fill(child: fixed),
+        if (vertical)
+          Positioned(
+            left: position == 'left' ? size - 7 : null,
+            right: position == 'right' ? size - 7 : null,
+            top: 0,
+            bottom: 0,
+            child: handle(expanded: true),
+          )
+        else
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: size - 7,
+            height: 14,
+            child: handle(expanded: true),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isOnChapterCommentsPage = widget.data.onCommentsPage;
     final brightnessPanelVisible = _isOpen && _brightnessPanelOpen;
-    final menuDuration = MediaQuery.disableAnimationsOf(context)
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        GlobalPreferenceStore(
+          appdata.settings,
+        ).read(AppearancePreferences.reduceMotion);
+    final menuDuration = reduceMotion
         ? Duration.zero
         : const Duration(milliseconds: 180);
     final scaler = MediaQuery.textScalerOf(context);
@@ -223,14 +554,22 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
         .map((size) => scaler.scale(size) / size)
         .fold(1.0, (largest, scale) => scale > largest ? scale : largest);
     final topBarHeight = kTopBarHeight * titleScale;
+    final body = App.isDesktop ? SafeArea(child: _buildBody()) : _buildBody();
+    // Keep the image viewport geometry stable while the reader tools appear.
+    // The compact progress rail owns only its 8px visual line plus the safe
+    // area; the expanded bar is painted over that same bottom slot.
+    final compactBody = Column(
+      children: [
+        Expanded(child: body),
+        if (_isOpen) const SizedBox(height: 8) else buildBottom(),
+      ],
+    );
     return Stack(
       children: [
-        Positioned.fill(
-          child: AbsorbPointer(
-            absorbing: widget.data.animating,
-            child: widget.child,
-          ),
-        ),
+        // WindowFrame exposes its title strip as MediaQuery padding rather
+        // than reducing the route's constraints. Reserve it for the image
+        // viewport; reader controls already consume their own insets.
+        Positioned.fill(child: compactBody),
         if (!isOnChapterCommentsPage)
           Positioned.fill(
             child: ReaderBrightnessOverlay(
@@ -244,28 +583,27 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
           ),
         if (!isOnChapterCommentsPage) _buildInformation(),
         ReaderChapterNavigationButton(action: widget.chapterNavigation),
-        AnimatedPositioned(
-          duration: menuDuration,
-          top: _isOpen ? 0 : -(topBarHeight + context.padding.top),
-          left: 0,
-          right: 0,
-          // Insets change immediately when the native/custom frame changes.
-          // Keep content height in sync; animate only its entrance position.
-          child: SizedBox(
-            height: topBarHeight + context.padding.top,
-            child: _menuRegion(visible: _isOpen, child: buildTop()),
+        if (_isOpen)
+          AnimatedPositioned(
+            duration: menuDuration,
+            top: _isOpen ? 0 : -(topBarHeight + context.padding.top),
+            left: 0,
+            right: 0,
+            // Insets change immediately when the native/custom frame changes.
+            // Keep content height in sync; animate only its entrance position.
+            child: SizedBox(
+              height: topBarHeight + context.padding.top,
+              child: _menuRegion(visible: _isOpen, child: buildTop()),
+            ),
           ),
-        ),
-        AnimatedPositioned(
-          duration: menuDuration,
-          bottom: _isOpen
-              ? 0
-              : -(ReaderBottomBar.height +
-                    MediaQuery.of(context).padding.bottom),
-          left: 0,
-          right: 0,
-          child: _menuRegion(visible: _isOpen, child: buildBottom()),
-        ),
+        if (_isOpen)
+          AnimatedPositioned(
+            duration: menuDuration,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: buildBottom(),
+          ),
         AnimatedPositioned(
           duration: menuDuration,
           curve: Curves.easeOut,
@@ -299,6 +637,18 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
     chapterTitle: widget.data.chapterTitle,
     onBack: () => unawaited(widget.onExit()),
     actions: [
+      if (widget.onFullscreen != null)
+        IconButton(
+          tooltip:
+              (widget.data.immersive
+                      ? 'Exit immersive reading'
+                      : 'Enter immersive reading')
+                  .tl,
+          onPressed: widget.onFullscreen,
+          icon: Icon(
+            widget.data.immersive ? Icons.fullscreen_exit : Icons.fullscreen,
+          ),
+        ),
       if (shouldShowChapterComments())
         Tooltip(
           message: "Chapter Comments".tl,
@@ -487,22 +837,50 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
     );
   }
 
+  void _filterChapters(String query) {
+    if (!mounted) return;
+    _chapterQuery.value = query;
+    openChapterDrawer();
+  }
+
+  void _submitChapterSearch(String query) {
+    final request = _chapterSearchRequest;
+    final handle = _chapterSearchHandle;
+    if (!mounted || request == null || handle?.isCurrent != true) return;
+    final first = request.data
+        .filteredGroups(query)
+        .expand((group) => group.entries)
+        .firstOrNull;
+    if (first != null && request.select(first.index)) handle?.close();
+  }
+
   void openChapterDrawer() {
+    if (_chapterSearchHandle?.isCurrent == true) return;
     final request = widget.createChapterMenu();
     if (request == null) return;
     ReaderSidebarHandle? handle;
     handle = _sidebarBinding.show(
       context,
-      ReaderChaptersView(
-        data: request.data,
-        onSelect: (chapter) {
-          if (handle?.isCurrent != true) return;
-          request.select(chapter);
-          handle?.close();
-        },
-        onClose: () => handle?.close(),
+      ValueListenableBuilder<String>(
+        valueListenable: _chapterQuery,
+        builder: (context, query, _) => ReaderChaptersView(
+          data: request.data,
+          query: query,
+          onSelect: (chapter) {
+            if (handle?.isCurrent != true) return;
+            request.select(chapter);
+            handle?.close();
+          },
+          onClose: () => handle?.close(),
+        ),
       ),
+      // The command center lives above this route and keeps keyboard input.
+      requestFocus: _chrome?.searchFocusNode.context != null ? false : null,
     );
+    if (handle != null) {
+      _chapterSearchHandle = handle;
+      _chapterSearchRequest = request;
+    }
   }
 
   ReaderImageExportBinding? _exporter;
@@ -534,6 +912,11 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
         isCurrent: isCurrent,
         onChanged: (key) {
           if (isCurrent()) {
+            if (key == ReaderPreferences.readerThumbnailState.key) {
+              // A saved comic preference supersedes a temporary toolbar/drag
+              // override, so quick and full settings affect the visible rail.
+              setState(() => _thumbnailCollapsedOverride = null);
+            }
             request.apply(key, applyShellEffect: _applyShellEffect);
           }
         },
@@ -617,5 +1000,46 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
   Future<Offset?> _showSelectImageOverlay() {
     if (_isOpen) openOrClose();
     return _selectionOverlay.show(context);
+  }
+}
+
+class _BottomResizeHandle extends StatelessWidget {
+  const _BottomResizeHandle({
+    required this.expanded,
+    required this.onToggle,
+    required this.onDrag,
+    required this.onDragEnd,
+  });
+
+  final bool expanded;
+  final VoidCallback onToggle;
+  final ValueChanged<double> onDrag;
+  final VoidCallback onDragEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.outlineVariant;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeUpDown,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onToggle,
+        onVerticalDragUpdate: (details) => onDrag(-details.delta.dy),
+        onVerticalDragEnd: (_) => onDragEnd(),
+        child: SizedBox(
+          height: 14,
+          child: Center(
+            child: Container(
+              width: 40,
+              height: 3,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -2,19 +2,16 @@
   <strong>简体中文</strong> | <a href="README.en.md">English</a>
   <br>
   <br>
-  <img src="assets/readme_logo.png" alt="VeneraNext" width="200" />
+  <img src="assets/readme_logo.png" alt="Venera-PC" width="200" />
 
-  # VeneraNext
+  # Venera-PC
 
-  ![Flutter](https://img.shields.io/badge/Flutter-3.41.4-02569B?logo=flutter&logoColor=white&style=flat-square)
-  [![Release](https://img.shields.io/github/v/release/CyrilPeng/venera-next?label=Release&color=10B981&style=flat-square)](https://github.com/CyrilPeng/venera-next/releases/latest)
+  ![Flutter](https://img.shields.io/badge/Flutter-3.47.7-02569B?logo=flutter&logoColor=white&style=flat-square)
+  [![Release](https://img.shields.io/github/v/release/Lezy233/Venera-PC?label=Release&color=10B981&style=flat-square)](https://github.com/Lezy233/Venera-PC/releases/latest)
   ![License](https://img.shields.io/badge/License-GPL--3.0-10B981?style=flat-square)
   <br>
-  [![Downloads](https://img.shields.io/github/downloads/CyrilPeng/venera-next/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=CyrilPeng&repo=venera-next)
+  [![Downloads](https://img.shields.io/github/downloads/Lezy233/Venera-PC/total?style=flat-square&color=2ea44f&logo=github)](https://tooomm.github.io/github-release-stats/?user=Lezy233&repo=Venera-PC)
   [![爱发电](https://img.shields.io/badge/爱发电-支持我-ff69b4?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgMyAxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==)](https://ifdian.net/a/cyril)
-
-  <a href="https://trendshift.io/repositories/140830?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-140830" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/140830" alt="VeneraNext 的 Trendshift 项目徽章" width="250" height="55" /></a>
-  <a href="https://trendshift.io/repositories/140830?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-140830" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/140830/daily?language=Dart" alt="VeneraNext 的 Trendshift Dart 每日趋势排名" width="250" height="55" /></a>
 
 </div>
 
@@ -25,37 +22,20 @@
 
 ## 项目介绍
 
-[VeneraNext](https://github.com/CyrilPeng/venera-next) 是基于 [Venera](https://github.com/venera-app/venera) 持续开发的 Flutter 漫画阅读器，支持 **Android、iOS、Windows、Linux 和 macOS**。
+[Venera-PC](https://github.com/Lezy233/Venera-PC) 是面向 **Windows、Linux 和 macOS** 的桌面漫画阅读器，围绕“少一点打断，多一点阅读”设计日常体验：长篇漫画可以瀑布流跨章阅读，横向双页可以拆开看，夜间和墨水屏设备有各自的阅读设置；从发现作品、稍后阅读、收藏追更，到离线下载、阅读统计和多设备同步，也有相互衔接的入口。
 
-本分支围绕“少一点打断，多一点阅读”改进日常体验：长篇漫画可以瀑布流跨章阅读，横向双页可以拆开看，夜间和墨水屏设备有各自的阅读设置；从发现作品、稍后阅读、收藏追更，到离线下载、阅读统计和多设备同步，也有相互衔接的入口。
-
-原项目的 JavaScript 漫画源扩展、本地阅读、搜索与分类、收藏下载，以及按源提供的登录、评论和评分能力继续保留。
+漫画阅读基于开放的 JavaScript 扩展接口，按源提供搜索、聚合搜索、探索页、分类、排行和标签翻译；本地阅读、收藏下载，以及按源提供的登录、评论和评分能力继续保留。
 
 **快速入口：** [下载安装](#下载安装) · [使用说明](#使用说明) · [编写漫画源](doc/api/comic_source.zh.md) · [JavaScript API](doc/api/js.zh.md) · [更新日志](CHANGELOG.md)
 
 > [!IMPORTANT]
 > 本仓库只维护阅读器本体和扩展运行环境，不提供、内置、托管或推荐漫画源。网络漫画源需由用户自行合法配置，具体内容及源站可用性由相应扩展和服务决定。
 
-<div align="center">
-  <a href="https://github.com/CyrilPeng/Venera-Next">
-    <img alt="GitHub 主仓库" src="https://img.shields.io/badge/GitHub-主仓库-181717?style=for-the-badge&logo=github&logoColor=white" /></a>
-  <a href="https://gitee.com/CyrilPeng/venera-next">
-    <img alt="Gitee 国内镜像" src="https://img.shields.io/badge/Gitee-国内镜像-C71D23?style=for-the-badge&logo=gitee&logoColor=white" /></a>
-</div>
-
----
-
-## 软件截图
-
-| 主页：阅读历史、稍后阅读与追更 | 漫画详情页 |
-|---|---|
-| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Home.jpg" alt="VeneraNext 主页，展示阅读历史、稍后阅读和追更" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Details.jpg" alt="VeneraNext 漫画详情页，展示阅读操作、作品信息和章节列表" width="100%" /></a> |
-
 ---
 
 ## 功能亮点
 
-### 本分支的重点改进
+### 重点改进
 
 | 改进 | 日常使用体验 |
 |---|---|
@@ -63,7 +43,7 @@
 | **纵向拆分双页** | 在纵向连续和瀑布流模式中，把横向双页按顺序上下排列，支持交换左右两半的先后顺序；保持原图片页数与进度含义。 |
 | **夜间调光** | 阅读器内独立开关与 20%–100% 亮度调节，阅读设置和底部快捷面板均可操作；与应用的浅色、深色主题配合使用。 |
 | **电子墨水屏刷新** | 画廊翻页后按设定间隔闪屏，可调时长，支持黑色、白色、先白后黑三种样式，帮助减少残影。 |
-| **更顺手的详情页** | 桌面与移动端统一两行操作区，突出下载、阅读和继续阅读；显示章节进度与更新提示，章节正序/倒序偏好会保存。 |
+| **更顺手的详情页** | 桌面统一两行操作区，突出下载、阅读和继续阅读；显示章节进度与更新提示，章节正序/倒序偏好会保存。 |
 | **稍后阅读与追更** | 把“准备开始看的作品”和“持续关注的连载”分别管理；首页提供待看列表、追更封面预览和更新提示。 |
 | **收藏与检索** | 收藏页可切换封面画廊，自动或 2～6 列；支持保存作者、标签搜索快捷方式，图片收藏增加单部漫画的图库浏览。 |
 | **阅读时长统计** | 记录前台有效阅读时长，在历史页和设置入口查看累计时长、读过的漫画数量与排行。 |
@@ -71,10 +51,10 @@
 | **WebDAV 漫画库与归档** | 在线读取 NAS/WebDAV 图片目录，支持目录缓存、增量同步和元数据；本地漫画还可单独备份为 CBZ 并恢复。 |
 | **数据与桌面体验** | 配置原子写入与备份恢复、同步状态与错误展示、历史清理，以及 Windows 安装器、便携包和 winget 更新。 |
 
-### 延续 Venera 的核心能力
+### 核心能力
 
 - **开放的扩展接口**：用 JavaScript 对接漫画服务，按源提供搜索、聚合搜索、探索页、分类、排行和标签翻译。
-- **多种阅读方式**：保留画廊分页、章节内连续滚动、缩放和多图布局，支持触摸、键盘及移动端音量键等阅读操作。
+- **多种阅读方式**：保留画廊分页、章节内连续滚动、缩放和多图布局，支持键盘、鼠标及触摸等阅读操作。
 - **收藏与离线阅读**：本地收藏、网络收藏、历史记录、图片收藏和下载队列；已下载章节可离线读取。
 - **按源启用的互动**：登录、Cookie、评论与回复、章节评论、点赞和评分等，由扩展实际支持的能力决定。
 - **跨设备使用**：WebDAV 应用数据同步与导入导出，以及可用于脚本调用的[无头命令模式](doc/user/headless.zh.md)。
@@ -82,22 +62,6 @@
 ---
 
 ## 下载安装
-
-### Android
-
-从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 APK 安装包：
-
-| 文件名 | 说明 | 适用场景 |
-|---|---|---|
-| `VeneraNext-xxx-android.apk` | 通用版 | 适用于大多数 Android 设备 |
-| `VeneraNext-xxx-android-arm64-v8a.apk` | ARM64 版 | 支持 ARM64 应用的 Android 设备 |
-| `VeneraNext-xxx-android-armeabi-v7a.apk` | ARM32 版 | 较老的 32 位设备 |
-
-**推荐**：如果不确定应该下载哪个，选择通用版 `VeneraNext-xxx-android.apk`。
-
-### iOS
-
-从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 ipa 安装包，使用 AltStore 旁加载。
 
 ### Windows
 
@@ -108,34 +72,34 @@ winget install --id CyrilPeng.VeneraNext --exact
 winget upgrade --id CyrilPeng.VeneraNext --exact
 ```
 
-也可以从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 `VeneraNext-xxx-windows-installer.exe` 安装包或 zip 便携版。便携版不受 winget 管理，需要手动下载新版本并覆盖更新。新版本发布后，winget 公共源可能需要等待 Microsoft 审核；可先执行 `winget source update` 刷新本地索引。
+也可以从 [最新稳定版](https://github.com/Lezy233/Venera-PC/releases/latest) 下载 `VeneraPC-xxx-windows-installer.exe` 安装包或 `VeneraPC-xxx-windows.zip` 便携版。便携版不受 winget 管理，需要手动下载新版本并覆盖更新。新版本发布后，winget 公共源可能需要等待 Microsoft 审核；可先执行 `winget source update` 刷新本地索引。
 
 Windows 安装器、便携包和 winget manifest 维护说明见 [doc/distribution/windows.zh.md](doc/distribution/windows.zh.md)。
 
 ### Linux
 
-从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载对应架构的安装包：
+从 [最新稳定版](https://github.com/Lezy233/Venera-PC/releases/latest) 下载对应架构的安装包：
 
 | 发行版 / 方式 | 安装或运行 |
 |---|---|
 | Debian / Ubuntu（DEB） | `sudo apt install ./venera-next_xxx_amd64.deb`（ARM64 选择 `arm64` 包） |
 | Fedora 等提供所需依赖的发行版（RPM） | `sudo dnf install ./venera-next-xxx.x86_64.rpm`（ARM64 选择 `aarch64` 包） |
 | Arch Linux（x86_64） | `sudo pacman -U ./venera-next-xxx-x86_64.pkg.tar.zst` |
-| AppImage（x86_64 / ARM64） | `chmod +x VeneraNext-xxx-x86_64.AppImage`，再执行 `./VeneraNext-xxx-x86_64.AppImage`（ARM64 选择 `aarch64` 文件） |
+| AppImage（x86_64 / ARM64） | `chmod +x VeneraPC-xxx-x86_64.AppImage`，再执行 `./VeneraPC-xxx-x86_64.AppImage`（ARM64 选择 `aarch64` 文件） |
 
-`xxx` 请替换为下载文件中的实际版本号。v1.18.0 稳定版提供 x86_64 和 ARM64 的 RPM 与 AppImage；可用 `uname -m` 查看机器架构。
+`xxx` 请替换为下载文件中的实际版本号。稳定版提供 x86_64 和 ARM64 的 RPM 与 AppImage；可用 `uname -m` 查看机器架构。安装后可通过 `venera-pc` 或兼容的 `venera-next` 命令启动同一应用。
 
 Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定版 AppImage 已包含 GTK 3 和 WebKitGTK 4.1，无需额外安装 GTK/WebKit；仍需系统提供 glibc 2.35 或更新版本及兼容的 OpenGL/EGL 显卡驱动。依赖安装、FUSE 问题及发行版兼容范围见 [Linux 安装与分发](doc/distribution/linux.zh.md)。
 
 ### macOS
 
-从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 下载 `VeneraNext-xxx.dmg`。
+从 [最新稳定版](https://github.com/Lezy233/Venera-PC/releases/latest) 下载 `VeneraPC-xxx.dmg`，打开后将 `Venera-PC` 拖入 Applications。
 
 ---
 
 ## 快速上手
 
-1. 从 [最新稳定版](https://github.com/CyrilPeng/venera-next/releases/latest) 安装适合当前平台的版本。
+1. 从 [最新稳定版](https://github.com/Lezy233/Venera-PC/releases/latest) 安装适合当前平台的版本。
 2. 选择内容来源：设备上的图片、压缩包或图片文档进入“本地 → 导入”；网络阅读先添加兼容扩展；NAS 目录在“设置 → 应用 → WebDAV 漫画库”配置。
 3. 在“设置 → 阅读器”选择阅读模式。长篇连载可用默认瀑布流；传统逐页翻看可用画廊；只想在当前章滚动可用连续模式。
 4. 按设备调整拆分双页、夜间调光或墨水屏刷新。需要时启用设备专属、漫画专属设置。
@@ -156,10 +120,6 @@ Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定�
 - **拆分双页**：只适用于纵向连续、瀑布流；顺序不合适时开启“交换拆分顺序”。应用仍按原图片记录页数。
 - **继续阅读**：保存章节、页码和章节组；瀑布流会记录实际正在阅读的章节。详情页的正序/倒序只调整章节列表显示。
 - **设置范围**：阅读设置按漫画专属、设备专属、全局依次回退，专属设置需先启用。
-
-| 单页阅读模式 | 拆分双页模式 |
-|---|---|
-| <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Single%20Page%20View.jpg" alt="未拆分的单页阅读画面" width="100%" /></a> | <a href="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg"><img src="https://git-pictures.cyrilworkshop.dpdns.org/veneranext/Double%20Page%20View.jpg" alt="开启拆分双页后的阅读画面" width="100%" /></a> |
 
 ### 夜间与墨水屏阅读
 
@@ -211,7 +171,7 @@ Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定�
 | 漫画归档 | 漫画归档备份 / Comic Archive Backup | 把本地漫画导出为 CBZ 上传，或下载归档恢复到本地库 |
 | 在线漫画库 | WebDAV 漫画库 / WebDAV Comic Library | 按需读取远端图片目录，并缓存目录与图片 |
 
-在线漫画库支持普通图片目录、带章节的目录，以及 VeneraNext 导出 CBZ 的解压目录。有效的 `metadata.json` 可提供标题、作者、标签和章节页码范围，也可标记分层目录中的漫画根目录；元数据无效时回退普通目录识别。
+在线漫画库支持普通图片目录、带章节的目录，以及 Venera-PC 导出 CBZ 的解压目录。有效的 `metadata.json` 可提供标题、作者、标签和章节页码范围，也可标记分层目录中的漫画根目录；元数据无效时回退普通目录识别。
 
 书架优先展示缓存，后台增量检查远端变化，可手动同步和设置自动更新周期。远端 CBZ/ZIP/7Z/CB7 本身不支持在线预览，应先在服务端解压，或通过归档恢复后本地阅读。[目录与元数据规则](doc/user/import_comic.zh.md#webdav-在线漫画库)
 
@@ -228,21 +188,17 @@ Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定�
 
 英文对应文档：[Comic Source Guide](doc/api/comic_source.en.md) · [JavaScript API](doc/api/js.en.md) · [Local Source Debugging](doc/development/source_debugging.en.md)。
 
-本分支继续维护兼容 Venera 的扩展接口。瀑布流、拆分双页和夜间调光由阅读器处理；扩展应提供稳定的漫画/章节标识、正确的章节与图片顺序、有效的更新日期，无需为每一种阅读模式另写一套规则。
+Venera-PC 维护兼容 Venera 的扩展接口。瀑布流、拆分双页和夜间调光由阅读器处理；扩展应提供稳定的漫画/章节标识、正确的章节与图片顺序、有效的更新日期，无需为每一种阅读模式另写一套规则。
 
 ## FAQ
 
-### VeneraNext 自带漫画源吗？
+### Venera-PC 自带漫画源吗？
 
 不自带，也不提供推荐源列表。可以先导入本地漫画，或自行合法配置兼容扩展、WebDAV 漫画库。
 
 ### 搜索不到内容、图片加载失败或没有追更提示怎么办？
 
 先检查扩展、登录/Cookie、源站状态和网络。追更还需要扩展返回有效的更新日期。具体站点和内容问题应联系相应维护者；可脱离具体站点复现的阅读器或扩展运行时问题可按[贡献指南](CONTRIBUTING.md)反馈。
-
-### 平板上怎样缩小条漫？
-
-在阅读器设置中选择纵向连续或瀑布流模式，调整「条漫缩小（每侧边距）」。每侧设为 20% 时，图片宽度缩小到原来的 60%，高度按比例变化，并保留阅读进度。详见[条漫缩小与左右边距](doc/user/reader_width.zh.md)。
 
 ### Windows 怎样更新？
 
@@ -252,27 +208,14 @@ Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定�
 
 - [构建与开发](doc/development/build.zh.md)：Flutter/Rust 环境、依赖锁定、测试和发布。
 - [贡献指南](CONTRIBUTING.md) · [依赖治理](doc/development/dependencies.zh.md)。
-- [Windows 分发维护](doc/distribution/windows.zh.md) · [无头命令模式](doc/user/headless.zh.md)。
+- [Windows 分发维护](doc/distribution/windows.zh.md) · [Linux 安装与分发](doc/distribution/linux.zh.md) · [无头命令模式](doc/user/headless.zh.md)。
 - [安全政策](SECURITY.md) · [行为准则](CODE_OF_CONDUCT.md) · [完整文档索引](doc/README.md)。
-
----
-
-## 星标历史
-
-<a href="https://www.star-history.com/?repos=CyrilPeng%2FVenera-Next&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=CyrilPeng/Venera-Next&type=date&theme=dark&legend=top-left&sealed_token=oOpEg16aOzfNd-LxRdnNlKMFvVT7R4hxnX3R0_siwlG1kcvQby3KmHFNPHaH-dbuficb1pbCiQyzTRFVYt2oKGGfjghUgiIs1huNy1yZ1ffelz7owlDrYQ" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=CyrilPeng/Venera-Next&type=date&legend=top-left&sealed_token=oOpEg16aOzfNd-LxRdnNlKMFvVT7R4hxnX3R0_siwlG1kcvQby3KmHFNPHaH-dbuficb1pbCiQyzTRFVYt2oKGGfjghUgiIs1huNy1yZ1ffelz7owlDrYQ" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=CyrilPeng/Venera-Next&type=date&legend=top-left&sealed_token=oOpEg16aOzfNd-LxRdnNlKMFvVT7R4hxnX3R0_siwlG1kcvQby3KmHFNPHaH-dbuficb1pbCiQyzTRFVYt2oKGGfjghUgiIs1huNy1yZ1ffelz7owlDrYQ" />
- </picture>
-</a>
 
 ---
 
 ## 声明
 
-
-本仓库只维护 VeneraNext 漫画阅读器本体，**不提供、内置、托管或推荐任何漫画源，也不处理任何源站内容**。
+本仓库只维护 Venera-PC 漫画阅读器本体，**不提供、内置、托管或推荐任何漫画源，也不处理任何源站内容**。
 
 网络阅读能力兼容 JavaScript 扩展 API，需要用户自行配置合法的漫画源扩展；搜索结果、章节加载、图片可用性和内容版权均取决于对应源站与扩展实现。
 
@@ -284,7 +227,7 @@ Linux 安装包基于 Ubuntu 22.04 构建，glibc 基线为 2.35。当前稳定�
 
 [![爱发电](https://img.shields.io/badge/爱发电-支持我-ff69b4?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgMyAxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==)](https://ifdian.net/a/cyril)
 
-本项目为个人兴趣维护，不以盈利为目的。如果 VeneraNext 对你的日常阅读有帮助，欢迎在[爱发电](https://ifdian.net/a/cyril)上支持作者的持续维护。
+本项目为个人兴趣维护，不以盈利为目的。如果 Venera-PC 对你的日常阅读有帮助，欢迎在[爱发电](https://ifdian.net/a/cyril)上支持作者的持续维护。
 
 赞助状态会通过爱发电 API 定期同步。需要公开鸣谢时，请在订单备注中填写“公开昵称：你的昵称”；未提供公开昵称的订单不会展示。
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:venera_next/components/effects.dart';
 import 'package:venera_next/foundation/context.dart';
 import 'package:venera_next/foundation/widget_utils.dart';
+import 'package:venera_next/design_system/tokens.dart';
 
 class ReaderTopBar extends StatelessWidget {
   const ReaderTopBar({
@@ -17,13 +17,17 @@ class ReaderTopBar extends StatelessWidget {
   final VoidCallback onBack;
   @override
   Widget build(BuildContext context) {
-    return BlurEffect(
+    return Material(
+      color: context.colorScheme.surface,
       child: Container(
         padding: EdgeInsets.only(top: context.padding.top),
         decoration: BoxDecoration(
           color: context.colorScheme.surface.toOpacity(0.92),
           border: Border(
-            bottom: BorderSide(color: Colors.grey.toOpacity(0.5), width: 0.5),
+            bottom: BorderSide(
+              color: context.colorScheme.outlineVariant,
+              width: AppSizes.hairline,
+            ),
           ),
         ),
         child: Padding(

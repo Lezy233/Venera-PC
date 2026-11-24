@@ -1,0 +1,70 @@
+# AGENTS.md — Venera-PC 多 agent 协作入口
+
+> 任何 agent（Kimi Code / dsh / 其他）在本仓库开局的**第一份必读文件**。
+> 读完本文后按「最小阅读清单」继续，不要全库探索。
+
+## 1. 项目一句话
+
+Venera-PC 是 PC 优先的独立 Flutter 漫画阅读器（仓库 `Lezy233/Venera-PC`），
+桌面（Windows/macOS/Linux）为设计中心，移动端可用但不再是设计中心。
+
+## 2. 角色路由（开局先确认你是谁）
+
+| 角色 | 承担者 | 职责 | 禁区 |
+|------|--------|------|------|
+| **规划者** | codex「architect」（pane w4:p1） | 写 proposal/spec/design/tasks；驱动 executor 派活与验收；维护 BACKLOG/ROADMAP/design-spec.md；owner 验收后归档推送 | 不写实现代码、不做实现 debug |
+| **执行者** | codex「executor」（pane w4:p2） | 按 change 的 tasks.md 逐个实现并勾选；flutter analyze 自检；交付说明 | 不得改 proposal/spec/design、design-spec.md、openspec/specs/ 下正式 spec；发现契约冲突须停止并报告 architect，不自行改契约；**architect 批准前不得提交** |
+| **验收人** | owner（人类） | 最终人工验收；验收通过后才归档 | — |
+
+协作闭环（architect 驱动）：① architect 派活 `herdr agent prompt executor "<任务全文>"`（工件以 HEAD 为准、含硬规则清单）；② 读交付 `herdr agent read executor --source recent-unwrapped`；③ architect **独立复核**（复跑 analyze 计数、复跑新增测试与相关回归、tasks 勾选、受保护文件零 diff、抽查 GUI 截图）后判「符合/不符合」，批准时给提交信息；不符合带 spec 依据打回；④ executor blocked（审批/提问）时 architect 读屏判断：只读审批用 send-keys 批，设计取舍类问题转 owner 拍板；⑤ 完成一个 change 后 architect 向 owner 交付报告 + 验收路径建议，owner 说「验收通过，归档推送」后 architect 执行 archive + 三文件同步 + push。
+
+## 3. 硬规则（踩过坑，勿重蹈）
+
+- **`pubspec.lock` 禁止重新生成**（项目铁律；flutter pub upgrade/add 会动它，动完必须还原）。
+- 新 UI 文案必须走 `.tl` 翻译系统，并在 `assets/translation.json` 补 **zh_CN 和 zh_TW** 词条。
+- `flutter analyze` 基线 = **50 项**（tool/code_audit 环境 38 项 + lib/test 预存在 12 项，含 `folder_order_ownership_test.dart` 编译错误与 pdfrx 0.4.5 冲突）。交付标准 = **不新增**问题，不是清零；不要顺手修基线问题。
+- **环境要点**：Flutter 走 fvm 3.47.7（.fvmrc）；跑 fvm 前 `export https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897`；pub-cache 热补丁 `~/.pub-cache/hosted/pub.dev/pdfrx_engine-0.4.5/lib/src/native/pdf_file_cache.dart` 368/380/382/392 行 `cache.`→`cache!.`（被清需重打）；GUI 验证 `DISPLAY=:1` 用隔离数据目录，截图只留 /tmp。
+- **阅读器深色例外已彻底移除**（owner 2026-10-20 决定）：阅读器 chrome 跟随应用当前主题，任何 change 不得重新引入深色沉浸例外。
+- 设计方向 = **现代极简**：浅色内容区 + 浅色壳，动态取色为唯一强调色来源，层级靠留白与 1px 分隔线。深色内容区主题是二期。
+- 每完成一个任务**立即**在 tasks.md 勾选 `[x]` 并写备注，不批量补勾。
+- **图片提交规则**（owner 2026-10-21）：界面截图一律不提交（已在 .gitignore 忽略 png/jpg/jpeg/gif/webp/bmp）。例外：README/app 资产等确需入库的图片，须在提交信息中特殊说明并 `git add -f`。GUI 走查截证留在本地或 change 目录但不入库。
+- 交接介质是**仓库文件 + git**，不是对话历史；每个 change 开新会话执行（省 token），开局读本文件 + 对应 change 目录即可。
+
+## 4. 当前状态（规划者维护，执行前核对）
+
+2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`openspec/changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含5A.1审计、5A.2纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
+
+2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
+
+- **2026-11-17 最新状态**：owner已验收UX1的1.3＋F2（4.1–4.5），授权阶段归档提交，未授权此次推送。证据见 `openspec/changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；含作者栏独立手柄保留长按排序、全局主体绑定及正常入口首帧顺序修复。独立123/0skip与作者保护60/0skip分列；启动宿主32通过/2既有Windows skip，analyze50=38+12零新增。活动change仅余5.x搜索/详情、6.x阅读器、7.x整体验收，整项UX1仍未完成，不整项archive或合入未实现delta。
+- **GUI显示教训**：`:1`为fixture虚拟显示，用命令级env隔离；owner正常启动须核对其实际桌面显示归属并清除遗留测试DISPLAY/XDG继承。IsViewable和虚拟显示截图不证明owner桌面可见；正常main须独立冷启动验证，不能仅以提前初始化窗口的harness或build成功替代。
+
+- **2026-11-16 最新状态（覆盖下方历史排期）**：owner 已授权归档、提交并推送 UX1 已完成的书架壳层与 F1 多标签阶段（tasks 2.1–2.4、3.1–3.6，含 1.1/1.2/1.4）。阶段证据归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；活动 change `ux1-bookshelf-workspace` 保留未完成的 1.3、4.x F2、5.x 搜索/详情、6.x 阅读器及 7.x 整体验收。继续该 change 时读活动四件套和 tasks；复核已验收阶段时读归档 README。整个 UX1 尚未完成，不运行整项 OpenSpec archive 或合入尚未实现的 delta spec。
+
+- 分支：`redesign-2026`（github.com/Lezy233/Venera-PC）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送此分支。
+- 已完成并归档：`design-system-foundation`（设计基座 + 验收缺陷 5.1–5.3 修复）；`settings-ia-cleanup`（2026-10-21 归档）；`save-bar-layout-fix`（2026-10-21 归档，commit 9669b5c）；`desktop-shell-polish`（2026-10-21 归档，commit ae00919）；`desktop-search-context`（2026-10-21 归档，commit 5833677）；`reader-quick-settings-panel`（2026-10-22 归档，commit 11c495e）；`save-feedback-placement-fix`（2026-10-22 归档，commit 63d45e7）；`chrome-binding-lifecycle-fix`（2026-10-22 归档，commit 0121b81，BACKLOG B1）；`keyboard-shortcuts`（2026-10-23 归档，commit b735663，BACKLOG F3，批次 A——动作注册表/多键位自定义/冲突检测/独立主分类/平台默认键）；`reader-mode-presets`（2026-10-23 归档，commit 1c8fbc3，BACKLOG F4，批次 A——阅读模式方案 CRUD + 面板方案切换）；`favorite-series`（2026-10-25 归档，批次 C F5——跨来源手动系列、收藏交互入口、多选 Escape、批量加入系列）；`search-profiles-author`（2026-11-03 owner验收通过并归档，实现commit c5429bb，批次 C F6+F7——搜索方案与收藏创作者平台名称树，替代旧B2作者聚合入口）。
+- 2026-11-03 owner验收`comic-card-hit-target-fix`（B4）通过，按owner指令归档至`openspec/changes/archive/2026-11-03-comic-card-hit-target-fix/`；实现commit `6f65f7f`，独立174测试0skip、analyze50=38+12、GUI及正常构建通过。
+- B3 `reader-preset-state-recovery`于2026-11-03经owner验收通过并归档，实现commit `526c311`：持续编辑共享19键及「跟随默认」保持绑定；独立285测试、B4保护174测试均0skip，analyze raw/unique50=38+12零新增，GUI/真实重启/正常构建与清理通过。证据见`openspec/changes/archive/2026-11-03-reader-preset-state-recovery/review.md`。
+- F8 `search-target-memory`于2026-11-04经owner验收通过并归档，实现commit `3749a52`；独立59测试0skip，analyze raw/unique50=38+12零新增，GUI/真实重启/正常构建及清理通过，证据见`openspec/changes/archive/2026-11-04-search-target-memory/review.md`。
+- F9 **阅读方案排序**于2026-11-04经owner验收通过并归档，实现commit `bc3f82a`；独立525测试0失败0skip、analyze50零新增，GUI/重启/正常构建与清理通过，见`openspec/changes/archive/2026-11-04-reader-preset-ordering/review.md`。此前仅本地提交，本次随F10推送。
+- F10 **作者分栏/三态/每栏独立排序/平台名称单源搜索及悬停反馈**于2026-11-06由owner验收通过并授权归档推送，实现commit `cdce3e6`，归档`openspec/changes/archive/2026-11-06-favorite-author-manual-order/`。tasks4.x 3/3、独立204通过0失败0skip，analyze raw/unique50=38+12零新增，GUI/正常main构建/ps与X11清理及23文件SHA通过，见归档review-v2.2.md；v2.1独立排序历史809通过/2项HEAD基线失败/0skip未冒称本次全量重跑。B5 reader-double-page-letterbox-fix于2026-11-06经owner验收通过并归档至openspec/changes/archive/2026-11-06-reader-double-page-letterbox-fix/，实现commit 49ea8a9：固定缩略图栏下双面误用窗口尺寸导致二次缩小，仅移除错误childSize覆盖；tasks1.x 4/4，独立148通过0skip、import清理后17新增复验全绿，analyze raw/unique50=38+12具体集合零增减，GUI/正常main构建/清理与SHA通过，局限见归档review.md和delivery.md。B5此前仅本地提交，于2026-11-07随F11一并推送。2026-11-07 owner验收F11 favorites-sidebar-section-collapse通过，实现commit 4a886a6，归档openspec/changes/archive/2026-11-07-favorites-sidebar-section-collapse/：三组独立折叠/可靠记忆/当前摘要与键盘，tasks1.x 5/5，独立140通过0失败0skip（含26新增）、analyze raw/unique50=38+12零新增、GUI两项多选/窄窗/键盘/真实重启及正常main构建/清理通过，四源码SHA冻结。executor额度限制后architect仅补独立验收与收尾，未改实现。见归档review.md及acceptance.md；已按owner指令归档，本次授权推送。2026-11-07 owner确认UX1 A书架型方向与全部默认值，正式方案及验收清单位于openspec/changes/ux1-bookshelf-workspace，design-spec v0.2已同步；F1/F2纳入UX1分阶段实施，当前仅完成规划，生产实现未启动。
+
+## 5. 最小阅读清单
+
+1. 本文件（AGENTS.md）
+2. `openspec/ROADMAP.md` — 执行顺序与依赖
+3. 若执行/验收某个 change：`openspec/changes/<name>/` 下 proposal、design、specs/、tasks.md 全部
+4. 涉及 UI 外观判定：`design-spec.md`（设计契约）
+
+**默认禁止全库探索。** 以上文件 + 被指名的源文件即全部上下文。
+
+## 6. Herdr 协作约定（如运行在 herdr 中）
+
+- 本机 herdr 0.9.5。Kimi Code 原生支持（`--kind kimi`）；**dsh-tui 不被识别**，只当普通终端。
+- orchestrator 驱动执行 agent（codex，pane w4:p2）用 **agent 原语**：
+  派活 `herdr agent prompt w4:p2 "<任务全文>"`（长文本先写 /tmp 文件再 `"$(cat /tmp/x.txt)"`），
+  读交付 `herdr agent read w4:p2 --source recent-unwrapped --lines 200`，
+  阻塞处理 `herdr agent wait w4:p2 --until blocked` + `herdr agent send-keys w4:p2 <key>`（选择题 down/up+enter，打开问题 shift+left）。
+- 反馈回路（三层，按序使用）：① herdr 读屏（即时）→ ② openspec tasks.md 勾选 + 交付说明（会话内）→ ③ git commit/push（持久，全员可见）。
+- 状态真相永远在仓库文件里：任何 agent 报告「完成」时，先用 git log / tasks.md 核对，再看屏幕说法。
+- openspec CLI：`openspec validate --changes <name>` / `openspec validate --specs` / `openspec archive <name> --yes`（owner 验收通过后）。

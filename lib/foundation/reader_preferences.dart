@@ -224,6 +224,26 @@ abstract final class ReaderPreferences {
     'showChapterCommentsAtEnd',
     false,
   );
+  static const readerThumbnailState = ChoicePreference(
+    'readerThumbnailState',
+    'expanded',
+    ['expanded', 'collapsed'],
+  );
+  static const readerThumbnailMode = ChoicePreference(
+    'readerThumbnailMode',
+    'floating',
+    ['floating', 'fixed'],
+  );
+  static const readerThumbnailPosition = ChoicePreference(
+    'readerThumbnailPosition',
+    'left',
+    ['left', 'bottom', 'right'],
+  );
+  static const readerThumbnailScrollDirection = ChoicePreference(
+    'readerThumbnailScrollDirection',
+    'rightToLeft',
+    ['rightToLeft', 'leftToRight'],
+  );
   static const splitDualPage = BoolPreference('splitDualPage', false);
   static const splitDualPageInvert = BoolPreference(
     'splitDualPageInvert',
@@ -273,6 +293,10 @@ abstract final class ReaderPreferences {
     showChapterCommentsAtEnd,
     splitDualPage,
     splitDualPageInvert,
+    readerThumbnailState,
+    readerThumbnailMode,
+    readerThumbnailPosition,
+    readerThumbnailScrollDirection,
   ];
   static Map<String, Object?> get storageDefaults => {
     for (final preference in all) preference.key: preference.storageDefault,
