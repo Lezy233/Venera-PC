@@ -20,6 +20,7 @@
 ## 4. Linux 命令、系统包与 AppImage
 
 - [x] 4.1 将 Linux 二进制和新命令改为 `venera-pc`、窗口及 desktop 显示名改为 `Venera-PC`，保持 GTK application ID 不变；用 Linux 构建和静态检查确认启动配置正确。
+  - 2026-11-26：7.3 冷启动走查发现 `linux/my_application.cc` 的 header bar/title 仍是旧名 `VeneraNext-Dev`（rebase 时遗漏），已改为与 Windows/macOS 一致的 `Venera-PC-Dev`，并在 `test_product_identity.py` 新增桌面窗口标题契约测试（Linux/Windows/macOS/MaterialApp 四处一致、禁止 `VeneraNext-Dev`）。Linux debug 重建成功；窗口标题的 GUI 复验待 owner 或获批的 Xvfb 运行。
 - [x] 4.2 更新 DEB/RPM/Arch/AppImage 打包，使新包同时提供 `venera-pc` 与既有 `venera-next` 命令，AppImage 改为 `VeneraPC-*`；运行对应 Python 测试验证系统包名、安装目录、图标名和包文件名保持兼容。
 - [x] 4.3 运行 AppImage runtime/relocate/smoke 相关测试及 Linux 实际构建，检查新旧命令均能启动同一应用，且桌面入口显示 Venera-PC。
 
@@ -40,6 +41,7 @@
 - [x] 7.1 运行 `python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"`、相关 Dart 测试及完整 `flutter test`，确认无失败和非既有跳过；运行 `git diff --check`。
 - [x] 7.2 按项目环境运行 `flutter analyze`，确认相对 50 项既有基线零新增；核对 `pubspec.lock`、依赖 URL、application ID、数据目录和升级标识均无未授权变化。
 - [ ] 7.3 在 Linux 正常入口冷启动并走查窗口、关于和菜单的 Venera-PC 展示；通过 CI 验证 Windows/macOS 构建与 Windows 安装启动，确认桌面 Release 只引用新资产名且中文翻译无回退。
+  - 2026-11-26：已触发 CI `构建`（Windows + macOS，Linux 关闭）验证安装包/启动与资产名；Linux 冷启动走查发现并修复窗口标题旧名（见 4.1）；关于/菜单文案由 `test_product_identity.py` 与既有 widget 测试覆盖。Linux GUI 目视复验尚未完成（本会话 Xvfb 命令被沙箱拒绝），待 owner 在本机启动确认或授权重试。
 - [x] 7.4 用既有用户数据副本验证升级前后收藏、历史、设置和同步配置仍从原位置读取；首次新仓库 Release 前不伪造更新成功，交付中明确真实更新 API 与下载链接的发布后验收项。
 
 ## Workflow follow-up

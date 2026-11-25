@@ -40,6 +40,19 @@ class RepositoryUrlTests(unittest.TestCase):
         self.assertNotIn("CyrilPeng", loader)
 
 
+class DesktopWindowTitleTests(unittest.TestCase):
+    def test_desktop_window_titles_use_the_new_product_name(self):
+        for path, expected in (
+            ("linux/my_application.cc", '"Venera-PC-Dev"'),
+            ("windows/runner/main.cpp", 'L"Venera-PC-Dev"'),
+            ("macos/Runner/Base.lproj/MainMenu.xib", "Venera-PC-Dev"),
+            ("lib/main.dart", 'title: "Venera-PC-Dev"'),
+        ):
+            text = (ROOT / path).read_text(encoding="utf-8")
+            self.assertIn(expected, text, path)
+            self.assertNotIn("VeneraNext-Dev", text, path)
+
+
 class CompatibilityIdentityTests(unittest.TestCase):
     def test_winget_generator_keeps_stable_identifiers(self):
         script = (ROOT / ".github/scripts/generate_winget_manifest.py").read_text(
