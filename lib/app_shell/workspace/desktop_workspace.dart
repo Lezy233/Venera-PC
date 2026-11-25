@@ -217,13 +217,15 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
       toggle: local?.toggleRightSidebar,
     );
     chrome.setFavoritesSearchQuery(tab == null ? null : _queryCurrent);
-    chrome.setWorkspaceTabs(
-      visible: chrome.readerActions?.immersive != true,
-      builder: _workspaceTabsBuilder,
-    );
+    // Reader actions feed the chrome row visibility, so publish the current
+    // route's actions before deciding whether the workspace tab row is shown.
     DesktopChromeScope.setReaderActions(
       chrome,
       tab?.presentationRouteRecord == null ? null : local?.readerActions,
+    );
+    chrome.setWorkspaceTabs(
+      visible: chrome.readerActions?.immersive != true,
+      builder: _workspaceTabsBuilder,
     );
     if (tab != null) appNavigation.mainNavigatorKey = tab.navigator;
   }

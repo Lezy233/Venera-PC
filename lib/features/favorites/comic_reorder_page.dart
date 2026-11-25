@@ -9,6 +9,7 @@ import 'package:venera_next/components/message.dart';
 import 'package:venera_next/components/pop_up_widget.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 import 'package:venera_next/components/window_selection_task.dart';
+import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
 import 'package:venera_next/foundation/app.dart';
@@ -201,6 +202,12 @@ class _ComicReorderPageState extends SettingsSaveState<_ComicReorderPage> {
         child: ComicTile(
           enableLongPressed: false,
           displayMode: displayMode,
+          // The reorder editor keeps the favorites bookshelf card layout
+          // instead of the legacy gallery renderer (UX1 D4 gallery contract)
+          // while pinning one density so the favorite density setting cannot
+          // resize this editor (F1 density isolation).
+          bookshelf: gallery,
+          compactDensityOverride: gallery ? false : null,
           comic: Comic(
             e.name,
             e.coverPath,
@@ -276,6 +283,14 @@ class _ComicReorderPageState extends SettingsSaveState<_ComicReorderPage> {
                     ).read(FavoritePreferences.galleryColumns)
                   : null,
               forceDetailed: !gallery,
+              // Mirror the production favorites grid geometry (UX1 D4) so the
+              // same card keeps its layout while being reordered, pinned to the
+              // comfortable density for the F1 isolation contract.
+              bookshelf: gallery,
+              densityOverride: gallery ? false : null,
+              textScale:
+                  MediaQuery.textScalerOf(context).scale(AppFontSize.body) /
+                  AppFontSize.body,
             ),
             children: children,
           ),

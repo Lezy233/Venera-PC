@@ -88,18 +88,25 @@ class SliverGridDelegateWithComics extends SliverGridDelegate {
     this.forceDetailed = false,
     this.textScale = 1,
     this.bookshelf = false,
+    this.densityOverride,
   }) : compactDensity =
            bookshelf &&
-           GlobalPreferenceStore(
-                 appdata.settings,
-               ).read(FavoritePreferences.density) ==
-               'compact';
+           (densityOverride ??
+               (GlobalPreferenceStore(
+                     appdata.settings,
+                   ).read(FavoritePreferences.density) ==
+                   'compact'));
 
   final int? galleryColumns;
 
   final bool forceDetailed;
   final double textScale;
   final bool bookshelf;
+
+  /// Pins the bookshelf density for hosts that must not follow the favorite
+  /// density preference.
+  final bool? densityOverride;
+
   final bool compactDensity;
 
   final bool useBriefMode =

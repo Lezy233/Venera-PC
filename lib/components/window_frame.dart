@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/navigation_admission.dart';
+import 'package:venera_next/routing/app_navigation.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/components/desktop_top_bar.dart';
 import 'package:venera_next/components/desktop_chrome.dart';
@@ -107,7 +108,12 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
   final _closeStartListeners = <VoidCallback>[];
   final _closeFailureListeners = <VoidCallback>[];
   final _activePointers = <int>{};
-  final _contentFocus = FocusScopeNode(debugLabel: 'window content');
+  // Tab must be able to leave the tab content and reach the merged title bar
+  // (sidebar toggle, tabs, window controls) instead of cycling inside content.
+  final _contentFocus = FocusScopeNode(
+    debugLabel: 'window content',
+    traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
+  );
   final _shutdownFocus = FocusScopeNode(
     debugLabel: 'window shutdown',
     traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
@@ -123,7 +129,20 @@ class _WindowFrameState extends State<WindowFrame> with WindowListener {
   @override
   void initState() {
     super.initState();
-    if (App.isDesktop) windowManager.addListener(this);
+    if (App.isDesktop) {
+      windowManager.addListener(this);
+      // The app routing is wrapped by WidgetsApp in a closed-loop focus scope
+      // that sits above this merged title bar. Let Tab leave the content scope
+      // so the shell row stays keyboard reachable (D3); without this the app
+      // content cycles inside its own routes.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !App.isDesktop) return;
+        final navigatorContext = appNavigation.rootNavigatorKey.currentContext;
+        if (navigatorContext == null) return;
+        FocusScope.of(navigatorContext).traversalEdgeBehavior =
+            TraversalEdgeBehavior.parentScope;
+      });
+    }
     if (widget.isFinalizing?.call() == true) {
       _finalizing = true;
       _closing = true;

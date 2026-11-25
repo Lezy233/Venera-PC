@@ -12,6 +12,7 @@ import 'package:venera_next/features/reader/reader_mode_labels.dart';
 import 'package:venera_next/features/reader/settings_effects.dart';
 import 'package:venera_next/features/reader/settings_panel.dart';
 import 'package:venera_next/features/settings/reader.dart';
+import 'package:venera_next/features/settings/reader_presets.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/app_data_operations.dart';
 import 'package:venera_next/foundation/appdata.dart';
@@ -20,6 +21,7 @@ import 'package:venera_next/foundation/image_work.dart';
 import 'package:venera_next/foundation/log.dart';
 import 'package:venera_next/foundation/reader_preference_store.dart';
 import 'package:venera_next/foundation/reader_preferences.dart';
+import 'package:venera_next/foundation/reader_presets.dart';
 
 ReaderPreferenceStore _store([String comic = 'book']) => ReaderPreferenceStore(
   settings: appdata.settings,
@@ -111,6 +113,22 @@ Future<Directory> _open(
   );
   await tester.pumpAndSettle();
   return root;
+}
+
+/// Preset records are global settings; every preset test starts and ends with a
+/// clean library so later cases do not inherit earlier bindings.
+void _isolatePresets(WidgetTester tester) {
+  Object? presets = appdata.settings['readerModePresets'];
+  Object? selections = appdata.settings['readerPresetSelections'];
+  Object? bindings = appdata.settings['readerPresetBindings'];
+  appdata.settings['readerModePresets'] = <dynamic>[];
+  appdata.settings['readerPresetSelections'] = <String, dynamic>{};
+  appdata.settings['readerPresetBindings'] = <String, dynamic>{};
+  addTearDown(() {
+    appdata.settings['readerModePresets'] = presets;
+    appdata.settings['readerPresetSelections'] = selections;
+    appdata.settings['readerPresetBindings'] = bindings;
+  });
 }
 
 void main() {
@@ -290,5 +308,181 @@ void main() {
     expect(changed, isEmpty);
     expect(appdata.settings.comicReaderModeOverride('book', 'local'), isNull);
     expect(find.byType(ReaderSettings), findsNothing);
+  });
+
+  testWidgets('failed preset selection offers retry and keeps recovery', (
+    tester,
+  ) async {
+    final root = await _open(tester);
+    _isolatePresets(tester);
+    final comicStore = ReaderPresetStore(
+      scope: ReaderPreferenceScope.comic,
+      comicId: 'book',
+      sourceKey: 'local',
+    );
+    await tester.runAsync(() => comicStore.createFromCurrent('Reader wide'));
+    await tester.pumpAndSettle();
+    final preset = comicStore.list.single;
+    await tester.runAsync(() => appdata.saveData(false));
+    final dataFile = File('${root.path}/appdata.json');
+    if (dataFile.existsSync()) dataFile.deleteSync();
+    final blocked = Directory('${root.path}/appdata.json')..createSync();
+    final selectorFind = find.byType(ReaderPresetSelector);
+    final dropdown = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<String> &&
+          widget.decoration.labelText == 'Preset',
+    );
+    tester.widget<DropdownButtonFormField<String>>(dropdown).onChanged!(
+      preset.id,
+    );
+    for (var i = 0; i < 500 && find.text('Retry').evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('Retry'), findsOneWidget);
+    expect(comicStore.selectedId, isNull);
+    expect(comicStore.recovery, isNotNull);
+    blocked.deleteSync();
+    await tester.tap(find.text('Retry'));
+    await _flush(
+      tester,
+      tester.state<SettingsSaveState>(selectorFind).waitForSettingsSave(),
+    );
+    expect(find.text('Retry'), findsNothing);
+    expect(comicStore.recovery, isNull);
+    // B3: retrying recovery persists the restored valid state and must not
+    // replay the failed preset application by itself.
+    expect(comicStore.selectedId, isNull);
+    expect(
+      tester.widget<DropdownButtonFormField<String>>(dropdown).initialValue,
+      '',
+    );
+    // An explicit new selection then saves normally.
+    tester.widget<DropdownButtonFormField<String>>(dropdown).onChanged!(
+      preset.id,
+    );
+    await _flush(
+      tester,
+      tester.state<SettingsSaveState>(selectorFind).waitForSettingsSave(),
+    );
+    expect(comicStore.selectedId, preset.id);
+    await tester.runAsync(() => appdata.saveData(false));
+    expect(appdata.settings.readerPresetId(comicStore.selectionKey), preset.id);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('clearing the quick panel preset selection persists', (
+    tester,
+  ) async {
+    await _open(tester);
+    _isolatePresets(tester);
+    final comicStore = ReaderPresetStore(
+      scope: ReaderPreferenceScope.comic,
+      comicId: 'book',
+      sourceKey: 'local',
+    );
+    await tester.runAsync(() => comicStore.createFromCurrent('Reader wide'));
+    await tester.pumpAndSettle();
+    final preset = comicStore.list.single;
+    await tester.runAsync(() => comicStore.apply(preset.id, comicStore.scope));
+    await tester.pumpAndSettle();
+    final selector = tester.state<SettingsSaveState>(
+      find.byType(ReaderPresetSelector),
+    );
+    expect(comicStore.selectedId, preset.id);
+    final dropdown = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<String> &&
+          widget.decoration.labelText == 'Preset',
+    );
+    tester.widget<DropdownButtonFormField<String>>(dropdown).onChanged!('');
+    await _flush(tester, selector.waitForSettingsSave());
+    expect(comicStore.selectedId, isNull);
+    expect(
+      tester.widget<DropdownButtonFormField<String>>(dropdown).initialValue,
+      '',
+    );
+    await tester.runAsync(() => appdata.saveData(false));
+    expect(appdata.settings.readerPresetId(comicStore.selectionKey), isNull);
+  });
+
+  testWidgets('preset selection survives quick panel close and disk reload', (
+    tester,
+  ) async {
+    final root = await _open(tester);
+    _isolatePresets(tester);
+    final comicStore = ReaderPresetStore(
+      scope: ReaderPreferenceScope.comic,
+      comicId: 'book',
+      sourceKey: 'local',
+    );
+    appdata.settings['readerMode'] = 'waterfallTopToBottom';
+    await tester.runAsync(() => comicStore.createFromCurrent('Reader wide'));
+    await tester.pumpAndSettle();
+    final preset = comicStore.list.single;
+    expect(preset.name, 'Reader wide');
+
+    // Select through the real dropdown in the quick panel.
+    await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reader wide').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    // The preset selection is owned by the selector's save state; the real
+    // disk write needs runAsync before frames can settle.
+    await _flush(
+      tester,
+      tester
+          .state<SettingsSaveState>(find.byType(ReaderPresetSelector))
+          .waitForSettingsSave(),
+    );
+    await tester.pumpAndSettle();
+
+    expect(comicStore.selectedId, preset.id);
+    expect(comicStore.list, hasLength(1));
+
+    // Closing and reopening the quick panel keeps the persisted selection.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    final preview = ReaderBrightnessPreview();
+    addTearDown(preview.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReaderQuickSettingsPanel(
+            comicId: 'book',
+            sourceKey: 'local',
+            brightnessPreview: preview,
+            isCurrent: () => true,
+            onChanged: (_) {},
+            onAllSettings: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<DropdownButtonFormField<String>>(
+            find.byType(DropdownButtonFormField<String>).last,
+          )
+          .initialValue,
+      preset.id,
+    );
+
+    // The selection is on disk, not only in this widget's state.
+    await tester.runAsync(() => appdata.saveData(false));
+    final saved =
+        jsonDecode(File('${root.path}/appdata.json').readAsStringSync()) as Map;
+    final settings = saved['settings'] as Map;
+    final selections = settings['readerPresetSelections'] as Map;
+    expect(selections.values, contains(preset.id));
+    final bindings = settings['readerPresetBindings'] as Map;
+    expect(bindings.values, contains(preset.id));
+    expect(appdata.settings.readerPresetId(comicStore.selectionKey), preset.id);
+    expect(tester.takeException(), isNull);
   });
 }

@@ -415,8 +415,16 @@ void main() {
           await tester.pumpAndSettle();
         }
         final longTab = tabFor(created.last);
-        final beforeHover = tester.getRect(longTab);
-        await mouse.moveTo(tester.getCenter(longTab));
+        // The merged top bar gives the tab viewport less width than the former
+        // full-width row, so scroll the real tab into view and hover a point
+        // inside its visible part.
+        await tester.ensureVisible(longTab);
+        await tester.pumpAndSettle();
+        final longTabRect = tester.getRect(longTab);
+        final beforeHover = longTabRect;
+        await mouse.moveTo(
+          Offset(longTabRect.left + 16, longTabRect.center.dy),
+        );
         await tester.pump(const Duration(seconds: 1));
         expect(tester.getRect(longTab), beforeHover);
         expect(

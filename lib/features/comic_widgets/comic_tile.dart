@@ -234,6 +234,7 @@ class ComicTile extends StatelessWidget {
     this.displayMode,
     this.hoverColor,
     this.bookshelf = false,
+    this.compactDensityOverride,
     this.previewGroup,
     this.selected = false,
     this.onSelectionChanged,
@@ -244,6 +245,12 @@ class ComicTile extends StatelessWidget {
   });
 
   final bool bookshelf;
+
+  /// Pins the bookshelf card density for hosts that must not follow the
+  /// favorite-density preference (for example the reorder editor keeps a
+  /// fixed layout while the collection grid switches density).
+  final bool? compactDensityOverride;
+
   final List<Comic>? previewGroup;
   final bool selected;
   final ValueChanged<bool>? onSelectionChanged;
@@ -887,10 +894,11 @@ class ComicTile extends StatelessWidget {
             MediaQuery.textScalerOf(context).scale(AppFontSize.body) >
             AppFontSize.body;
         final compact =
+            compactDensityOverride ??
             GlobalPreferenceStore(
-              appdata.settings,
-            ).read(FavoritePreferences.density) ==
-            'compact';
+                  appdata.settings,
+                ).read(FavoritePreferences.density) ==
+                'compact';
         Widget image = Container(
           decoration: BoxDecoration(
             color: context.colorScheme.contentSurfaceRaised,

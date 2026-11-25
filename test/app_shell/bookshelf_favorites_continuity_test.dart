@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:venera_next/components/scroll.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/components/bookshelf_workspace.dart';
 import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
@@ -186,11 +185,13 @@ void main() {
       );
       expect(chrome.canNavigate, isTrue);
       expect(chrome.leftAvailable, isTrue);
-      final toggle = find.descendant(
-        of: find.byType(BookshelfWorkspace),
-        matching: find.byTooltip('Toggle bookshelf'),
-      );
+      // D3 merged top bar: the bookshelf toggle lives in the WindowFrame row.
+      final toggle = find.byTooltip('Toggle bookshelf');
       expect(toggle, findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(WindowFrame), matching: toggle),
+        findsOneWidget,
+      );
       expect(
         FocusManager.instance.primaryFocus?.debugLabel,
         'comic-card-selection',

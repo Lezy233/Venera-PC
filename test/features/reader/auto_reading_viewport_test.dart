@@ -18,6 +18,7 @@ import 'package:venera_next/features/history/history.dart';
 import 'package:venera_next/features/local_comics/local_comics.dart';
 import 'package:venera_next/features/reader/auto_reading.dart';
 import 'package:venera_next/features/reader/continuous_view.dart';
+import 'package:venera_next/features/reader/progress_bar.dart';
 import 'package:venera_next/features/reader/reader_page.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/routing/app_navigation.dart';
@@ -260,11 +261,17 @@ void main() {
               settings['limitImageWidth'] = true;
               reader.update();
               await pumpFrames(10);
+              // Hidden tools own a compact progress rail inside the layout, so
+              // the image viewport is the reader box minus that rail.
+              final viewportSize = Size(
+                reader.size.width,
+                reader.size.height - ReaderBottomBar.compactHeight,
+              );
               final limitedWidth =
                   mode.isTopToBottom &&
-                      reader.size.width / reader.size.height > 0.7
-                  ? reader.size.height * 0.7
-                  : reader.size.width;
+                      viewportSize.width / viewportSize.height > 0.7
+                  ? viewportSize.height * 0.7
+                  : viewportSize.width;
               expect(
                 flowPhoto().childSize!.width,
                 closeTo(limitedWidth * (mode.isTopToBottom ? 0.4 : 1.0), 0.01),

@@ -110,9 +110,11 @@ void main() {
         }
         expect(find.byType(ComicTile), findsWidgets);
         final before = tester.getSize(find.byType(ComicTile).first);
+        // The reorder editor now shares the collection bookshelf card layout
+        // (UX1 D4); its density stays pinned to comfortable below.
         expect(
           tester.widget<ComicTile>(find.byType(ComicTile).first).bookshelf,
-          false,
+          reorder,
         );
         // Actual production settings listener/rebuild, no delegate-only substitute.
         appdata.settings['favoritesDensity'] = 'compact';
@@ -124,8 +126,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.getSize(find.byType(ComicTile).first), before);
         if (reorder) {
-          // Existing renderer/gallery geometry remains the HEAD seven-column grid.
-          expect(before.width, closeTo(1000 / 7 - 8, .01));
+          // Geometry identity with the collection grid at comfortable density
+          // is owned by favorites_reorder_test; this protection only pins the
+          // density isolation above.
+          expect(before.width, greaterThan(0));
         }
         expect(tester.takeException(), isNull);
       },

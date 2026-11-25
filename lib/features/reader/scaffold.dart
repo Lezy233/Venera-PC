@@ -559,9 +559,16 @@ class ReaderScaffoldState extends State<ReaderScaffold> {
     // The compact progress rail owns only its 8px visual line plus the safe
     // area; the expanded bar is painted over that same bottom slot.
     final compactBody = Column(
+      // Reading content and the progress rail share the full viewport width.
+      // Loose cross-axis constraints would collapse content that relies on the
+      // incoming width rather than expanding itself.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: body),
-        if (_isOpen) const SizedBox(height: 8) else buildBottom(),
+        if (_isOpen)
+          const SizedBox(height: ReaderBottomBar.compactHeight)
+        else
+          buildBottom(),
       ],
     );
     return Stack(

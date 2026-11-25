@@ -55,7 +55,18 @@ class DesktopChromeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void refreshWorkspaceTabs() => notifyListeners();
+  void refreshWorkspaceTabs() {
+    // Workspace observers track routes while the incoming route builds, so the
+    // refresh must not mark this scope dirty during the build phase.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) notifyListeners();
+      });
+      return;
+    }
+    notifyListeners();
+  }
 
   DesktopWorkspaceActions? get workspaceActions => _workspaceActions;
   void setWorkspaceActions(DesktopWorkspaceActions? actions) {

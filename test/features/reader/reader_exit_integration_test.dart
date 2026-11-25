@@ -71,6 +71,9 @@ import 'package:venera_next/foundation/app_data_operations.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/foundation/comic_layout.dart';
 import 'package:venera_next/foundation/log.dart';
+import 'package:venera_next/foundation/reader_preference_store.dart';
+import 'package:venera_next/foundation/reader_preferences.dart';
+import 'package:venera_next/foundation/reader_presets.dart';
 import 'package:venera_next/network/images.dart';
 import 'package:venera_next/network/request_scope.dart';
 import 'package:window_manager/window_manager.dart';
@@ -1040,19 +1043,28 @@ void main() {
         final reverse =
             mode == ReaderMode.galleryRightToLeft ||
             mode == ReaderMode.continuousRightToLeft;
+        // Hidden tools expose only the compact progress rail, so the slider's
+        // keyboard target requires the real tool row to be open first.
+        final shell = tester.state<ReaderScaffoldState>(
+          find.byType(ReaderScaffold),
+        );
+        shell.openOrClose();
+        await tester.pumpAndSettle();
         Focus.of(tester.element(find.byIcon(Icons.first_page))).requestFocus();
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
-        await tester.sendKeyEvent(reverse
-            ? LogicalKeyboardKey.arrowLeft
-            : LogicalKeyboardKey.arrowRight);
+        await tester.sendKeyEvent(
+          reverse
+              ? LogicalKeyboardKey.arrowLeft
+              : LogicalKeyboardKey.arrowRight,
+        );
         await tester.pump();
         expect(reader.page, 2);
-        final shell = tester.state<ReaderScaffoldState>(
-          find.byType(ReaderScaffold),
-        );
         await tester.tapAt(bounds.center);
+        await tester.pumpAndSettle();
+        expect(shell.isOpen, isFalse);
+        shell.openOrClose();
         await tester.pumpAndSettle();
         Focus.of(tester.element(find.byIcon(Icons.first_page))).requestFocus();
         await tester.pump();
@@ -1073,8 +1085,6 @@ void main() {
         );
         await tester.pump();
         expect(reader.page, 2);
-        shell.openOrClose();
-        await tester.pumpAndSettle();
         var progress = tester.widget<ReaderBottomBar>(
           find.byType(ReaderBottomBar),
         );
@@ -1986,7 +1996,11 @@ void main() {
       expect(settings.sourceKey, 'local');
       tester
           .widget<DropdownButtonFormField<String>>(
-            find.byWidgetPredicate((widget) => widget is DropdownButtonFormField<String> && widget.decoration.labelText == 'Reading Mode'),
+            find.byWidgetPredicate(
+              (widget) =>
+                  widget is DropdownButtonFormField<String> &&
+                  widget.decoration.labelText == 'Reading Mode',
+            ),
           )
           .onChanged!(ReaderMode.continuousTopToBottom.key);
       await _pumpUntil(
@@ -2016,7 +2030,16 @@ void main() {
       await _pumpUntil(tester, () => reader.preferences.readerBrightness == 30);
       expect(reader.preferences.readerBrightnessEnabled, isTrue);
       await tester.pump(const Duration(seconds: 2));
-      await tester.scrollUntilVisible(find.text('All settings'), 200, scrollable: find.descendant(of: find.byType(ReaderQuickSettingsPanel), matching: find.byType(Scrollable)).first);
+      await tester.scrollUntilVisible(
+        find.text('All settings'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ReaderQuickSettingsPanel),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       await tester.tap(find.text('All settings'));
       await _pumpUntil(
         tester,
@@ -2032,6 +2055,119 @@ void main() {
       await fixture.dispose(tester);
     }
   });
+
+  testWidgets(
+    'preset selected in quick settings persists across panel close and reader re-entry',
+    (tester) async {
+      final fixture = await _ReaderFixture.create(tester);
+      // Presets are global settings and feed the reader scope layers; isolate
+      // them so later cases in this file do not inherit a materialized preset.
+      final savedPresets = appdata.settings['readerModePresets'];
+      final savedSelections = appdata.settings['readerPresetSelections'];
+      final savedBindings = appdata.settings['readerPresetBindings'];
+      final savedComicSettings = appdata.settings['comicSpecificSettings'];
+      appdata.settings['readerModePresets'] = <dynamic>[];
+      appdata.settings['readerPresetSelections'] = <String, dynamic>{};
+      appdata.settings['readerPresetBindings'] = <String, dynamic>{};
+      try {
+        await fixture.mount(tester, pushed: false);
+        final reader = fixture.readerKey.currentState!;
+        expect(reader.mode, ReaderMode.galleryLeftToRight);
+
+        // The preset carries a different mode than the reader currently uses.
+        appdata.settings['readerMode'] = ReaderMode.continuousTopToBottom.key;
+        final presetStore = ReaderPresetStore(
+          scope: ReaderPreferenceScope.comic,
+          comicId: 'book',
+          sourceKey: 'local',
+        );
+        await tester.runAsync(
+          () => presetStore.createFromCurrent('Reader preset'),
+        );
+        final preset = presetStore.list.single;
+        expect(
+          preset.values[ReaderPreferences.readerMode.key],
+          ReaderMode.continuousTopToBottom.key,
+        );
+
+        final shell = tester.state<ReaderScaffoldState>(
+          find.byType(ReaderScaffold),
+        );
+        shell.openSetting();
+        await tester.pumpAndSettle();
+        final presetDropdown = find.byWidgetPredicate(
+          (widget) =>
+              widget is DropdownButtonFormField<String> &&
+              widget.decoration.labelText == 'Preset',
+        );
+        expect(presetDropdown, findsOneWidget);
+        tester
+            .widget<DropdownButtonFormField<String>>(presetDropdown)
+            .onChanged!(preset.id);
+
+        // The selection, applied mode and comic layer land in the same save.
+        await _pumpUntil(tester, () => presetStore.selectedId == preset.id);
+        await _pumpUntil(
+          tester,
+          () => reader.mode == ReaderMode.continuousTopToBottom,
+        );
+        await tester.pumpAndSettle();
+        expect(presetStore.selectedId, preset.id);
+        expect(reader.mode, ReaderMode.continuousTopToBottom);
+        expect(
+          appdata.settings.isComicSpecificSettingsEnabled('book', 'local'),
+          isTrue,
+        );
+        expect(
+          reader.preferences.readerMode,
+          ReaderMode.continuousTopToBottom.key,
+        );
+
+        // Closing the quick settings panel keeps the persisted selection.
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+        expect(find.byType(ReaderQuickSettingsPanel), findsNothing);
+        expect(presetStore.selectedId, preset.id);
+        expect(reader.mode, ReaderMode.continuousTopToBottom);
+
+        // Re-entering the reader resolves the same preset values from storage.
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+        await fixture.mount(tester, pushed: false);
+        final reopened = fixture.readerKey.currentState!;
+        expect(reopened.mode, ReaderMode.continuousTopToBottom);
+        expect(
+          reopened.preferences.readerMode,
+          ReaderMode.continuousTopToBottom.key,
+        );
+        expect(presetStore.selectedId, preset.id);
+        final reopenedShell = tester.state<ReaderScaffoldState>(
+          find.byType(ReaderScaffold),
+        );
+        reopenedShell.openSetting();
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<DropdownButtonFormField<String>>(
+                find.byWidgetPredicate(
+                  (widget) =>
+                      widget is DropdownButtonFormField<String> &&
+                      widget.decoration.labelText == 'Preset',
+                ),
+              )
+              .initialValue,
+          preset.id,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        appdata.settings['readerModePresets'] = savedPresets;
+        appdata.settings['readerPresetSelections'] = savedSelections;
+        appdata.settings['readerPresetBindings'] = savedBindings;
+        appdata.settings['comicSpecificSettings'] = savedComicSettings;
+        await fixture.dispose(tester);
+      }
+    },
+  );
 
   for (final change in ['comic', 'source', 'chapters']) {
     testWidgets(
@@ -2637,92 +2773,84 @@ void main() {
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
 
-  testWidgets(
-    'reader back waits for native effects restoration',
-    (tester) async {
-      final fixture = await _ReaderFixture.create(tester);
-      final platform = _PlatformEffectsProbe()..install();
-      final restored = Completer<void>();
-      try {
-        appdata.settings['showSystemStatusBar'] = false;
-        await fixture.mount(tester, pushed: true, withWindow: false);
-        final reader = fixture.readerKey.currentState!;
-        reader.cycleReaderOrientation();
-        await tester.pump();
-        platform.onBars = (value) => value ? restored.future : Future.value();
-        var left = false;
-        final leaving = reader.requestExit().then((_) => left = true);
-        await tester.pump();
-        expect(left, isFalse);
-        expect(
-          ModalRoute.of(fixture.readerKey.currentContext!)!.isCurrent,
-          isTrue,
-        );
-        restored.complete();
-        await _pumpUntil(tester, () => left);
-        await leaving;
-        await tester.pump(const Duration(seconds: 1));
-        expect(fixture.readerKey.currentState, isNull);
-        expect(platform.orientation, isEmpty);
-        expect(platform.barsVisible, isTrue);
-        expect(tester.takeException(), isNull);
-      } finally {
-        if (!restored.isCompleted) restored.complete();
-        await fixture.dispose(tester);
-        platform.uninstall();
-      }
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.android),
-  );
+  testWidgets('reader back waits for native effects restoration', (
+    tester,
+  ) async {
+    final fixture = await _ReaderFixture.create(tester);
+    final platform = _PlatformEffectsProbe()..install();
+    final restored = Completer<void>();
+    try {
+      appdata.settings['showSystemStatusBar'] = false;
+      await fixture.mount(tester, pushed: true, withWindow: false);
+      final reader = fixture.readerKey.currentState!;
+      reader.cycleReaderOrientation();
+      await tester.pump();
+      platform.onBars = (value) => value ? restored.future : Future.value();
+      var left = false;
+      final leaving = reader.requestExit().then((_) => left = true);
+      await tester.pump();
+      expect(left, isFalse);
+      expect(
+        ModalRoute.of(fixture.readerKey.currentContext!)!.isCurrent,
+        isTrue,
+      );
+      restored.complete();
+      await _pumpUntil(tester, () => left);
+      await leaving;
+      await tester.pump(const Duration(seconds: 1));
+      expect(fixture.readerKey.currentState, isNull);
+      expect(platform.orientation, isEmpty);
+      expect(platform.barsVisible, isTrue);
+      expect(tester.takeException(), isNull);
+    } finally {
+      if (!restored.isCompleted) restored.complete();
+      await fixture.dispose(tester);
+      platform.uninstall();
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets(
-    'reversible window failure resumes reader effects',
-    (tester) async {
-      final fixture = await _ReaderFixture.create(tester);
-      final platform = _PlatformEffectsProbe()..install();
-      var failing = true;
-      try {
-        appdata.settings['showSystemStatusBar'] = false;
-        await fixture.mount(
-          tester,
-          pushed: false,
-          beforeReaderMount: (frame) {
-            frame.addExitTask(() async {
-              if (failing) throw StateError('other preparation');
-            });
-          },
-        );
-        fixture.readerKey.currentState!.cycleReaderOrientation();
-        await tester.pump();
-        platform.events.clear();
-        fixture.closeWindow(tester);
-        await _pumpUntil(
-          tester,
-          () => platform.events
-              .where((event) => event == 'bars:false')
-              .isNotEmpty,
-        );
-        expect(tester.takeException(), isA<StateError>());
-        expect(
-          platform.events,
-          containsAllInOrder(['bars:true', 'bars:false']),
-        );
-        expect(platform.orientation, contains('portraitUp'));
-        expect(fixture.exits, 0);
-        failing = false;
-        fixture.closeWindow(tester);
-        await _pumpUntil(tester, () => fixture.exits == 1);
-        expect(platform.orientation, isEmpty);
-        expect(platform.barsVisible, isTrue);
-        expect(tester.takeException(), isNull);
-      } finally {
-        failing = false;
-        await fixture.dispose(tester);
-        platform.uninstall();
-      }
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.android),
-  );
+  testWidgets('reversible window failure resumes reader effects', (
+    tester,
+  ) async {
+    final fixture = await _ReaderFixture.create(tester);
+    final platform = _PlatformEffectsProbe()..install();
+    var failing = true;
+    try {
+      appdata.settings['showSystemStatusBar'] = false;
+      await fixture.mount(
+        tester,
+        pushed: false,
+        beforeReaderMount: (frame) {
+          frame.addExitTask(() async {
+            if (failing) throw StateError('other preparation');
+          });
+        },
+      );
+      fixture.readerKey.currentState!.cycleReaderOrientation();
+      await tester.pump();
+      platform.events.clear();
+      fixture.closeWindow(tester);
+      await _pumpUntil(
+        tester,
+        () =>
+            platform.events.where((event) => event == 'bars:false').isNotEmpty,
+      );
+      expect(tester.takeException(), isA<StateError>());
+      expect(platform.events, containsAllInOrder(['bars:true', 'bars:false']));
+      expect(platform.orientation, contains('portraitUp'));
+      expect(fixture.exits, 0);
+      failing = false;
+      fixture.closeWindow(tester);
+      await _pumpUntil(tester, () => fixture.exits == 1);
+      expect(platform.orientation, isEmpty);
+      expect(platform.barsVisible, isTrue);
+      expect(tester.takeException(), isNull);
+    } finally {
+      failing = false;
+      await fixture.dispose(tester);
+      platform.uninstall();
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets(
     'platform release remains with original registry during reparenting',

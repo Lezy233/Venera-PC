@@ -12,6 +12,7 @@ import 'package:venera_next/features/search/aggregated_search_page.dart';
 import 'package:venera_next/features/search/search_result_page.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
+import 'package:venera_next/routing/app_navigation.dart';
 import '../../support/creator_search_source.dart';
 
 void main() {
@@ -250,6 +251,11 @@ void main() {
     'aggregate title and cover open exact source detail once, not full results',
     (tester) async {
       final opened = <(String, String)>[];
+      // The production comic card opens through the workspace main navigator,
+      // which the app shell normally mounts; provide it for this harness.
+      final previousMain = appNavigation.mainNavigatorKey;
+      appNavigation.mainNavigatorKey = navigator;
+      addTearDown(() => appNavigation.mainNavigatorKey = previousMain);
       configureComicWidgets(
         comicPageBuilder:
             ({required id, required sourceKey, cover, title, heroID}) {
@@ -263,10 +269,22 @@ void main() {
       await host(tester, const AggregatedSearchPage(keyword: 'Book'));
       for (final source in sources) {
         final name = 'Controlled result 1 · ${source.displayName}';
+        // UX1 D4: aggregated results are bookshelf gallery cards, not the
+        // legacy horizontal SimpleComicTile rows.
         final tile = find.ancestor(
           of: find.text(name),
-          matching: find.byType(SimpleComicTile),
+          matching: find.byType(ComicTile),
         );
+        // Gallery cards are taller than the legacy rows; each source group may
+        // start below the viewport, so center the exact card before tapping its
+        // title and cover. The pinned search bar keeps the cover tap off the
+        // top 52px overlay.
+        await Scrollable.ensureVisible(
+          tester.element(tile),
+          alignment: 0.5,
+          duration: Duration.zero,
+        );
+        await frames(tester);
         final paragraph = tester.renderObject<RenderParagraph>(
           find.descendant(of: find.text(name), matching: find.byType(RichText)),
         );

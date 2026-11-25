@@ -22,6 +22,7 @@ import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/foundation/opencc.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/foundation/res.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/routing/app_navigation.dart';
@@ -332,7 +333,7 @@ void main() {
           expect(source.requests, isEmpty);
           expect(
             host.record.tabs
-                .skip(1)
+                .where((t) => t.current.kind == WorkspacePageKind.comic)
                 .map(
                   (t) => (
                     t.current.arguments['id'],
@@ -395,7 +396,7 @@ void main() {
           );
           expect(
             host.record.tabs
-                .skip(1)
+                .where((t) => t.current.kind == WorkspacePageKind.comic)
                 .map(
                   (t) => (
                     t.current.arguments['id'],

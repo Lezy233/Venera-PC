@@ -441,8 +441,16 @@ void main() {
       );
       await host.mount(tester);
       addTearDown(visible.dispose);
+      // UX1 added a Series section header with its own menu; target the local
+      // section menu that owns Create Folder/Sort instead of assuming a single
+      // MenuButton in the whole sidebar.
+      final localMenu = find.byWidgetPredicate(
+        (widget) =>
+            widget is MenuButton &&
+            widget.entries.any((entry) => entry.text == title),
+      );
       tester
-          .widget<MenuButton>(find.byType(MenuButton))
+          .widget<MenuButton>(localMenu)
           .entries
           .singleWhere((entry) => entry.text == title)
           .onClick();

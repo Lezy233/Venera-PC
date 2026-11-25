@@ -75,15 +75,20 @@ void main() {
       final element = tester.element(
         find.byKey(const ValueKey('workspace-content')),
       );
-      final workspaceToggle = find.descendant(
-        of: find.byType(BookshelfWorkspace),
-        matching: find.byTooltip('Toggle bookshelf'),
-      );
+      // D3 merged top bar: the bookshelf toggle is part of the single
+      // WindowFrame row and the workspace itself starts below it.
+      final workspaceToggle = find.byTooltip('Toggle bookshelf');
       expect(workspaceToggle, findsOneWidget);
       expect(
-        tester.getRect(workspaceToggle).top,
-        greaterThanOrEqualTo(AppSizes.titleBarHeight),
+        find.descendant(
+          of: find.byType(WindowFrame),
+          matching: workspaceToggle,
+        ),
+        findsOneWidget,
       );
+      final toggleRect = tester.getRect(workspaceToggle);
+      expect(toggleRect.center.dy, greaterThan(0));
+      expect(toggleRect.center.dy, lessThan(AppSizes.titleBarHeight));
       expect(
         tester.getRect(find.byType(BookshelfWorkspace)).top,
         greaterThanOrEqualTo(AppSizes.titleBarHeight),

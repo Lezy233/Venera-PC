@@ -70,6 +70,12 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
   ScrollPosition? _wheelPosition;
   int _wheelGeneration = 0;
 
+  /// A restored page can be laid out before its async content is tall enough
+  /// for the saved offset, which clamps the position. Remember the requested
+  /// offset and apply it once content allows, unless the user scrolls first.
+  double? _pendingRestoreOffset;
+  int _restoreFrames = 0;
+
   static bool _isMouseScroll = App.isDesktop;
 
   late int id;
@@ -88,6 +94,53 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
     super.initState();
     id = _id;
     _id++;
+    _armPendingRestore();
+  }
+
+  void _armPendingRestore() {
+    _restoreFrames = 0;
+    if (_controller.hasClients) {
+      _pendingRestoreOffset = null;
+      return;
+    }
+    final offset = _controller.initialScrollOffset;
+    _pendingRestoreOffset = offset > 0 ? offset : null;
+    if (_pendingRestoreOffset != null) _schedulePendingRestore();
+  }
+
+  void _schedulePendingRestore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryPendingRestore());
+  }
+
+  void _tryPendingRestore() {
+    final target = _pendingRestoreOffset;
+    if (target == null || !mounted) return;
+    if (!_controller.hasClients || !_controller.position.hasContentDimensions) {
+      if (++_restoreFrames <= 120) _schedulePendingRestore();
+      return;
+    }
+    final position = _controller.position;
+    if (position.maxScrollExtent + 0.5 < target) {
+      if (++_restoreFrames <= 120) _schedulePendingRestore();
+      return;
+    }
+    _pendingRestoreOffset = null;
+    if ((position.pixels - target).abs() > 0.5) position.jumpTo(target);
+  }
+
+  /// Any real scroll input supersedes the pending restored position.
+  void _cancelPendingRestore() {
+    _pendingRestoreOffset = null;
+  }
+
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollStartNotification &&
+            notification.dragDetails != null ||
+        notification is ScrollUpdateNotification &&
+            notification.dragDetails != null) {
+      _cancelPendingRestore();
+    }
+    return false;
   }
 
   @override
@@ -109,6 +162,7 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
       final owned = _ownsController;
       _controller = widget.controller ?? ScrollController();
       _ownsController = widget.controller == null;
+      _armPendingRestore();
       _resetWheel();
       if (owned && !identical(previous, _controller)) previous.dispose();
     }
@@ -149,6 +203,7 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
       setState(() => _isMouseScroll = true);
     }
     if (!_isMouseScroll || _controller.positions.length != 1) return;
+    _cancelPendingRestore();
     final controller = _controller;
     final position = controller.position;
     if (!position.hasPixels || !position.hasContentDimensions) return;
@@ -198,10 +253,13 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
   @override
   Widget build(BuildContext context) {
     if (App.isMacOS) {
-      return widget.builder(
-        context,
-        _controller,
-        const BouncingScrollPhysics(),
+      return NotificationListener<ScrollNotification>(
+        onNotification: _onScrollNotification,
+        child: widget.builder(
+          context,
+          _controller,
+          const BouncingScrollPhysics(),
+        ),
       );
     }
     var child = Listener(
@@ -237,7 +295,10 @@ class _SmoothScrollProviderState extends State<SmoothScrollProvider> {
         _hovered = false;
         parent?.onChildInactive(id);
       },
-      child: child,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _onScrollNotification,
+        child: child,
+      ),
     );
   }
 }

@@ -34,6 +34,16 @@ Future<void> _open(
 
 Future<void> _enter(WidgetTester tester, String title) async {
   final entry = find.widgetWithText(PopupWindowSetting, title);
+  if (entry.evaluate().isEmpty) {
+    // The right pane is a lazily built sliver list: at narrow widths the
+    // requested entry can sit beyond the build cache until scrolled into view.
+    await tester.dragUntilVisible(
+      entry,
+      find.byType(CustomScrollView),
+      const Offset(0, -120),
+    );
+    await tester.pumpAndSettle();
+  }
   await tester.ensureVisible(entry);
   await tester.pumpAndSettle();
   await tester.tap(entry);
