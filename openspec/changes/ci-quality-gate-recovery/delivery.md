@@ -119,3 +119,14 @@ python3 .github/scripts/report_dart_coverage.py coverage/lcov.info
 ```
 
 所有本地证据位于 `tmp/ciqg/`（`tmp/` 被 .gitignore 忽略，不会进入提交）。
+
+## 2026-11-26 PR #2 首跑修复
+
+PR #2 首轮 5 个失败 job 已定位：
+
+- **analyze**：仅 `test/features/reader/compact_progress_layout_test.dart` 未格式化（109 个待检文件中 1 个）。已格式化，CI 同款 diff 范围复跑 0 待改。
+- **Flutter 测试与覆盖率 / Windows 冒烟**：同一根因——干净 pub 缓存下 `pdfrx_engine` 0.4.5 的 `pdf_file_cache.dart:380/382` 可空性编译失败（测试 job 因此 149 失败、仅 4328 项执行）。本机一直靠 pub-cache 热补丁规避。新增 `.github/scripts/patch_pdfrx_engine.py`（4 处已知访问、幂等、形状不符即失败），接入 analyze 2 处、pr_build 1 处、build 4 处 `pub get` 之后；干净缓存模拟产物与本机热补丁逐字节一致。
+- **Apple 目录授权与跨会话恢复**：runner 容量取消（macOS arm64 排队），属基础设施，随下次 run 重试。
+- **平台冒烟构建门禁**：因 Windows 冒烟失败而失败，根因同上。
+
+新增任务 3.3；新增 5 项 Python 测试（脚本 3 + 工作流契约 2），全量 Python 161/0/10，`flutter analyze --fatal-infos --fatal-warnings` 0，结构/架构检查 0。

@@ -29,6 +29,9 @@
 - [x] 3.2 调整 analyze 工作流的 Dart 格式步骤，仅排除 vendored `packages/webdav_client/`，其他改动的本仓 Dart 文件仍受检查；新增或调整 Python 静态测试锁定该过滤范围，并在本地用与 CI 相同的 `git diff` 范围命令验证 vendored 被跳过、本仓改动仍被检查。不得格式化或修改 vendored 源码来通过检查。
   备注：`.github/workflows/analyze.yml` 的格式步骤在 `git diff` 中增加且仅增加 `':(exclude)packages/webdav_client/**'` 路径过滤，并打印待检文件清单。`.github/scripts/tests/test_desktop_ci_cd.py` 新增静态测试锁定“唯一排除路径 + 原 diff 范围 + dart format 命令，且不得排除 lib/test/tool 或使用更宽通配”，该文件 14/14 通过。用与 CI 相同的 git diff 范围本地验证：`git merge-base main HEAD...HEAD` 含 89 个 Dart 文件（其中 11 个 vendored），过滤后 78 个本仓文件、0 vendored，`dart format --output=none --set-exit-if-changed` 退出 0；对 11 个 vendored 文件直接跑同命令退出 1（仅 `webdav_dio.dart` 会被改格式），因 `--output=none` 未写入、11 文件 sha256 前后一致，vendored 逐字节未变。证据：`tmp/ciqg/3.2-verify.log`、`tmp/ciqg/3.2-vendored-unformatted.log`。
 
+- [x] 3.3 固化 `pdfrx_engine` 0.4.5 的 pub-cache 编译补丁到 CI：新增幂等、失败可见的补丁脚本，在 analyze/pr_build/build 的所有 `flutter pub get` 后执行，并用工作流静态测试锁定；用干净 pub 缓存模拟验证补丁产物与本机热补丁一致，运行新增 Python 测试。
+  备注：PR #2 首跑日志定位 Windows 构建与 Flutter 测试同因——干净 pub 缓存下 `pdf_file_cache.dart:380/382` 可空性编译失败（测试 job 因此 149 失败/4328 执行）。新增 `.github/scripts/patch_pdfrx_engine.py` 对 0.4.5 的 `isCached/blockSize/read/fileSize` 四处已知访问补 `!`，已存在则跳过、形状不符则失败；analyze 2 处、pr_build 1 处、build 4 处 `pub get` 后接入。干净缓存模拟产物与本机长期热补丁 `diff` 逐字节一致；新增 5 项 Python 测试（3 项脚本 + 2 项工作流契约）161/0/10 全绿；同时按 CI 同款 diff 范围格式化 `compact_progress_layout_test.dart`，109 文件 `dart format` 0 待改。证据：PR #2 run 45655040888/45655040601 日志、`tmp/job-*.log`（本地）。
+
 ## 4. 集成与 GitHub 验收
 
 - [x] 4.1 格式化本次修改的 Dart 文件，运行全部 `.github/scripts/tests/` Python 测试、`git diff --check` 和旧 import 路径搜索，确认无新增无关文件或检查豁免。

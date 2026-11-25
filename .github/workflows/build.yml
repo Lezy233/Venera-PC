@@ -68,6 +68,7 @@ jobs:
       - name: 构建 Windows 安装包
         run: |
           flutter pub get --enforce-lockfile
+          python .github/scripts/patch_pdfrx_engine.py
           python windows/build.py
       - name: 验证 Windows 分享请求与 COM 归属
         shell: pwsh
@@ -166,6 +167,7 @@ jobs:
           echo "RUSTUP_REAL_BINARY=$RUNNER_TEMP/rustup" >> "$GITHUB_ENV"
           echo "RUSTUP_LOCK_FILE=$RUNNER_TEMP/venera-rustup.lock" >> "$GITHUB_ENV"
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 检查 rust-toolchain.toml
         run: rustup show
       - name: 构建 Flutter macOS 应用
@@ -205,6 +207,7 @@ jobs:
       - name: 准备 Rust 工具链
         run: python3 .github/scripts/prepare_rust_toolchain.py
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 安装 Linux 构建依赖
         run: |
           sudo apt-get update -y
@@ -255,6 +258,7 @@ jobs:
       - name: 准备 Rust 工具链
         run: python3 .github/scripts/prepare_rust_toolchain.py
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 安装 Linux 构建依赖
         run: |
           sudo apt-get update -y

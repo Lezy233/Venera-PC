@@ -41,64 +41,64 @@ void main() {
             disableAnimations: reduceMotion,
           ),
           child: Scaffold(
-          body: SizedBox.expand(
-            child: ReaderScaffold(
-            key: const ValueKey('shell'),
-            data: ReaderShellData(
-              comicId: 'book',
-              sourceKey: 'local',
-              title: 'Book',
-              chapterTitle: 'One',
-              hasChapters: true,
-              vertical: false,
-              gallery: true,
-              animating: false,
-              onCommentsPage: false,
-              swipeToCollect: false,
-              preferences: ReaderSettings.resolve(
-                global: {
-                  'showPageNumberInReader': false,
-                  'enableClockAndBatteryInfoInReader': false,
-                },
-              ),
-              automaticReading: AutoReadingStatus.stopped,
-            ),
-            progress: ReaderProgressRequest(
-              identity: Object(),
-              page: 2,
-              maxPage: 10,
-              chapter: 1,
-              maxChapter: 3,
-              reversed: false,
-              isCurrent: () => true,
-              toPage: (_, {animated = true}) => true,
-              toChapter: (_) => true,
-            ),
-            onExit: () async {},
-            onFullscreen: null,
-            onToggleAutomaticReading: () => false,
-            acquireSidebarPause: () => () {},
-            readImagePickContext: () => null,
-            imageWork: work,
-            orientation: ReaderOrientation.system,
-            onRotate: null,
-            onSystemUiChanged: (_) {},
-            createChapterMenu: () => null,
-            favoriteChanges: favorites,
-            createFavoriteQuery: () => null,
-            createImageFavorite: () => null,
-            createImageExport: () => null,
-            createSettings: () => null,
-            createChapterComments: () => null,
-            chapterNavigation: null,
-              child: const ColoredBox(
-                key: ValueKey('comic-content'),
-                color: Color(0xff758473),
+            body: SizedBox.expand(
+              child: ReaderScaffold(
+                key: const ValueKey('shell'),
+                data: ReaderShellData(
+                  comicId: 'book',
+                  sourceKey: 'local',
+                  title: 'Book',
+                  chapterTitle: 'One',
+                  hasChapters: true,
+                  vertical: false,
+                  gallery: true,
+                  animating: false,
+                  onCommentsPage: false,
+                  swipeToCollect: false,
+                  preferences: ReaderSettings.resolve(
+                    global: {
+                      'showPageNumberInReader': false,
+                      'enableClockAndBatteryInfoInReader': false,
+                    },
+                  ),
+                  automaticReading: AutoReadingStatus.stopped,
+                ),
+                progress: ReaderProgressRequest(
+                  identity: Object(),
+                  page: 2,
+                  maxPage: 10,
+                  chapter: 1,
+                  maxChapter: 3,
+                  reversed: false,
+                  isCurrent: () => true,
+                  toPage: (_, {animated = true}) => true,
+                  toChapter: (_) => true,
+                ),
+                onExit: () async {},
+                onFullscreen: null,
+                onToggleAutomaticReading: () => false,
+                acquireSidebarPause: () => () {},
+                readImagePickContext: () => null,
+                imageWork: work,
+                orientation: ReaderOrientation.system,
+                onRotate: null,
+                onSystemUiChanged: (_) {},
+                createChapterMenu: () => null,
+                favoriteChanges: favorites,
+                createFavoriteQuery: () => null,
+                createImageFavorite: () => null,
+                createImageExport: () => null,
+                createSettings: () => null,
+                createChapterComments: () => null,
+                chapterNavigation: null,
+                child: const ColoredBox(
+                  key: ValueKey('comic-content'),
+                  color: Color(0xff758473),
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
     await tester.pumpAndSettle();
@@ -115,10 +115,7 @@ void main() {
       final rail = find.byType(ReaderProgressSlider);
       expect(compactBar, findsOneWidget);
       expect(rail, findsOneWidget);
-      expect(
-        tester.getSize(compactBar).height,
-        ReaderBottomBar.compactHeight,
-      );
+      expect(tester.getSize(compactBar).height, ReaderBottomBar.compactHeight);
       final content = tester.getRect(
         find.byKey(const ValueKey('comic-content')),
       );

@@ -78,6 +78,14 @@ inventory 完整后，基线暴露出 HEAD 已有的 4 条 UI 层跨 feature 直
 
 为使 inventory 可通过，本 change 另做两处最小解耦：`app_locale` 改为由 `Appdata` 构造时绑定 `Settings`（`attachAppLocaleSettings`），移除 foundation 内 `appdata→settings_recovery→translations→app_locale→appdata` 业务循环；三处业务文件改引 `comic_source_api.dart` 公共入口以消除 business→UI 边。两者行为保持不变，但 `app_locale` 在 `Appdata` 创建前被读取时会回退到系统默认，而不是旧实现的懒初始化，须在交付与启动测试说明中保留该前提。
 
+### 10. CI 在 pub get 后应用 pdfrx_engine 0.4.5 的既有编译补丁
+
+项目锁定的 `pdfrx_engine` 0.4.5 在 `openCustom` 闭包内丢失了可空参数的流提升，干净 pub 缓存下 `pdf_file_cache.dart` 的 `cache.blockSize` 与 `cache.read` 无法编译。本机一直靠 pub-cache 热补丁规避，CI 没有该补丁，导致 Windows 构建与 Flutter 测试在编译阶段失败（PR #2 首跑中两个 job 报同一错误，测试 job 因此 149 项失败、仅 4328 项执行）。
+
+本 change 新增 `.github/scripts/patch_pdfrx_engine.py`：仅对 0.4.5 的四处已知访问补 `!`，幂等、可审查；找不到包或源码形状变化时**失败退出**而不是静默跳过。脚本在 analyze、pr_build、build 的所有 `flutter pub get` 之后执行，并由 `test_pdfrx_engine_patch_workflow.py` 锁定“每个会编译应用的工作流都在 pub get 后打补丁”。不升级 pdfrx、不改锁文件，避免把 PDF 行为变化混进本 change。
+
+风险：上游若修改 0.4.5 源码形状或脚本漏配工作流，脚本/静态测试会失败，需要人工重新核对；届时优先评估升级或 vendoring，而不是放宽补丁。本补丁已用干净 pub 缓存模拟验证，产物与本机长期使用的热补丁逐字节一致。
+
 ## Risks / Trade-offs
 
 - [移动共享文件遗漏相对 import 或测试引用] → 全局搜索旧路径，运行格式检查、analyze 和相关测试；不改变公共类型名称。

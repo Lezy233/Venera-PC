@@ -61,6 +61,7 @@ jobs:
       - run: python3 .github/scripts/check_architecture_dependencies.py
       - run: python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 准备并验证独立代码审查工具
         working-directory: tool/code_audit
         run: |
@@ -108,6 +109,7 @@ jobs:
           architecture: x64
           cache: true
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - uses: actions/download-artifact@v8
         with:
           name: linux-rhttp-test-library

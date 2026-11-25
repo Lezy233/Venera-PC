@@ -33,6 +33,16 @@ macOS 目录授权检查 SHALL 在 GitHub Actions 当前支持的 runner 上执�
 - **THEN** GitHub Actions 能接受并启动 macOS 目录授权 job
 - **AND** 该 job 不因 runner 配置不受支持而失败
 
+### Requirement: 锁定依赖在干净环境可编译
+
+质量工作流 SHALL 在干净 pub 缓存中让锁定的依赖源码可编译。若锁定版本含已知编译缺陷，工作流 MAY 在 `pub get` 后应用仓库内可审查、幂等的补丁，但 MUST NOT 升级版本、修改锁文件或静默跳过补丁失败。
+
+#### Scenario: 干净环境编译锁定依赖
+
+- **WHEN** CI 在空 pub 缓存中解析锁定依赖并编译应用或测试
+- **THEN** 依赖源码可编译，已知缺陷由仓库内脚本确定性修复
+- **AND** 补丁缺失或源码形状变化时工作流失败并给出可诊断信息
+
 ### Requirement: 质量门禁完整执行
 
 质量工作流 SHALL 在依赖恢复后实际执行结构检查、架构 inventory 检查、静态分析、Flutter 测试与覆盖率步骤，MUST NOT 通过删除检查、扩大豁免范围或把既有违规加入白名单获得成功结果。

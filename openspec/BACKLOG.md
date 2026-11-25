@@ -110,6 +110,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-26：PR #2 首跑 5 红定位并修复：`compact_progress_layout_test` 格式、CI 干净缓存 pdfrx_engine 0.4.5 编译补丁（新增 3.3 与 5 项测试）、macOS arm64 容量取消待重试；待新 run 验证 4.5。
+
 - 2026-11-26：owner 手动验收通过 UX1 全部剩余项（47/47）；待授权 push 与单一 PR（含 ci 提交），合并后归档 UX1/ci 并同步正式 specs。
 
 - 2026-11-26：UX1 6.1–6.7 与 7.6 实施交付，architect 独立复核通过（5791/0/150、analyze 0、结构/架构 0）；UX1 41/47，待 owner 7.x 验收后进入含 ci 提交的单一 PR。
