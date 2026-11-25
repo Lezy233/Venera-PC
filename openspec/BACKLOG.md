@@ -102,13 +102,15 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 ## 已知债务（architect 维护，2026-11-25 起）
 
 - [ ] **缩减架构 allowlist 的 4 条既有 UI 跨 feature 边**：`favorites→search`、`reader→settings`、`search→favorites`、`settings→search`。来源 `ci-quality-gate-recovery` 2.5（inventory 补齐后暴露，HEAD 已存在，仅 UI 层，无 business 反向边）；本次按基线机制登记，属已知债务。后续应以公共入口或注入重构，逐步把 `allowed_feature_edges` 从 62 缩回，不得把登记机制用于吸收新反向依赖。
-- [ ] **全量测试 64 项 CI 必挂失败**：由 `ux1-bookshelf-workspace` 7.6 承接（reader-shell 28、workspace/5A 24、favorites/search/settings 12），清零前 `ci-quality-gate-recovery` 4.5、`desktop-only-ci-cd` 4.3、`venera-pc-rebrand` 7.3 均不得勾选；清单见该 change 的 `full-suite-baseline.md`。
+- [x] **全量测试 64 项 CI 必挂失败**：`ux1-bookshelf-workspace` 7.6 已清零（2026-11-26 architect 独立复跑 5791/0/150），清单见该 change 的 `full-suite-baseline.md`，复核见 `review-6x-7.6.md`。
 
 ## 锚点机制（怎么用）
 
 锚点功能不做实现，只做框架验收：其 propose 产出的 design.md 必须包含一节"框架容纳检查"——逐条核对 design-spec.md 的 token/断点/surface/壳层规则是否需要为本次功能新增例外。需要新增例外的，先改 design-system-foundation 的 spec 再实现。这样"为未来扩展做准备"是可执行、可验收的。
 
 ## 变更记录
+
+- 2026-11-26：UX1 6.1–6.7 与 7.6 实施交付，architect 独立复核通过（5791/0/150、analyze 0、结构/架构 0）；UX1 41/47，待 owner 7.x 验收后进入含 ci 提交的单一 PR。
 
 - 2026-11-25：owner 采纳方案 A 调整排期——`ux1-bookshelf-workspace` 新增 7.6（64 项全量测试归零），顺序改为 UX1 6.x + 7.6 → `ci-quality-gate-recovery` 4.5 PR → desktop-only 4.3 → rebrand 7.3；ci 分支本地 14/15 未推送，4.5 待 UX1 绿灯 PR；4 条既有 UI 跨 feature 边登记为已知债务并在此记录清理项。
 

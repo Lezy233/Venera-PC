@@ -8,7 +8,7 @@
 
 基线（`full-suite-baseline.md`，HEAD `cec0762` worktree）：**5719 通过 / 64 失败 / 150 skip**；64 项与 HEAD 逐条一致。
 
-最终（CI 等价，本分支工作区）：**5791 通过 / 0 失败 / 150 skip**（`fvm flutter test --coverage --concurrency=4`，见 `**最终 CI 等价计数**：`5791 通过 / 0 失败 / 150 skip`（`exit 0`，`All tests passed!`）。覆盖率：`coverage/lcov.info` **49496/60037 行 = 82.44%**（538 个文件）。
+最终（CI 等价）：**5791 通过 / 0 失败 / 150 skip**，`exit 0`（`All tests passed!`）；无覆盖率 `--concurrency=4` 全量通过，覆盖率报告用同套测试 `--concurrency=2` 取得：`coverage/lcov.info` **49496/60037 行 = 82.44%**（538 个文件）。
 
 - 全量无覆盖率、`--concurrency=4`：`/tmp/ux1-7x-interim.log` **5719+72=5791 通过 / 0 失败 / 150 skip**，`exit 0`。
 - 带覆盖率、`--concurrency=2`：`/tmp/ux1-76-cov2.log` **5791 通过 / 0 失败 / 150 skip**，`exit 0`，生成 `coverage/lcov.info`（82.44%）。
@@ -46,7 +46,7 @@
 | `features/reader/shell_presentation_test.dart` | 3 | 全部通过 |
 | `features/search/search_profile_flow_test.dart` | 1 | 全部通过 |
 | `features/settings/settings_inplace_editing_test.dart` | 1 | 全部通过 |
-` 段）。差值 +72 = 64 项基线失败全部转绿 + 8 项本轮新增测试（6.6 四辅助？见 §2/§6）；无新增 skip、无删除断言、无放宽 finder。
+差值 +72 = 64 项基线失败全部转绿 + 8 项本轮新增测试；无新增 skip、无删除断言、无放宽 finder。
 
 分组归零对照（64/64）：
 
