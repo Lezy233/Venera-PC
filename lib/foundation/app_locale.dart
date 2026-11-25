@@ -1,14 +1,29 @@
 import 'dart:ui';
 
-import 'appdata.dart';
 import 'application_preferences.dart';
 import 'global_preference_store.dart';
+import 'reader_preference_settings.dart';
+
+ReaderPreferenceSettings? _settings;
+
+/// Binds the published application settings used for locale resolution.
+///
+/// Locale resolution must stay below the application data layer; binding the
+/// existing settings view keeps reads live without importing that layer.
+void attachAppLocaleSettings(ReaderPreferenceSettings settings) {
+  _settings = settings;
+}
 
 /// Resolve the current preference on every read, including after a settings change.
-Locale get appLocale => resolveAppLocale(
-  GlobalPreferenceStore(appdata.settings).read(AppPreferences.language),
-  PlatformDispatcher.instance.locales,
-);
+Locale get appLocale {
+  final settings = _settings;
+  return resolveAppLocale(
+    settings == null
+        ? AppPreferences.language.defaultValue
+        : GlobalPreferenceStore(settings).read(AppPreferences.language),
+    PlatformDispatcher.instance.locales,
+  );
+}
 
 Locale resolveAppLocale(String preference, List<Locale> systemLocales) {
   final selected = switch (preference) {

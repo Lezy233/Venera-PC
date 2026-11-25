@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 
 /// One route's retained view state; never owns a business store or network cache.
 class WorkspacePageBinding extends ChangeNotifier {
@@ -17,6 +17,7 @@ class WorkspacePageBinding extends ChangeNotifier {
   bool _acceptsChanges = false;
   bool _disposed = false;
   bool get active => _active;
+
   /// The foreground page may retain its chrome beneath a popup while its
   /// input and background work remain inactive.
   bool get presentationActive => _presentationActive;

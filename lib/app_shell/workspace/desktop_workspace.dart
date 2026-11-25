@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/components/navigation_bar.dart';
 import 'package:venera_next/components/settings_save_state.dart';
 import 'package:venera_next/components/window_frame.dart';
@@ -15,12 +15,12 @@ import 'package:venera_next/foundation/selection_operation.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/routing/app_navigation.dart';
 import 'package:venera_next/design_system/tokens.dart';
-import 'workspace_record.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'workspace_store.dart';
-import 'workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'workspace_pages.dart';
 import 'workspace_tab_strip.dart';
-import 'workspace_navigation_scope.dart';
+import 'package:venera_next/components/workspace_navigation_scope.dart';
 
 /// The desktop shell has one visible content stack, with retained siblings.
 class DesktopWorkspace extends StatefulWidget {
@@ -217,13 +217,15 @@ class DesktopWorkspaceState extends SettingsSaveState<DesktopWorkspace> {
       toggle: local?.toggleRightSidebar,
     );
     chrome.setFavoritesSearchQuery(tab == null ? null : _queryCurrent);
-    chrome.setWorkspaceTabs(
-      visible: chrome.readerActions?.immersive != true,
-      builder: _workspaceTabsBuilder,
-    );
+    // Reader actions feed the chrome row visibility, so publish the current
+    // route's actions before deciding whether the workspace tab row is shown.
     DesktopChromeScope.setReaderActions(
       chrome,
       tab?.presentationRouteRecord == null ? null : local?.readerActions,
+    );
+    chrome.setWorkspaceTabs(
+      visible: chrome.readerActions?.immersive != true,
+      builder: _workspaceTabsBuilder,
     );
     if (tab != null) appNavigation.mainNavigatorKey = tab.navigator;
   }

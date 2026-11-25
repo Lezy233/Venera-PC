@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

@@ -8,7 +8,7 @@ import 'package:venera_next/features/history/history_scope.dart';
 import '../components/sidebar_presentation_test.dart' show settleSidebarWork;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/navigation_bar.dart';
 import 'package:venera_next/foundation/appdata.dart';
@@ -36,22 +36,32 @@ class _Chrome extends DesktopChromeController {
 }
 
 void main() {
-  App.dataPath=App.cachePath=Directory.systemTemp.path;
+  App.dataPath = App.cachePath = Directory.systemTemp.path;
   late LocalFavoritesManager favorites;
   late HistoryManager history;
-  Widget scoped(Widget child)=>FavoritesScope(manager:favorites,child:HistoryScope(manager:history,child:child));
+  Widget scoped(Widget child) => FavoritesScope(
+    manager: favorites,
+    child: HistoryScope(manager: history, child: child),
+  );
   setUp(() async {
-    final path=App.dataPath,cache=App.cachePath;
-    final implicit=Map<String,dynamic>.of(appdata.implicitData);
-    final root=Directory.systemTemp.createTempSync('ux1-chrome-binding-');
-    App.dataPath=App.cachePath=root.path;
+    final path = App.dataPath, cache = App.cachePath;
+    final implicit = Map<String, dynamic>.of(appdata.implicitData);
+    final root = Directory.systemTemp.createTempSync('ux1-chrome-binding-');
+    App.dataPath = App.cachePath = root.path;
     appdata.implicitData.clear();
-    favorites=LocalFavoritesManager.independent();history=HistoryManager.create();
-    await favorites.init();await history.init();
+    favorites = LocalFavoritesManager.independent();
+    history = HistoryManager.create();
+    await favorites.init();
+    await history.init();
     addTearDown(() async {
       await appdata.writeImplicitData();
-      await favorites.debugWaitForHashedIdsRefresh();favorites.close();history.close();
-      appdata.implicitData=implicit;App.dataPath=path;App.cachePath=cache;root.deleteSync(recursive:true);
+      await favorites.debugWaitForHashedIdsRefresh();
+      favorites.close();
+      history.close();
+      appdata.implicitData = implicit;
+      App.dataPath = path;
+      App.cachePath = cache;
+      root.deleteSync(recursive: true);
     });
     final settings = Map<String, dynamic>.from(
       appdata.toJson()['settings'] as Map,
@@ -102,8 +112,8 @@ void main() {
       expect(chrome.phases, hasLength(1));
       expect(tester.takeException(), isNull);
       chrome.navigateTo(2);
-      await tester.pump(const Duration(milliseconds:400));
-      await settleSidebarWork(tester,()=>appdata.writeImplicitData());
+      await tester.pump(const Duration(milliseconds: 400));
+      await settleSidebarWork(tester, () => appdata.writeImplicitData());
       await tester.pumpAndSettle();
       expect(tester.state<NaviPaneState>(find.byType(NaviPane)).currentPage, 2);
       expect(chrome.phases, hasLength(1));

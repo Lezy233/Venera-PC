@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:venera_next/features/comic_source/comic_source.dart';
+import 'package:venera_next/features/comic_source/comic_source_api.dart';
 import 'package:venera_next/foundation/appdata.dart';
 
 class SearchProfileSource {

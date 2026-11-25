@@ -13,7 +13,7 @@ import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
 import 'package:venera_next/app_shell/workspace/workspace_tab_strip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
@@ -316,12 +316,25 @@ void main() {
             .map((c) => (c.sourceKey, c.id)),
         unorderedEquals(selectedIds.map((id) => ('workspace-fixture', id))),
       );
+      // D3: the shell's merged top bar no longer hosts a text field. Use a
+      // real settings input to prove workspace shortcuts never fire while a
+      // text input owns focus.
+      await tester.tap(find.text('Settings').hitTestable());
+      await settleWorkspace();
+      await tester.tap(find.text('Network').hitTestable().first);
+      await settleWorkspace();
+      await tester.tap(find.text('Proxy').hitTestable().first);
+      await settleWorkspace();
+      await tester.tap(find.text('Manual').hitTestable());
+      await settleWorkspace();
+      final editable = find.byType(TextFormField).hitTestable();
+      expect(editable, findsWidgets);
       for (final key in [
         LogicalKeyboardKey.keyT,
         LogicalKeyboardKey.keyW,
         LogicalKeyboardKey.tab,
       ]) {
-        await tester.tap(find.byType(TextField).hitTestable().first);
+        await tester.tap(editable.first);
         await settleWorkspace();
         expect(
           FocusManager.instance.primaryFocus?.context

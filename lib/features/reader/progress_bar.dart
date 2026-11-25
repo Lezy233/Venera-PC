@@ -24,6 +24,10 @@ class ReaderBottomBar extends StatelessWidget {
     this.nextTooltip,
   });
   static const height = 105.0;
+
+  /// Hidden tools keep only this narrow layout rail, not a floating overlay.
+  static const compactHeight = 8.0;
+
   final String label;
   final List<Widget> actions;
   final int page;
@@ -38,7 +42,7 @@ class ReaderBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final barHeight = isOpen ? height : 8.0;
+    final barHeight = isOpen ? height : compactHeight;
     Widget child = SizedBox(
       height: barHeight,
       child: Column(
@@ -193,7 +197,7 @@ class ReaderProgressSlider extends StatelessWidget {
                   }
                 : const {},
             child: SizedBox(
-              height: 8,
+              height: ReaderBottomBar.compactHeight,
               child: LayoutBuilder(
                 builder: (context, constraints) => GestureDetector(
                   behavior: HitTestBehavior.opaque,

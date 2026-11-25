@@ -248,9 +248,12 @@ void main() {
             expect((detail.id, detail.sourceKey), ('book-0', 'local'));
             navigator.currentState!.removeRoute(route);
             await tester.pumpAndSettle();
-            await tester.longPressAt(
-              tester.getCenter(find.text('Neighbor favorite')),
+            // UX1 removed card long-press selection: select through the
+            // checkbox which is the only selection entry on the card body.
+            final neighborCard = find.byWidgetPredicate(
+              (w) => w is ComicTile && w.comic.id == 'book-1',
             );
+            await toggleComicCheckbox(tester, neighborCard);
             await tester.pumpAndSettle();
             final beforeSelect = routes.pushes.length;
             final selectedPoints = points();

@@ -1,5 +1,5 @@
 import "package:flutter/material.dart";
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import "package:venera_next/components/appbar.dart";

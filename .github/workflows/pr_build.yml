@@ -52,6 +52,7 @@ jobs:
           architecture: x64
           cache: true
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 构建 Windows Debug 应用
         run: flutter build windows --debug
       - name: 编译并运行 Windows 原生启动测试

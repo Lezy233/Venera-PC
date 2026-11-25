@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/global_shortcuts.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
@@ -23,6 +23,7 @@ import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/comic_type.dart';
 import 'package:venera_next/foundation/opencc.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/foundation/res.dart';
 import 'package:venera_next/foundation/translations.dart';
 import 'package:venera_next/routing/app_navigation.dart';
@@ -373,9 +374,11 @@ void main() {
           reason:
               'the actual author header selection handle must drop two entities',
         );
+        // The drop inserts at the drop position, so the original tab is not
+        // necessarily first; assert the two real detail tabs by kind instead.
         expect(
           host.record.tabs
-              .skip(1)
+              .where((t) => t.current.kind == WorkspacePageKind.comic)
               .map(
                 (t) => (
                   t.current.arguments['id'],

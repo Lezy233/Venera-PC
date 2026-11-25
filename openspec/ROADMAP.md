@@ -1,10 +1,12 @@
-# Venera-Next UI/UX 改造路线图
+# Venera-PC UI/UX 改造路线图
 
 > 分工：codex「architect」（规划，pane w4:p1）→ codex「executor」（执行/debug，pane w4:p2）→ owner（人工验收 → archive）
 > 规则见 `openspec/config.yaml` 的 context 与 operations。已完成的 quick wins 见 `doc/ui-audit-2026-10-20.md`。
 > 设计方向（2026-10-20 锁定，同日修订）：现代极简——浅色内容区 + 浅色壳，动态取色为唯一强调色来源；阅读器跟随主题不设例外；深色内容区主题为二期。详见 design-system-foundation。
 
 ## 执行顺序（依赖关系）
+
+**2026-11-26 状态（owner 手动验收通过）**：4 个活动 change，`openspec validate --changes` 4/4 通过；归档 23 个、正式 specs 20 份。`ux1-bookshelf-workspace` **47/47**（owner 手动验收通过，待归档推送）；`ci-quality-gate-recovery` 15/16（4.5 待 PR 重跑；首跑 5 红已修复，第二次 run 仅 1 项 CI flake 已加固）；`desktop-only-ci-cd` 10/12（余 4.1、4.3）；`venera-pc-rebrand` 20/21（余 7.3）。顺序：**owner 授权 push + 单一 PR（`ux1-reader-6x`，含 ci 提交）→ 合并后归档 UX1 与 ci、同步正式 specs → desktop 4.3 → rebrand 7.3**。门禁（architect 独立复跑）：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0，Python 161/0/10，全量测试 **5791/0/150**。已知债务：4 条既有 UI 跨 feature 边（BACKLOG）。
 
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含审计、纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
 
@@ -16,7 +18,7 @@
 
 功能愿望与新功能规划见 `openspec/BACKLOG.md`（愿景 + 候选清单 + 批次建议）。
 
-2026-11-01 owner反馈的依赖/验收条件见BACKLOG「Owner反馈TODO」。当前F6/F7、B3/B4及F8–F10均已验收归档；B5于2026-11-06验收归档，2026-11-07随F11推送；F11于2026-11-07经owner验收通过并归档。UX1于2026-11-07完成方向确认和正式方案，F1/F2纳入其实施阶段，生产实现待排期。
+2026-11-01 owner反馈的依赖/验收条件见BACKLOG「Owner反馈TODO」。当前F6/F7、B3/B4及F8–F10均已验收归档；B5于2026-11-06验收归档，2026-11-07随F11推送；F11于2026-11-07经owner验收通过并归档。UX1于2026-11-07完成方向确认和正式方案，F1/F2纳入其分阶段实施，已分阶段交付归档（见执行表 #17）；2026-11-24 的 UX1 计数与余项以文首状态为准。
 
 2026-11-02 owner实际搜索未得到结果，已批准废止B2详情跨平台入口及原F7专用作者聚合链路。`search-profiles-author` 最终设计：F6搜索方案保留，F7改为收藏右栏单选创作者的平台名称树，可维护同源多名称并点击普通单源搜索。2026-11-03实现与自动化独立复核完成：113项测试全通过、0skip，analyze50=38+12零新增；F6/F7 GUI证据已重留并独立抽查通过，正常生产构建已恢复，owner于2026-11-03验收通过，已归档（实现commit c5429bb）。B3/B4已于2026-11-03由owner安排，四件套已建并校验，顺序执行；F8–F11尚未启动。
 
@@ -40,9 +42,12 @@
 | 15 | **reader-double-page-letterbox-fix**（B5）✅已归档 | 修正双面错误窗口尺寸覆盖，保护原图比例/完整性与既有阅读语义 | 2026-11-06 owner验收通过，实现49ea8a9；tasks1.x 4/4、独立148通过0skip/analyze50零新增，GUI/正常构建/清理/SHA通过；2026-11-07随F11推送 |
 
 | 16 | **favorites-sidebar-section-collapse**（F11）✅已归档 | 本地/系列/网络独立折叠、状态记忆、当前条目摘要及键盘/菜单隔离 | 2026-11-07 owner验收，实现4a886a6；tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 |
-| 17 | **ux1-bookshelf-workspace**（UX1，5A基本工作已归档） | 书架、多栈、F2、搜索/详情及5A基本切片已交付；Batch B后续、阅读器与整体验收待继续 | 2026-11-21 owner授权5A基本工作阶段归档提交；活动任务保留，不整项archive，此次不推送 |
+| 17 | **ux1-bookshelf-workspace**（UX1，5A基本工作已归档） | 47/47：5.5、6.x、7.x 全部闭合；全量 5791/0/150、analyze 0；owner 2026-11-26 手动验收通过 | 基于 #18 分支；等待 owner 授权 push/PR；归档与正式 spec 同步在合并后执行 |
+| 18 | **ci-quality-gate-recovery**（实施中，14/15） | WebDAV 客户端入库为 path 依赖、两个额外失效 git 依赖改同 commit 镜像、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；并补齐架构 inventory、修复 CI 可见 analyze 问题、vendored 目录排除格式/分析检查 | 无硬前置；4.5 需 UX1 合入的绿灯 PR 证据；⚠ UX1 6.x 基于本分支，两者同一 PR 落地 |
+| 19 | **desktop-only-ci-cd**（10/12） | 桌面专用 CI/CD：build/main/pr_build/analyze 收敛，移动商店工作流删除 | 余 4.1 本地全量脚本测试、4.3 PR 门禁核实；依赖 #18/#17 的同一全绿 PR |
+| 20 | **venera-pc-rebrand**（20/21） | Venera-PC 产品身份与发布命名（Windows/macOS/Linux 资产、README、元数据） | 平台构建验证依赖 #18/#19/#17 全绿 PR；余 7.3（Linux 冷启动走查 + CI 构建核实） |
 
-当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；F1/F2纳入其分阶段实施，当前仅完成规划，生产实现未启动。
+当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；截至2026-11-24，F1/F2 与 5.x 已分阶段交付归档，UX1 整体 47/47（owner 已验收），详见文首状态与执行表 #17–#20。
 
 ## 已完成（quick wins，不在 changes 中）
 

@@ -1,6 +1,6 @@
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';

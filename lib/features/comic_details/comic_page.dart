@@ -1,6 +1,6 @@
 import 'package:venera_next/foundation/app_page_route.dart';
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'package:venera_next/components/file_save_task.dart';

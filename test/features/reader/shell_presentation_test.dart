@@ -152,11 +152,12 @@ void main() {
         ),
       );
       await mount();
-      final rotationFocus = Focus.of(
-        tester.element(find.byIcon(Icons.screen_rotation)),
-      );
-      expect(rotationFocus.canRequestFocus, isFalse);
-      expect(find.bySemanticsLabel('Page'), findsNothing);
+      // Hidden tools expose no reader controls and no second row: only the
+      // compact progress rail remains inside the reading layout.
+      expect(find.byIcon(Icons.screen_rotation), findsNothing);
+      expect(find.byType(ReaderTopBar), findsNothing);
+      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+      expect(find.bySemanticsLabel('Page'), findsOneWidget);
       shell.currentState!.openOrClose();
       await tester.pump();
       expect(
@@ -258,12 +259,21 @@ void main() {
       expect(shell.currentState!.isOpen, isFalse);
       await mount();
       await tester.pumpAndSettle();
+      // Automatic reading closed the tool row, so its actions are gone until
+      // the row is shown again with the running state reflected.
+      expect(shell.currentState!.isOpen, isFalse);
+      expect(find.byIcon(Icons.pause_circle_outline), findsNothing);
+      expect(find.bySemanticsLabel('Page'), findsOneWidget);
+      shell.currentState!.openOrClose();
+      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.pause_circle_outline), findsOneWidget);
-      expect(rotationFocus.canRequestFocus, isFalse);
-      expect(find.bySemanticsLabel('Page'), findsNothing);
+      final rotationFocus = Focus.of(
+        tester.element(find.byIcon(Icons.screen_rotation)),
+      );
       reducedMotion = false;
       await mount();
-      shell.currentState!.openOrClose();
+      await tester.pumpAndSettle();
+      if (!shell.currentState!.isOpen) shell.currentState!.openOrClose();
       await tester.pumpAndSettle();
       rotationFocus.requestFocus();
       await tester.pump();
@@ -276,8 +286,9 @@ void main() {
         tester.getRect(find.byType(ReaderBottomBar)).bottom,
         scenario.size.height,
       );
-      expect(rotationFocus.hasFocus, isFalse);
-      expect(find.bySemanticsLabel('Page'), findsNothing);
+      // Hidden controls are removed from the tree, so stale focus cannot fire.
+      expect(find.byIcon(Icons.screen_rotation), findsNothing);
+      expect(find.bySemanticsLabel('Page'), findsOneWidget);
       await tester.tapAt(rotationPoint);
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       expect(calls.where((call) => call == 'rotate'), hasLength(1));
@@ -287,6 +298,8 @@ void main() {
       comments = true;
       identity = Object();
       await mount();
+      await tester.pumpAndSettle();
+      if (!shell.currentState!.isOpen) shell.currentState!.openOrClose();
       await tester.pumpAndSettle();
       expect(
         tester.widget<ReaderTopBar>(find.byType(ReaderTopBar)).chapterTitle,

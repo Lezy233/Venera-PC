@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:venera_next/app_shell/workspace/workspace_store.dart';
 import 'package:venera_next/features/reader/gallery_view.dart';
 import 'package:venera_next/features/reader/scaffold.dart';
+import 'package:venera_next/features/reader/top_bar.dart';
 import 'package:venera_next/features/reader/progress_bar.dart';
 import 'package:venera_next/features/reader/auto_reading.dart';
 import 'package:venera_next/features/reader/reader_session_scope.dart';
@@ -24,7 +25,7 @@ import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
 import 'package:venera_next/app_shell/workspace/workspace_tab_strip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
@@ -393,6 +394,18 @@ void main() {
           .byTooltip('Enter immersive reading')
           .hitTestable();
       expect(enterImmersive, findsOneWidget);
+      // D8: ordinary reading keeps the merged workspace tab row and adds the
+      // reader tool row below it, never a third independent title bar.
+      expect(find.byType(WorkspaceTabStrip).hitTestable(), findsOneWidget);
+      expect(find.byType(ReaderTopBar).hitTestable(), findsOneWidget);
+      expect(
+        tester.getRect(find.byType(ReaderTopBar)).top,
+        greaterThanOrEqualTo(
+          tester.getRect(find.byType(WorkspaceTabStrip)).bottom,
+        ),
+      );
+      // Exactly one progress component while the tools are visible.
+      expect(find.byType(ReaderProgressSlider), findsOneWidget);
       await tester.tap(enterImmersive);
       await settleWorkspace();
       expect(find.byType(WorkspaceTabStrip).hitTestable(), findsNothing);
@@ -437,7 +450,15 @@ void main() {
         tester.state<ReaderScaffoldState>(find.byType(ReaderScaffold)).isOpen,
         isFalse,
       );
-      expect(find.byType(ReaderProgressSlider).hitTestable(), findsOneWidget);
+      // The window frame's resize edge overlaps the very bottom of the window,
+      // so the compact rail's upper half is its usable hit area.
+      expect(
+        find
+            .byType(ReaderProgressSlider)
+            .hitTestable(at: const Alignment(0, -0.5)),
+        findsOneWidget,
+        reason: 'the compact rail stays usable above the window resize edge',
+      );
       expect(find.byType(ReaderProgressSlider), findsOneWidget);
       final compactContent = tester.getRect(find.byType(ReaderGalleryView));
       final compactBar = tester.getRect(find.byType(ReaderBottomBar));
@@ -489,7 +510,9 @@ void main() {
       await tester.tap(
         find.byTooltip('Start or stop automatic reading').hitTestable(),
       );
-      await settleWorkspace();
+      // Automatic reading keeps scheduling frames, so settle without
+      // pumpAndSettle while it is running.
+      await settleWorkspace(automaticReading: true);
       expect(reader.autoReading.isActive, isTrue);
       expect(reader.autoReading.status, isNot(AutoReadingStatus.paused));
       final otherId = host.record.tabs.firstWhere((t) => t.id != originalId).id;
@@ -539,11 +562,11 @@ void main() {
       );
       // Reopen the existing tools, then stop through the real control.
       await tester.tapAt(tester.getCenter(find.byType(ReaderGalleryView)));
-      await settleWorkspace();
+      await settleWorkspace(automaticReading: true);
       await tester.tap(
         find.byTooltip('Start or stop automatic reading').hitTestable(),
       );
-      await settleWorkspace();
+      await settleWorkspace(automaticReading: true);
       expect(reader.autoReading.isActive, isFalse);
       await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);

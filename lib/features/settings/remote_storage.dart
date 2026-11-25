@@ -3,7 +3,6 @@ import 'package:venera_next/components/appbar.dart';
 import 'package:venera_next/components/pop_up_widget.dart';
 import 'package:venera_next/components/scroll.dart';
 import 'package:venera_next/components/settings_save_state.dart';
-import 'package:venera_next/app_runtime/webdav_library.dart';
 import 'package:venera_next/features/settings/setting_components.dart';
 import 'package:venera_next/features/settings/webdav_connection_fields.dart';
 import 'package:venera_next/features/settings/webdav_settings.dart';
@@ -279,15 +278,20 @@ class _RemoteStorageSettingsState
   }
 
   Future<void> _setPurpose(String key, bool value) async {
+    // Resolve the application-owned services from the existing scope before the
+    // async save so this page never reads the app_runtime singleton.
+    final library = key == WebDavPurposes.library
+        ? WebDavLibraryScope.of(context)
+        : null;
     final ok = await saveSetting(
       key,
       () => appdata.updateSettings((draft) {
         draft[key] = value;
       }, sync: false),
     );
-    if (ok && key == WebDavPurposes.library && mounted) {
+    if (ok && library != null && mounted) {
       // Apply the visibility switch without waiting for a restart.
-      mountWebDavLibrary(webDavLibrary);
+      mountWebDavLibrary(library);
       setState(() {});
     }
   }

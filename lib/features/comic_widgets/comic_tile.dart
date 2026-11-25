@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-import 'package:venera_next/app_shell/workspace/workspace_navigation_scope.dart';
-import 'package:venera_next/app_shell/workspace/workspace_record.dart';
+import 'package:venera_next/components/workspace_navigation_scope.dart';
+import 'package:venera_next/foundation/workspace_record.dart';
 import 'package:venera_next/design_system/tokens.dart';
 import 'package:venera_next/foundation/application_preferences.dart';
 import 'package:venera_next/foundation/global_preference_store.dart';
@@ -234,6 +234,7 @@ class ComicTile extends StatelessWidget {
     this.displayMode,
     this.hoverColor,
     this.bookshelf = false,
+    this.compactDensityOverride,
     this.previewGroup,
     this.selected = false,
     this.onSelectionChanged,
@@ -244,6 +245,12 @@ class ComicTile extends StatelessWidget {
   });
 
   final bool bookshelf;
+
+  /// Pins the bookshelf card density for hosts that must not follow the
+  /// favorite-density preference (for example the reorder editor keeps a
+  /// fixed layout while the collection grid switches density).
+  final bool? compactDensityOverride;
+
   final List<Comic>? previewGroup;
   final bool selected;
   final ValueChanged<bool>? onSelectionChanged;
@@ -887,10 +894,11 @@ class ComicTile extends StatelessWidget {
             MediaQuery.textScalerOf(context).scale(AppFontSize.body) >
             AppFontSize.body;
         final compact =
+            compactDensityOverride ??
             GlobalPreferenceStore(
-              appdata.settings,
-            ).read(FavoritePreferences.density) ==
-            'compact';
+                  appdata.settings,
+                ).read(FavoritePreferences.density) ==
+                'compact';
         Widget image = Container(
           decoration: BoxDecoration(
             color: context.colorScheme.contentSurfaceRaised,

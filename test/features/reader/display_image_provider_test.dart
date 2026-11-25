@@ -72,6 +72,14 @@ Future<void> _frame() async {
   await pumpEventQueue();
 }
 
+/// Pumps frames until [condition] holds, so image decode completion is not
+/// coupled to one scheduler tick on a loaded CI runner.
+Future<void> _frameUntil(bool Function() condition) async {
+  for (var attempt = 0; attempt < 200 && !condition(); attempt++) {
+    await _frame();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   var nextKey = 0;
@@ -187,8 +195,7 @@ void main() {
       expect(source.loads, 1);
       expect(frames, 0);
       release();
-      await pumpEventQueue();
-      await _frame();
+      await _frameUntil(() => frames == 2);
       expect(source.loads, 2);
       expect(frames, 2);
       expect(errors, isEmpty);

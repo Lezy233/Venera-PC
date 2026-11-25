@@ -6,7 +6,7 @@ import 'package:venera_next/foundation/appdata.dart';
 import 'favorite_filters.dart';
 import 'favorite_models.dart';
 import 'favorites_manager.dart';
-import 'package:venera_next/features/comic_source/comic_source.dart';
+import 'package:venera_next/features/comic_source/comic_source_api.dart';
 
 const creatorPlatformNamesKey = 'creator_platform_names';
 

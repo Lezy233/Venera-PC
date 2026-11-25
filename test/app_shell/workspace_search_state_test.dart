@@ -13,7 +13,7 @@ import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
 import 'package:venera_next/app_shell/workspace/workspace_tab_strip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
@@ -264,11 +264,14 @@ void main() {
       );
       expect(FocusManager.instance.primaryFocus, same(originalFocus));
       Future<void> openSearchEntry() async {
+        // D3: the global search entry lives in the left sidebar, not in the
+        // merged workspace top bar. Keep the settings page below it so the
+        // tab keeps a real page to return to.
         await tester.tap(find.text('Settings').hitTestable());
         await settleWorkspace();
-        final globalField = find.byType(TextField).hitTestable().first;
-        await tester.tap(globalField);
-        await tester.testTextInput.receiveAction(TextInputAction.search);
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Search').hitTestable(),
+        );
         await settleWorkspace();
         expect(find.byType(SearchPage), findsOneWidget);
       }

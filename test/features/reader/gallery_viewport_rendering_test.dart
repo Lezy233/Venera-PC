@@ -11,6 +11,7 @@ import 'package:venera_next/features/reader/gallery_data.dart';
 import 'package:venera_next/features/reader/gallery_view.dart';
 import 'package:venera_next/features/reader/page_layout.dart';
 import 'package:venera_next/features/reader/platform_effects_controller.dart';
+import 'package:venera_next/features/reader/progress_bar.dart';
 import 'package:venera_next/features/reader/progress_navigation.dart';
 import 'package:venera_next/features/reader/reader_controller.dart';
 import 'package:venera_next/features/reader/reader_viewport.dart';
@@ -53,7 +54,15 @@ void main() {
       );
       addTearDown(() => fixture.dispose(tester));
       await fixture.mount(tester);
-      expect(tester.getSize(find.byType(ReaderGalleryView)), fixture.size);
+      // Hidden tools keep a compact progress rail in the layout instead of
+      // floating over the comic, so the reading viewport is the shell minus it.
+      expect(
+        tester.getSize(find.byType(ReaderGalleryView)),
+        Size(
+          fixture.size.width,
+          fixture.size.height - ReaderBottomBar.compactHeight,
+        ),
+      );
       await fixture.checkPixels(tester, mode);
     });
   }

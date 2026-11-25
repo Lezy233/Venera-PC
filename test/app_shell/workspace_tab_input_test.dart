@@ -13,7 +13,7 @@ import 'package:venera_next/app_shell/workspace/desktop_workspace.dart';
 import 'package:venera_next/app_shell/workspace/workspace_tab_strip.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:venera_next/app_shell/desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 import 'package:venera_next/app_shell/main_page.dart';
 import 'package:venera_next/components/window_frame.dart';
 import 'package:venera_next/features/comic_widgets/comic_widgets.dart';
@@ -415,8 +415,16 @@ void main() {
           await tester.pumpAndSettle();
         }
         final longTab = tabFor(created.last);
-        final beforeHover = tester.getRect(longTab);
-        await mouse.moveTo(tester.getCenter(longTab));
+        // The merged top bar gives the tab viewport less width than the former
+        // full-width row, so scroll the real tab into view and hover a point
+        // inside its visible part.
+        await tester.ensureVisible(longTab);
+        await tester.pumpAndSettle();
+        final longTabRect = tester.getRect(longTab);
+        final beforeHover = longTabRect;
+        await mouse.moveTo(
+          Offset(longTabRect.left + 16, longTabRect.center.dy),
+        );
         await tester.pump(const Duration(seconds: 1));
         expect(tester.getRect(longTab), beforeHover);
         expect(

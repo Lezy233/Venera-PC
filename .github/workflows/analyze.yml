@@ -16,7 +16,7 @@ permissions:
 jobs:
   apple-directory-access:
     name: Apple 目录授权与跨会话恢复
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -61,6 +61,7 @@ jobs:
       - run: python3 .github/scripts/check_architecture_dependencies.py
       - run: python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - name: 准备并验证独立代码审查工具
         working-directory: tool/code_audit
         run: |
@@ -78,11 +79,19 @@ jobs:
           else
             diff_range="HEAD^...HEAD"
           fi
-          mapfile -t dart_files < <(git diff --diff-filter=ACMRTUXB --name-only "$diff_range" -- '*.dart')
+          # Vendored third-party source is kept byte-for-byte from its reviewed
+          # upstream commit, so formatting it is out of scope. Only this single
+          # directory is excluded; every other changed Dart file stays checked.
+          mapfile -t dart_files < <(
+            git diff --diff-filter=ACMRTUXB --name-only "$diff_range" \
+              -- '*.dart' ':(exclude)packages/webdav_client/**'
+          )
           if (( ${#dart_files[@]} == 0 )); then
-            echo "本次没有修改 Dart 文件。"
+            echo "本次没有修改非 vendored 的 Dart 文件。"
             exit 0
           fi
+          printf '本次检查 %d 个 Dart 文件:\n' "${#dart_files[@]}"
+          printf '  %s\n' "${dart_files[@]}"
           dart format --output=none --set-exit-if-changed "${dart_files[@]}"
       - run: flutter analyze --fatal-infos --fatal-warnings
 
@@ -100,6 +109,7 @@ jobs:
           architecture: x64
           cache: true
       - run: flutter pub get --enforce-lockfile
+      - run: python3 .github/scripts/patch_pdfrx_engine.py
       - uses: actions/download-artifact@v8
         with:
           name: linux-rhttp-test-library

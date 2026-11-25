@@ -304,7 +304,13 @@ class DesktopInlineMenuBar extends StatelessWidget {
             ],
           ),
         ];
-        if (Breakpoints.isCompact(context)) {
+        // 150% text makes the inline labels wide enough to starve the tab
+        // strip in the merged row; D3 allows secondary chrome to move into a
+        // menu, so collapse the menu bar then as well.
+        final largeText =
+            MediaQuery.textScalerOf(context).scale(AppFontSize.body) >
+            AppFontSize.body;
+        if (Breakpoints.isCompact(context) || largeText) {
           return PopupMenuButton<(int, int)>(
             tooltip: 'Application menu'.tl,
             icon: const Icon(Icons.menu, size: AppSizes.shellIconSize),

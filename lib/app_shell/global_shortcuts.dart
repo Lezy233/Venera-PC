@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:venera_next/foundation/app.dart';
 import 'package:venera_next/foundation/appdata.dart';
 import 'package:venera_next/foundation/shortcuts/shortcut_registry.dart';
-import 'desktop_chrome.dart';
+import 'package:venera_next/components/desktop_chrome.dart';
 
 class GlobalShortcutTarget implements ShortcutTarget {
   GlobalShortcutTarget(this.chrome);

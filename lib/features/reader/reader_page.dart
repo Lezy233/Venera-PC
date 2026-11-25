@@ -1,10 +1,9 @@
-import 'package:venera_next/app_shell/workspace/workspace_page_scope.dart';
+import 'package:venera_next/components/workspace_page_scope.dart';
 import 'package:venera_next/foundation/shortcuts/shortcut_registry.dart';
 import 'keyboard_shortcuts.dart';
 import 'package:venera_next/features/history/history_scope.dart';
 import 'package:venera_next/features/favorites/favorites_scope.dart';
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show listEquals;
@@ -1952,13 +1951,6 @@ class ReaderState extends State<Reader>
     }
     immersive = !immersive;
     updateShell();
-    // Debug macOS runs can lose the VM connection while AppKit changes the
-    // native fullscreen window during a live Flutter session. Keep the
-    // reader's immersive chrome behavior in debug; defer native fullscreen
-    // verification to a release/profile build.
-    if (kDebugMode) {
-      return;
-    }
     final window = _windowController;
     if (window != null) {
       // Defer the native window transition until after the shell has rebuilt.
