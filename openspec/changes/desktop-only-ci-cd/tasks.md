@@ -20,9 +20,11 @@
 
 ## 4. 集成验证
 
-- [ ] 4.1 运行 `python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"`，确认全部通过；运行 `git diff --check` 并检查只有预期工作流、测试和文档发生变化。
+- [x] 4.1 运行 `python3 -m unittest discover -s .github/scripts/tests -p "test_*.py"`，确认全部通过；运行 `git diff --check` 并检查只有预期工作流、测试和文档发生变化。
+  备注：2026-11-26 复核 `ux1-reader-6x` PR #2 分支：`.github/scripts/tests` **161 通过 / 0 失败 / 10 skip**（含本 change 与 ci change 新增测试）；`git diff --check` 干净；工作流/测试/文档变更与预期一致，其余差异属于同一 PR 的 UX1/ci change。
 - [x] 4.2 按项目环境运行 `flutter analyze`，确认相对 50 项既有基线零新增；不得重新生成 `pubspec.lock`，并核对其无差异。
-- [ ] 4.3 在 PR 中确认代码分析、Flutter 测试、Windows 冒烟与 `platform_gate` 通过，且不再出现 Android/iOS 检查；不通过实际打 tag 验证 Release，交付中列出下一次桌面 Release 的人工验收项。
+- [x] 4.3 在 PR 中确认代码分析、Flutter 测试、Windows 冒烟与 `platform_gate` 通过，且不再出现 Android/iOS 检查；不通过实际打 tag 验证 Release，交付中列出下一次桌面 Release 的人工验收项。
+  备注：PR #2 最终 run（head `6775807`）7 项检查全绿：analyze、Flutter 测试与覆盖率（5791/0/150）、Windows 冒烟、Apple 目录授权、platform_gate、rhttp、平台变更检测；check 列表无 Android/iOS job。未打 tag；下一次桌面 Release 的人工验收项保留。
 
 ## Workflow follow-up
 

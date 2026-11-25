@@ -130,3 +130,7 @@ PR #2 首轮 5 个失败 job 已定位：
 - **平台冒烟构建门禁**：因 Windows 冒烟失败而失败，根因同上。
 
 新增任务 3.3；新增 5 项 Python 测试（脚本 3 + 工作流契约 2），全量 Python 161/0/10，`flutter analyze --fatal-infos --fatal-warnings` 0，结构/架构检查 0。
+
+## 2026-11-26 PR #2 最终验证
+
+head `6775807` 的 run 全绿：analyze、Flutter 测试与覆盖率（**5791 通过 / 0 失败 / 150 skip**）、Windows 冒烟、Apple 目录授权、platform_gate、rhttp 与平台变更检测均 success，无 Android/iOS 检查。首跑 5 红与第二次 run 的 1 项既有 CI 时序 flake 均已修复；4.5 与 `desktop-only-ci-cd` 4.1/4.3 据此关闭。

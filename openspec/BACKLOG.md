@@ -110,6 +110,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-26：PR #2（head `6775807`）7 项检查全绿（5791/0/150）；ci 4.5 与 desktop-only 4.1/4.3 关闭；待 owner 合并后归档 UX1/ci/desktop-only 并同步正式 specs。
+
 - 2026-11-26：PR #2 第二次 run 5790/1/150，唯一失败为既有 `display_image_provider_test` 的 CI 时序 flake（frames 0/2，本机 6/6）；改为有界 `_frameUntil`（断言不变，本机 15/15），待第三次 run 验证。
 
 - 2026-11-26：PR #2 首跑 5 红定位并修复：`compact_progress_layout_test` 格式、CI 干净缓存 pdfrx_engine 0.4.5 编译补丁（新增 3.3 与 5 项测试）、macOS arm64 容量取消待重试；待新 run 验证 4.5。
