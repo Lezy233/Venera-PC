@@ -42,6 +42,7 @@
 - [x] 7.2 按项目环境运行 `flutter analyze`，确认相对 50 项既有基线零新增；核对 `pubspec.lock`、依赖 URL、application ID、数据目录和升级标识均无未授权变化。
 - [ ] 7.3 在 Linux 正常入口冷启动并走查窗口、关于和菜单的 Venera-PC 展示；通过 CI 验证 Windows/macOS 构建与 Windows 安装启动，确认桌面 Release 只引用新资产名且中文翻译无回退。
   - 2026-11-26：已触发 CI `构建`（Windows + macOS，Linux 关闭）验证安装包/启动与资产名；Linux 冷启动走查发现并修复窗口标题旧名（见 4.1）；关于/菜单文案由 `test_product_identity.py` 与既有 widget 测试覆盖。Linux GUI 目视复验尚未完成（本会话 Xvfb 命令被沙箱拒绝），待 owner 在本机启动确认或授权重试。
+  - 2026-11-26 追加：首次 `构建` run 45673869115 的 Build_MacOS 在“串行化 Rustup 安装操作”失败（runner 的 rustup 不在 `$HOME/.cargo/bin`，BSD install 目标目录不存在，exit 71），与产品代码无关；已改为 `$RUNNER_TEMP/rustup-shim` 并写入 `GITHUB_PATH`，新增静态测试；待重跑 Windows + macOS。
 - [x] 7.4 用既有用户数据副本验证升级前后收藏、历史、设置和同步配置仍从原位置读取；首次新仓库 Release 前不伪造更新成功，交付中明确真实更新 API 与下载链接的发布后验收项。
 
 ## Workflow follow-up

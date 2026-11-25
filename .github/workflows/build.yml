@@ -160,10 +160,12 @@ jobs:
             --target x86_64-apple-darwin
       - name: 串行化 Rustup 安装操作
         run: |
-          install "$(command -v rustup)" "$RUNNER_TEMP/rustup"
-          rm -f "$HOME/.cargo/bin/rustup"
-          install .github/scripts/serialized_rustup.py "$HOME/.cargo/bin/rustup"
-          chmod +x "$HOME/.cargo/bin/rustup"
+          real_rustup="$(command -v rustup)"
+          install "$real_rustup" "$RUNNER_TEMP/rustup"
+          mkdir -p "$RUNNER_TEMP/rustup-shim"
+          install .github/scripts/serialized_rustup.py "$RUNNER_TEMP/rustup-shim/rustup"
+          chmod +x "$RUNNER_TEMP/rustup-shim/rustup"
+          echo "$RUNNER_TEMP/rustup-shim" >> "$GITHUB_PATH"
           echo "RUSTUP_REAL_BINARY=$RUNNER_TEMP/rustup" >> "$GITHUB_ENV"
           echo "RUSTUP_LOCK_FILE=$RUNNER_TEMP/venera-rustup.lock" >> "$GITHUB_ENV"
       - run: flutter pub get --enforce-lockfile
