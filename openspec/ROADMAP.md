@@ -6,7 +6,7 @@
 
 ## 执行顺序（依赖关系）
 
-**2026-11-26 状态（owner 手动验收通过）**：4 个活动 change，`openspec validate --changes` 4/4 通过；归档 23 个、正式 specs 20 份。`ux1-bookshelf-workspace` **47/47**（owner 手动验收通过，待归档推送）；`ci-quality-gate-recovery` 15/16（4.5 待 PR 重跑；首跑 5 红已定位修复）；`desktop-only-ci-cd` 10/12（余 4.1、4.3）；`venera-pc-rebrand` 20/21（余 7.3）。顺序：**owner 授权 push + 单一 PR（`ux1-reader-6x`，含 ci 提交）→ 合并后归档 UX1 与 ci、同步正式 specs → desktop 4.3 → rebrand 7.3**。门禁（architect 独立复跑）：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0，Python 161/0/10，全量测试 **5791/0/150**。已知债务：4 条既有 UI 跨 feature 边（BACKLOG）。
+**2026-11-26 状态（owner 手动验收通过）**：4 个活动 change，`openspec validate --changes` 4/4 通过；归档 23 个、正式 specs 20 份。`ux1-bookshelf-workspace` **47/47**（owner 手动验收通过，待归档推送）；`ci-quality-gate-recovery` 15/16（4.5 待 PR 重跑；首跑 5 红已修复，第二次 run 仅 1 项 CI flake 已加固）；`desktop-only-ci-cd` 10/12（余 4.1、4.3）；`venera-pc-rebrand` 20/21（余 7.3）。顺序：**owner 授权 push + 单一 PR（`ux1-reader-6x`，含 ci 提交）→ 合并后归档 UX1 与 ci、同步正式 specs → desktop 4.3 → rebrand 7.3**。门禁（architect 独立复跑）：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0，Python 161/0/10，全量测试 **5791/0/150**。已知债务：4 条既有 UI 跨 feature 边（BACKLOG）。
 
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含审计、纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
 

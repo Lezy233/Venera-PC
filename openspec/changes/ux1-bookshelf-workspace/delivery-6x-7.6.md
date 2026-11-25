@@ -192,3 +192,7 @@ env https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 \
 4. `lib/components/scroll.dart` 的通用「被裁剪恢复偏移待内容足够后补跳」兜底（app-shell 执行器为 workspace aggregate 滚动恢复所做）；如认为应收敛到 features/search 页面内实现，可另行返工。
 5. Linux 虚拟窗口 frame 的 8px resize edge 与底边 8px 精简进度线重叠约 4px：生产环境可点击区域为轨道上半部；本轮测试以 `hitTestable(at: Alignment(0,-0.5))` 记录（`workspace_reader_state` 注释）。若 owner 认为体验不足，另立 UI 修正（例如 rail 增加底部安全 inset）。
 6. GUI 局限：无窗口管理器/合成输入下未取得「后台休眠/跨重启恢复」GUI，仅真实控件测试覆盖；若必须 GUI 实拍，需要可控窗口管理器或真机环境。
+
+## 2026-11-26 CI flake 加固
+
+PR #2 第二次 run 的 5791 项中仅 `display_image_provider_test`「two visible listeners stay mounted while preparation joins and resumes」失败（frames 0/2）。该文件自 HEAD 未改动、本机 6/6 通过，为 CI 负载下图片解码完成晚于单个 scheduler tick 的 flake。已把该用例的固定 `pumpEventQueue + _frame` 改为有界 `_frameUntil`（最多 200 帧），断言（loads=2、frames=2、errors 为空）不变；本机 15/15 通过。
