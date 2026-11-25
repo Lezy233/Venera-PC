@@ -90,8 +90,9 @@
   - 2026-11-18：现有Preference/WorkspaceStore真实持久化回归25通过0失败0skip（/tmp/ux1-5x-234-regression.log）；详情层级由5.2的comicDetailMode实现覆盖，保存/重进仍沿现有SettingsSaveState与WorkspaceStore边界。
 - [x] 5.4 实现首次加载骨架、更新中旧结果、无结果恢复和更新失败旧结果/打开/重试；提示靠近上下文且不循环 toast，关键词、筛选和选择保持。
   - 2026-11-18：真实ComicList/SearchResultPage loading/error/empty/retry/过滤/关键词现场回归25通过0失败0skip（/tmp/ux1-5x-234-regression.log）。
-- [ ] 5.5 完成搜索/详情真实控件、状态反馈、收藏切换、层级/标签现场保持及 F6/F7/F8 搜索身份回归；所有新文案 `.tl` + zh_CN/zh_TW。
+- [x] 5.5 完成搜索/详情真实控件、状态反馈、收藏切换、层级/标签现场保持及 F6/F7/F8 搜索身份回归；所有新文案 `.tl` + zh_CN/zh_TW。
   - 2026-11-18：搜索身份/方案/过滤/键盘焦点/状态反馈及B4/F8相关回归50通过0失败0skip（/tmp/ux1-5x-55-regression.log），与25/11集合不相加；自动化已绿，但本阶段真实正常main GUI尚未取证，故不勾整项。
+  - 2026-11-26：owner 手动验收通过（搜索/详情现场、收藏切换、层级与标签保持）；自动化集合保持 50/0/0；本轮未单独留正常 main GUI 截图，以 owner 实测为准。
 - [x] 5.6 修复搜索及其他平铺列表的漫画封面比例，完整显示原始封面内容并保持现有列数、密度、标题与交互命中区；覆盖不同宽高比、响应式宽度和大文字场景，避免以裁切或横向固定卡片掩盖问题。
   - 2026-11-18：真实生产 `ComicTile` 以 2×1 与 1×2 受控封面建立红灯：旧 `AnimatedImage` 忽略显式 fit 且平铺调用 `cover`，实际断言 `fit == contain` 失败；最小修复让 `AnimatedImage` 尊重调用方 fit，并使 `ComicTile` gallery/brief 平铺使用 `BoxFit.contain`。`search_cover_ratio_and_single_drag_test.dart` 2/0/0 绿，受影响保护合跑 `/tmp/ux1-5x-567-protection.log` 16/0/0；保留现有列数/标题/主体与独立控件命中。测试覆盖两个纵横比，响应式/150% 仍依赖既有生产矩阵与 GUI 环境，未冒称本轮 GUI。
 - [x] 5.7 支持未选择单张漫画主体直接拖到标签栏后台打开；一次仅创建该漫画详情标签，保持当前页、选择、焦点、滚动、来源身份与请求现场，且不冒泡为单击、复选框切换或作者栏排序；保留既有多选拖放、菜单、键盘、Escape取消和正确 id/sourceKey/hero。
@@ -150,11 +151,16 @@
 
 ## 7. 整体验收与交付
 
-- [ ] 7.1 按 acceptance-checklist.md 执行完整 owner 场景矩阵；所有项目实施项有生产行为测试和 GUI 证据，不以探索稿、helper 属性或内存重新构建 替代真实动作。
-- [ ] 7.2 运行全部受影响既有回归并保留原语义断言；`flutter analyze --fatal-infos --fatal-warnings` 零问题（`ci-quality-gate-recovery` 后基线已从 50 降为 0），新增测试 0 skip，既有失败与基线单列，不借返工修无关问题。
-- [ ] 7.3 在 expanded/medium/compact、浅深主题、150% 大文字、简繁、减少动画下完成生产 GUI；真实终止进程并以新 PID 验证工作区恢复，正常 main 构建恢复并精确清理 fixture/进程。
-- [ ] 7.4 核查所有新增文案 zh_CN/zh_TW、设计契约与 delta spec 一致、保护文件零非授权 diff、`pubspec.lock` 未重生成、截图不入库、git diff --check 与 `openspec validate ux1-bookshelf-workspace` 通过。
-- [ ] 7.5 编写 delivery.md，列出真实命令、通过/失败/skip、analyze 具体集合、改动/SHA、保护范围、GUI/重启/资源计数和局限；architect 独立复核前不提交，owner 验收前不归档、不推送。
+- [x] 7.1 按 acceptance-checklist.md
+  - 2026-11-26：owner 手动验收通过完整场景矩阵（acceptance-checklist.md）；本轮以 owner 实测为准，未另造 helper 证据。 执行完整 owner 场景矩阵；所有项目实施项有生产行为测试和 GUI 证据，不以探索稿、helper 属性或内存重新构建 替代真实动作。
+- [x] 7.2 运行全部受影响既有回归
+  - 2026-11-26：architect 独立复跑 analyze --fatal-infos --fatal-warnings 0、Python 156/0/10、全量 5791/0/150（exit 0）、新增测试无 skip；既有 150 skip 为平台条件跳过。并保留原语义断言；`flutter analyze --fatal-infos --fatal-warnings` 零问题（`ci-quality-gate-recovery` 后基线已从 50 降为 0），新增测试 0 skip，既有失败与基线单列，不借返工修无关问题。
+- [x] 7.3 在 expanded/medium/compact
+  - 2026-11-26：owner 手动 GUI 验收通过（三档宽度、浅深主题、150%、简繁、减少动画）；历史自动化 GUI 证据见各阶段 delivery，6.5 为 Xvfb 逐图核对。、浅深主题、150% 大文字、简繁、减少动画下完成生产 GUI；真实终止进程并以新 PID 验证工作区恢复，正常 main 构建恢复并精确清理 fixture/进程。
+- [x] 7.4 核查所有新增文案
+  - 2026-11-26：architect 复核 design-spec/正式 specs 零 diff；pubspec.lock 仅 ci change 的 24 行；无截图入库；`git diff --check` 与 `openspec validate --changes` 通过；新增文案 zh_CN/zh_TW 由 translation 测试覆盖。 zh_CN/zh_TW、设计契约与 delta spec 一致、保护文件零非授权 diff、`pubspec.lock` 未重生成、截图不入库、git diff --check 与 `openspec validate ux1-bookshelf-workspace` 通过。
+- [x] 7.5 编写 delivery.md
+  - 2026-11-26：`delivery.md` 已汇总最终门禁、提交、阶段交付索引、GUI 局限与已知债务；分阶段证据见 delivery-batch-*、delivery-6x-7.6、review-*。，列出真实命令、通过/失败/skip、analyze 具体集合、改动/SHA、保护范围、GUI/重启/资源计数和局限；architect 独立复核前不提交，owner 验收前不归档、不推送。
 - [x] 7.6 全量 `flutter test --coverage` 归零：修复 `full-suite-baseline.md` 记录的 64 项 HEAD 既有失败（reader-shell 6.x 28、workspace/5A 24、favorites/search/settings 12），逐项对齐 UX1 契约；禁止用 skip、删除断言、放宽 finder 或与契约不符的产品改动掩盖。完成后以 CI 等价并发复跑全量，保留 HEAD 对照与覆盖率报告。
   - 2026-11-25：来源 `ci-quality-gate-recovery` 4.4（5719 通过 / 64 失败 / 150 skip；64 项与 HEAD worktree 逐条一致、零新增）。本项完成前，`ci-quality-gate-recovery` 4.5、`desktop-only-ci-cd` 4.3、`venera-pc-rebrand` 7.3 均不得勾选；证据入口见 `full-suite-baseline.md`，原始逐条日志仍在本地 `tmp/ciqg/4.4-bisect.md`（`tmp/` 不入库）。
   - 2026-11-26 architect 独立复核：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0，Python 156/0/10，全量 `--concurrency=4` **5791/0/150** exit 0（`tmp/review-7x.log`）；skip 无新增、`testWidgets` 未减少；受保护文件零 diff、vendored 与上游一致。判定 6.1–6.7 与 7.6 符合，6.6/6.7 仍需 owner 复验原路径与目视；详见 `review-6x-7.6.md`。

@@ -110,6 +110,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-26：owner 手动验收通过 UX1 全部剩余项（47/47）；待授权 push 与单一 PR（含 ci 提交），合并后归档 UX1/ci 并同步正式 specs。
+
 - 2026-11-26：UX1 6.1–6.7 与 7.6 实施交付，architect 独立复核通过（5791/0/150、analyze 0、结构/架构 0）；UX1 41/47，待 owner 7.x 验收后进入含 ci 提交的单一 PR。
 
 - 2026-11-25：owner 采纳方案 A 调整排期——`ux1-bookshelf-workspace` 新增 7.6（64 项全量测试归零），顺序改为 UX1 6.x + 7.6 → `ci-quality-gate-recovery` 4.5 PR → desktop-only 4.3 → rebrand 7.3；ci 分支本地 14/15 未推送，4.5 待 UX1 绿灯 PR；4 条既有 UI 跨 feature 边登记为已知债务并在此记录清理项。
