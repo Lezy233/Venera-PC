@@ -110,6 +110,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-26：合并 PR #2（`f07f92a`）并归档 `ux1-bookshelf-workspace`（47/47）、`ci-quality-gate-recovery`（16/16）、`desktop-only-ci-cd`（12/12）；26 个归档、27 份正式 specs；剩 rebrand 7.3。
+
 - 2026-11-26：PR #2（head `6775807`）7 项检查全绿（5791/0/150）；ci 4.5 与 desktop-only 4.1/4.3 关闭；待 owner 合并后归档 UX1/ci/desktop-only 并同步正式 specs。
 
 - 2026-11-26：PR #2 第二次 run 5790/1/150，唯一失败为既有 `display_image_provider_test` 的 CI 时序 flake（frames 0/2，本机 6/6）；改为有界 `_frameUntil`（断言不变，本机 15/15），待第三次 run 验证。
