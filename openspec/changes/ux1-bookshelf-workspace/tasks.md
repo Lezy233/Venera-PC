@@ -1,5 +1,7 @@
 # UX1 A 书架型工作区实施任务
 
+2026-11-25 architect 依 owner 决定调整排期：全量测试基线由本 change 承接。`ci-quality-gate-recovery` 4.4 的 64 项 HEAD 既有 CI 必挂失败按区域归入 6.x（reader-shell）、5A（workspace/bookshelf）与 5.x（favorites/search/settings），新增 7.6 作为全量测试归零任务；在 7.6 完成前，`ci-quality-gate-recovery` 4.5、`desktop-only-ci-cd` 4.3 与 `venera-pc-rebrand` 7.3 均不能勾选。
+
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。5A.1/5A.2审计与计划、Batch A–D已交付切片及标签布局/排序证据已冻结到 `../archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；Batch B后续项、owner GUI复核与6.x/7.x仍未完成，本活动change继续作为契约和任务源，不整项archive或合入未实现delta。
 
 2026-11-19 owner 澄清 `explorations/ux1-directions` A 草稿是布局、信息层级、控件组合与顶栏行数基线，并确认普通阅读工具隐藏时顶部一行、显示工具时两行，不保留独立标题栏形成第三行。当前 6.x 暂停，先完成 5A 草稿视觉对齐审计与纠偏批次确认；既有阶段功能验收和证据保留，但不自动视为视觉对齐通过。本项仅更新契约与计划，未改生产代码，未勾任何实现任务。
@@ -142,7 +144,9 @@
 ## 7. 整体验收与交付
 
 - [ ] 7.1 按 acceptance-checklist.md 执行完整 owner 场景矩阵；所有项目实施项有生产行为测试和 GUI 证据，不以探索稿、helper 属性或内存重新构建 替代真实动作。
-- [ ] 7.2 运行全部受影响既有回归并保留原语义断言；flutter analyze raw/unique 50=38+12 零新增，新增测试 0 skip，既有失败与基线单列，不借返工修无关问题。
+- [ ] 7.2 运行全部受影响既有回归并保留原语义断言；`flutter analyze --fatal-infos --fatal-warnings` 零问题（`ci-quality-gate-recovery` 后基线已从 50 降为 0），新增测试 0 skip，既有失败与基线单列，不借返工修无关问题。
 - [ ] 7.3 在 expanded/medium/compact、浅深主题、150% 大文字、简繁、减少动画下完成生产 GUI；真实终止进程并以新 PID 验证工作区恢复，正常 main 构建恢复并精确清理 fixture/进程。
 - [ ] 7.4 核查所有新增文案 zh_CN/zh_TW、设计契约与 delta spec 一致、保护文件零非授权 diff、`pubspec.lock` 未重生成、截图不入库、git diff --check 与 `openspec validate ux1-bookshelf-workspace` 通过。
 - [ ] 7.5 编写 delivery.md，列出真实命令、通过/失败/skip、analyze 具体集合、改动/SHA、保护范围、GUI/重启/资源计数和局限；architect 独立复核前不提交，owner 验收前不归档、不推送。
+- [ ] 7.6 全量 `flutter test --coverage` 归零：修复 `full-suite-baseline.md` 记录的 64 项 HEAD 既有失败（reader-shell 6.x 28、workspace/5A 24、favorites/search/settings 12），逐项对齐 UX1 契约；禁止用 skip、删除断言、放宽 finder 或与契约不符的产品改动掩盖。完成后以 CI 等价并发复跑全量，保留 HEAD 对照与覆盖率报告。
+  - 2026-11-25：来源 `ci-quality-gate-recovery` 4.4（5719 通过 / 64 失败 / 150 skip；64 项与 HEAD worktree 逐条一致、零新增）。本项完成前，`ci-quality-gate-recovery` 4.5、`desktop-only-ci-cd` 4.3、`venera-pc-rebrand` 7.3 均不得勾选；证据入口见 `full-suite-baseline.md`，原始逐条日志仍在本地 `tmp/ciqg/4.4-bisect.md`（`tmp/` 不入库）。

@@ -74,6 +74,10 @@
 
 同时，`flutter analyze --fatal-infos --fatal-warnings` 在当前源码有 12 条真实问题（11 条 warning/info + `folder_order_ownership_test.dart` 的返回类型编译错误），本地另外 38 条预计来自未解析的 `tool/code_audit` 依赖，CI 先 `dart pub get` 后应消失，须在 4.3 用 CI 同款步骤证明。前者在本 change 修复，后者只做证明，不纳入修复范围。
 
+inventory 完整后，基线暴露出 HEAD 已有的 4 条 UI 层跨 feature 直接边（`favorites→search`、`reader→settings`、`search→favorites`、`settings→search`）。它们不是本 change 引入，按基线既有机制登记进 `allowed_feature_edges`（58→62），并作为**已知债务**记录：只涉及 UI 文件、不构成 business→UI 反向依赖、不减少任何检查；后续应由独立 change 重构这些跨 feature UI 依赖并缩减 allowlist。登记机制不得用于吸收新引入的反向依赖。
+
+为使 inventory 可通过，本 change 另做两处最小解耦：`app_locale` 改为由 `Appdata` 构造时绑定 `Settings`（`attachAppLocaleSettings`），移除 foundation 内 `appdata→settings_recovery→translations→app_locale→appdata` 业务循环；三处业务文件改引 `comic_source_api.dart` 公共入口以消除 business→UI 边。两者行为保持不变，但 `app_locale` 在 `Appdata` 创建前被读取时会回退到系统默认，而不是旧实现的懒初始化，须在交付与启动测试说明中保留该前提。
+
 ## Risks / Trade-offs
 
 - [移动共享文件遗漏相对 import 或测试引用] → 全局搜索旧路径，运行格式检查、analyze 和相关测试；不改变公共类型名称。
@@ -83,6 +87,7 @@
 - [镜像组织未来不可用] → 已记录镜像 URL 与锁定 commit 的对应关系；若不可用，重新评估 vendoring 或自有托管，不改为浮动 ref。
 - [vendored 排除范围被后续扩大] → 仅排除 `packages/webdav_client/`，由静态测试锁定；代码审查拒绝把本仓目录加入排除。
 - [inventory 归类错误或用来绕过检查] → 逐文件按现有职责最小归类，运行脚本确认无新增 feature 依赖边与业务循环；禁止把业务文件归入 pending 来消音。
+- [既有 UI 边登记变成长期豁免] → 4 条边附清单并记入 BACKLOG 清理项；登记只允许用于 HEAD 既有 UI 边，拒绝吸收任何新反向依赖。
 - [70 项既有测试失败被误判为环境问题] → 以 HEAD worktree 逐条对照并保留复现命令；CI 必挂项在 4.4 单独列出，不得带病勾 4.5。
 
 ## Migration Plan

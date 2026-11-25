@@ -99,11 +99,18 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 - **批次 B（框架验证锚点）**：F1 页面多开、F2 类 mac 预览。F1 的 propose 第一件事：验证 design-spec.md 的壳层规则能否容纳多内容栈（锚点验收）；F2 跟随 F1 定型后的导航形态。
 - **批次 C（功能纵深）**：F5 收藏系列归类 ✅；F6搜索方案 + F7创作者平台名称 ✅（2026-11-03 search-profiles-author归档）；批次C完成。
 
+## 已知债务（architect 维护，2026-11-25 起）
+
+- [ ] **缩减架构 allowlist 的 4 条既有 UI 跨 feature 边**：`favorites→search`、`reader→settings`、`search→favorites`、`settings→search`。来源 `ci-quality-gate-recovery` 2.5（inventory 补齐后暴露，HEAD 已存在，仅 UI 层，无 business 反向边）；本次按基线机制登记，属已知债务。后续应以公共入口或注入重构，逐步把 `allowed_feature_edges` 从 62 缩回，不得把登记机制用于吸收新反向依赖。
+- [ ] **全量测试 64 项 CI 必挂失败**：由 `ux1-bookshelf-workspace` 7.6 承接（reader-shell 28、workspace/5A 24、favorites/search/settings 12），清零前 `ci-quality-gate-recovery` 4.5、`desktop-only-ci-cd` 4.3、`venera-pc-rebrand` 7.3 均不得勾选；清单见该 change 的 `full-suite-baseline.md`。
+
 ## 锚点机制（怎么用）
 
 锚点功能不做实现，只做框架验收：其 propose 产出的 design.md 必须包含一节"框架容纳检查"——逐条核对 design-spec.md 的 token/断点/surface/壳层规则是否需要为本次功能新增例外。需要新增例外的，先改 design-system-foundation 的 spec 再实现。这样"为未来扩展做准备"是可执行、可验收的。
 
 ## 变更记录
+
+- 2026-11-25：owner 采纳方案 A 调整排期——`ux1-bookshelf-workspace` 新增 7.6（64 项全量测试归零），顺序改为 UX1 6.x + 7.6 → `ci-quality-gate-recovery` 4.5 PR → desktop-only 4.3 → rebrand 7.3；ci 分支本地 14/15 未推送，4.5 待 UX1 绿灯 PR；4 条既有 UI 跨 feature 边登记为已知债务并在此记录清理项。
 
 - 2026-11-07：owner验收F11通过并授权归档推送；实现4a886a6，归档2026-11-07-favorites-sidebar-section-collapse，5条需求合入正式spec；此前已验收的B5本地提交一并推送。剩余F1→F2及UX1，未启动其他change。
 

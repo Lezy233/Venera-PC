@@ -6,7 +6,7 @@
 
 ## 执行顺序（依赖关系）
 
-**2026-11-24 状态校准（覆盖下方更早状态）**：4 个活动 change，`openspec validate --changes` 4/4 通过；归档 23 个、正式 specs 20 份。`ux1-bookshelf-workspace` 33/46（余 5.5、6.1–6.7、7.1–7.5；6.6/6.7 为 owner 新报缺陷）；`desktop-only-ci-cd` 10/12（余 4.1、4.3）；`venera-pc-rebrand` 20/21（余 7.3）；`ci-quality-gate-recovery` 0/11（新建，纯规划、未实施）。依赖顺序：`ci-quality-gate-recovery`（#18）→ 用其 PR 证据复核 `desktop-only-ci-cd` 4.1/4.3（#19）→ `venera-pc-rebrand` 7.3（#20）→ UX1 6.x 复工（#17）。当前 `.github/scripts/tests` 147 通过/1 失败/10 skip，唯一失败项即 #18 要修的结构边界（25 条受限 import + 4 条 feature 入口违规）。
+**2026-11-25 排期调整（覆盖 11-24 状态）**：4 个活动 change，`openspec validate --changes` 4/4 通过；归档 23 个、正式 specs 20 份。`ux1-bookshelf-workspace` 33/47（余 5.5、6.1–6.7、7.1–7.6；7.6 为全量测试归零，承接 `full-suite-baseline.md` 的 64 项 CI 必挂失败）；`ci-quality-gate-recovery` 14/15（4.5 未勾，本地分支 4 个提交未推送）；`desktop-only-ci-cd` 10/12（余 4.1、4.3）；`venera-pc-rebrand` 20/21（余 7.3）。执行顺序：**UX1 6.x + 7.6 → ci 4.5 PR → #19 4.3 → #20 7.3**。UX1 工作分支基于 `fix/ci-quality-gates`，其绿灯 PR 同时作为 ci 4.5 的 PR 证据。当前门禁：结构检查、架构检查、`dart analyze --fatal-infos --fatal-warnings` 均为 0，`.github/scripts/tests` 156 通过/0 失败/10 skip；仅剩全量测试 64 项（5719 通过/150 skip），清零前 ci 4.5、desktop 4.3、rebrand 7.3 均不得勾选。
 
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含审计、纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
 
@@ -42,12 +42,12 @@
 | 15 | **reader-double-page-letterbox-fix**（B5）✅已归档 | 修正双面错误窗口尺寸覆盖，保护原图比例/完整性与既有阅读语义 | 2026-11-06 owner验收通过，实现49ea8a9；tasks1.x 4/4、独立148通过0skip/analyze50零新增，GUI/正常构建/清理/SHA通过；2026-11-07随F11推送 |
 
 | 16 | **favorites-sidebar-section-collapse**（F11）✅已归档 | 本地/系列/网络独立折叠、状态记忆、当前条目摘要及键盘/菜单隔离 | 2026-11-07 owner验收，实现4a886a6；tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 |
-| 17 | **ux1-bookshelf-workspace**（UX1，5A基本工作已归档） | 书架、多栈、F2、搜索/详情、5A Batch A–D 基本切片已交付；余 5.5、Batch B 后续、6.x 阅读器、7.x 整体验收；tasks 33/46 | 依赖 #18 完成 `app_shell` 共享 UI 搬迁后再复工 6.x；5.5 GUI 与 7.x 需 owner 复核 |
-| 18 | **ci-quality-gate-recovery**（实施中，10/15） | WebDAV 客户端入库为 path 依赖、两个额外失效 git 依赖改同 commit 镜像、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；并补齐架构 inventory、修复 CI 可见 analyze 问题、vendored 目录排除格式/分析检查 | 无硬前置；须先于 #19 的 4.1/4.3 与 #20 的 7.3；⚠ 会搬迁 `app_shell` 共享 UI，须在 UX1 6.x 复工前完成 |
-| 19 | **desktop-only-ci-cd**（10/12） | 桌面专用 CI/CD：build/main/pr_build/analyze 收敛，移动商店工作流删除 | 余 4.1 本地全量脚本测试、4.3 PR 门禁核实；依赖 #18 让门禁转绿，其 PR 证据可复用 |
-| 20 | **venera-pc-rebrand**（20/21） | Venera-PC 产品身份与发布命名（Windows/macOS/Linux 资产、README、元数据） | 平台构建验证依赖 #18/#19；余 7.3（Linux 冷启动走查 + CI 构建核实） |
+| 17 | **ux1-bookshelf-workspace**（UX1，5A基本工作已归档） | 书架、多栈、F2、搜索/详情、5A Batch A–D 基本切片已交付；余 5.5、Batch B 后续、6.x 阅读器、7.1–7.6；7.6 全量测试归零承接 64 项 CI 必挂失败；tasks 33/47 | 基于 #18 分支复工 6.x；7.6 清零是全部门禁 PR 的前置；5.5 GUI 与 7.x 需 owner 复核 |
+| 18 | **ci-quality-gate-recovery**（实施中，14/15） | WebDAV 客户端入库为 path 依赖、两个额外失效 git 依赖改同 commit 镜像、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；并补齐架构 inventory、修复 CI 可见 analyze 问题、vendored 目录排除格式/分析检查 | 无硬前置；4.5 需 UX1 7.6 绿灯 PR 证据；⚠ 会搬迁 `app_shell` 共享 UI，UX1 6.x 须基于本分支 |
+| 19 | **desktop-only-ci-cd**（10/12） | 桌面专用 CI/CD：build/main/pr_build/analyze 收敛，移动商店工作流删除 | 余 4.1 本地全量脚本测试、4.3 PR 门禁核实；依赖 #18 与 #17 7.6，全绿 PR 后复核 |
+| 20 | **venera-pc-rebrand**（20/21） | Venera-PC 产品身份与发布命名（Windows/macOS/Linux 资产、README、元数据） | 平台构建验证依赖 #18/#19 与 #17 7.6；余 7.3（Linux 冷启动走查 + CI 构建核实） |
 
-当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；截至2026-11-24，F1/F2 与 5.x 已分阶段交付归档，UX1 整体 33/46，余 5.5、6.x、7.x，详见文首状态与执行表 #17–#20。
+当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；截至2026-11-24，F1/F2 与 5.x 已分阶段交付归档，UX1 整体 33/47，余 5.5、6.x、7.x（含 7.6 全量测试归零），详见文首状态与执行表 #17–#20。
 
 ## 已完成（quick wins，不在 changes 中）
 

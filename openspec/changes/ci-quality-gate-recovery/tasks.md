@@ -47,3 +47,4 @@
 - owner 验收通过后归档，并将两个新 capability 同步到正式 specs。
 - 使用本 change 的本地与 PR 证据复核 `desktop-only-ci-cd` 剩余的 4.1、4.3，不在证据不足时勾选。
 - 2026-11-25 owner 批准扩大范围：2.5（inventory）、3.2（格式排除）、4.3（12 条 analyze）、4.4（全量测试二分）并入本 change；4.5 为 PR 门禁。原 4.3 的门禁验收编号顺延为 4.5。
+- 2026-11-25 排期确定：4.5 的前置是 `ux1-bookshelf-workspace` 7.6（64 项 CI 必挂失败归零）；UX1 修复分支基于本 change 分支 `fix/ci-quality-gates`，其绿灯 PR 同时作为本 change 4.5 的 PR 证据。4.5 在 UX1 7.6 完成前保持未勾。
