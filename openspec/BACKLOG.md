@@ -110,6 +110,10 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-27：归档 `venera-pc-rebrand`（21/21）——Linux 窗口标题 `Venera-PC-Dev` owner 目视确认，CI 构建 Windows 安装/启动与 macOS DMG 全绿；全部 change 归档（27 个），正式 specs 28 份。
+
+- 2026-11-27：rebrand 7.3 CI 证据齐备（构建 run 45675463749：Windows 安装/启动、macOS DMG 成功；代码分析全绿）；Linux 窗口标题旧名已修复并加契约测试；待 owner 确认静态替代目视后归档。
+
 - 2026-11-26：合并 PR #2（`f07f92a`）并归档 `ux1-bookshelf-workspace`（47/47）、`ci-quality-gate-recovery`（16/16）、`desktop-only-ci-cd`（12/12）；26 个归档、27 份正式 specs；剩 rebrand 7.3。
 
 - 2026-11-26：PR #2（head `6775807`）7 项检查全绿（5791/0/150）；ci 4.5 与 desktop-only 4.1/4.3 关闭；待 owner 合并后归档 UX1/ci/desktop-only 并同步正式 specs。
