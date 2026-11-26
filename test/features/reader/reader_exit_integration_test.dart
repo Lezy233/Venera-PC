@@ -1344,7 +1344,9 @@ void main() {
       expect(reader.page, 2);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
       shell.openOrClose();
-      await tester.pumpAndSettle();
+      // Closing the tool row can leave non-settling frame callbacks on a
+      // loaded CI runner; wait for the observable focus restoration instead.
+      await _pumpUntil(tester, () => reader.focusNode.hasPrimaryFocus);
       expect(reader.focusNode.hasPrimaryFocus, isTrue);
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       expect(reader.page, 1);
