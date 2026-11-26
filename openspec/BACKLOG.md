@@ -16,14 +16,6 @@
 
 ## 功能候选清单
 
-2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`openspec/changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
-
-2026-11-18 owner已验收UX1搜索/详情及全局卡片交互阶段（5.1–5.4、5.6–5.13），授权阶段归档提交，未授权push。归档 `openspec/changes/archive/2026-11-18-ux1-bookshelf-workspace-phase-3-search-details/`；独立15/0skip、相关128/0skip（重叠不相加）、analyze raw/unique50=38+12零新增、正常构建/保护校验通过。5.5真实GUI证据保持未勾，活动change继续6.x阅读器→7.x整体验收，不整项archive或合入未实现delta。
-
-**2026-11-17 最新状态（覆盖下方历史）**：owner验收UX1的1.3＋F2（4.1–4.5）通过，授权阶段归档提交，未授权此次推送。归档 `openspec/changes/archive/2026-11-17-ux1-bookshelf-workspace-phase-2-f2/`；整个UX1仍活动，剩余5.x搜索/详情、6.x阅读器、7.x整体验收。
-
-**2026-11-16 最新状态**：F1 多内容栈和 UX1 书架壳层已验收，owner 授权阶段归档、提交和推送。阶段归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；整个 UX1 仍活动，剩余 1.3 阶段红灯、4.x F2 预览/多选拖放、5.x 搜索/详情一致性、6.x 阅读器及 7.x 整体验收。后文“生产未启动/待排期”保留为历史，以此及活动 tasks 为准。
-
 | # | 功能 | 一句话 | 价值假设 | 成本 | 框架要求 | 依赖 | 批次 |
 |---|------|--------|----------|------|----------|------|------|
 | F1 ✅阶段已验收 | 页面多开 | 同一窗口多标签/独立内容栈、后台打开/按需加载、返回/关闭策略及真实重启恢复 | 2026-11-16 owner授权阶段归档提交推送，见 UX1 tasks3.1–3.6 与阶段归档 | 大 | 已实现多内容栈，F2沿此宿主继续 | design-system-foundation | B · 锚点① |
@@ -37,7 +29,7 @@
 
 ## Owner 反馈 TODO（2026-11-01）
 
-本清单记录排期与验收边界，不代表已实现或已批准开启全部change。F6/F7、B3/B4、F8/F9均已验收归档；F10于2026-11-06经owner验收通过并归档，实现cdce3e6，tasks4.x 3/3、独立204通过0skip、analyze50零新增、GUI/正常构建/清理通过，本次授权推送。UX1方向与默认值已于2026-11-07确认，正式方案已建立，生产实施待排期。F11于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，本次随此前B5本地提交一并推送。
+本清单记录排期与验收边界，不代表已实现或已批准开启全部change。F6/F7、B3/B4、F8/F9均已验收归档；F10于2026-11-06经owner验收通过并归档，实现cdce3e6，tasks4.x 3/3、独立204通过0skip、analyze50零新增、GUI/正常构建/清理通过，本次授权推送。UX1 已于 2026-11-26 由 owner 手动验收并归档（47/47）。F11于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，本次随此前B5本地提交一并推送。
 
 | ID | 优先级 | TODO | 归属与依赖 | 验收条件 |
 |----|--------|------|------------|----------|
@@ -49,7 +41,7 @@
 | F9 | P2 | 阅读模式方案手动排序 | owner验收通过并归档2026-11-04-reader-preset-ordering，实现bc3f82a；525测试0skip/analyze50/GUI通过，2026-11-06随F10推送 | 管理页可拖动排序，并提供上移/下移等非拖动操作；重进与重启后顺序保留；设置下拉与阅读器面板使用相同顺序；移动不改变方案身份、内容或应用状态 |
 | F10 | P2 | 文件夹作者分栏、三态折叠、栏内独立排序与平台名称搜索 | 2026-11-06 owner验收通过并归档2026-11-06-favorite-author-manual-order，实现cdce3e6；独立204通过0失败0skip、analyze50零新增、GUI/正常构建/清理/23SHA通过，tasks4.x 3/3，本次授权推送 | 每栏独立顺序/三态及绑定源搜索保持；卡片主区域悬停背景变化、移出恢复，邻卡/跨栏实例隔离，浅深及两布局可用，不回退点击/拖动 |
 | F11 | P2 | 收藏侧栏大分类折叠 | 2026-11-07 owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6；tasks5/5、独立140通过0skip、analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送 | 「本地」「系列」「网络」各自可展开/折叠，沿用创作者/标签的交互；标题行和键盘均可操作；记住各组折叠状态；折叠不清除当前内容或多选状态；当前项所在分组有明确选中提示 |
-| UX1 | 5A基本工作已归档，其余待继续 | A书架型工作区与一致交互 | 2026-11-21 5A基本工作阶段归档提交；活动change保留5A后续、5.5及6.x–7.x | 完整delta仍待剩余视觉纠偏、阅读器及整体验收，阶段归档不等于整个change完成 |
+| UX1 | ✅已归档（2026-11-26） | A书架型工作区与一致交互（47/47，owner 手动验收） | 归档 `archive/2026-11-26-ux1-bookshelf-workspace`；6.x、7.6 全量测试归零，5791/0/150 | 验收证据见归档 tasks/delivery/review；4 个 delta 已合入正式 specs |
 
 B2 历史及替换状态（2026-11-02）：旧入口虽通过76项受控测试与50项analyze，owner实际搜索无结果。owner已批准移除旧作者聚合链路，以新F7「创作者的平台名称」替换；新F7与保留的F6已实现；2026-11-03 architect重新独立复跑113项测试全通过、0skip，analyze保持50=38+12且受保护文件零diff。旧/tmp证据清理后已重新留存并独立抽查F6/F7生产控件GUI（含方案编辑/切换、平台名称维护/分页/返回及窄屏）；正常生产构建已恢复。2026-11-03 owner验收通过，已提交实现c5429bb并归档至 `openspec/changes/archive/2026-11-03-search-profiles-author/`；受控来源验证不等同真实平台内容命中。
 
@@ -57,8 +49,8 @@ B2 历史及替换状态（2026-11-02）：旧入口虽通过76项受控测试�
 
 1. **搜索基础已完成**：F6搜索方案与新F7平台名称树已验收归档（替代B2旧入口），F8的前置依赖已满足。
 2. **修复批：B3/B4已验收归档**，保留其测试与契约作为后续保护基线。
-3. **F8–F10均已验收归档**。2026-11-06 owner验收F10通过并授权推送，F9此前本地提交一并推送；F11于2026-11-07验收归档。UX1方案已建立，生产实施待排期。
-4. **B5已由owner验收并归档提交**：reader-double-page-letterbox-fix仅修正双面错误尺寸覆盖，保护原图完整比例，实现49ea8a9；详见归档review/delivery及acceptance中的证据与GUI局限，2026-11-07随F11推送。F11已于2026-11-07由owner验收并归档；UX1生产实现尚未启动。
+3. **F8–F10均已验收归档**。2026-11-06 owner验收F10通过并授权推送，F9此前本地提交一并推送；F11 于 2026-11-07 验收归档；UX1 于 2026-11-26 验收归档。
+4. **B5已由owner验收并归档提交**：reader-double-page-letterbox-fix仅修正双面错误尺寸覆盖，保护原图完整比例，实现49ea8a9；详见归档review/delivery及acceptance中的证据与GUI局限，2026-11-07随F11推送。F11 已于 2026-11-07 验收归档；UX1 已于 2026-11-26 验收归档。
 
 依赖边：`search-profiles-author（F6+F7，替代B2）已验收 → F8`；`B3 → F9`。B4、F11、F10 无上述技术强依赖，列表顺序为排期建议。F1/F2 保留原候选身份，在UX1中依次作为多内容栈和临时预览实施阶段，不另建平行交互契约。
 
@@ -88,10 +80,10 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 - [x] 盘点壳层/导航、收藏与系列、搜索、详情、设置及阅读器chrome的视觉与操作问题，形成具体问题清单和优先级。
 - [x] 提供少量有区别的风格方向、参考与关键页面样例（含收藏作者分栏），由owner确认目标风格后再规划实施；不将现有方向直接包装为已确认方案。
 - [x] 明确全局布局层级、密度与留白、字体排版、配色、圆角/分隔、图标、动效，以及hover/pressed/selected/focus/disabled和加载/空态/失败反馈的一致规范。
-- [ ] 评估桌面常用流程、菜单与键盘操作、页面切换和反馈，改善整体操作感；按确认后的方向分阶段落地并由owner验收。
-- [ ] 同时检查浅深主题、缩放与窄宽窗口、减少动画偏好；保留阅读器chrome跟随主题、收藏身份/独立顺序、阅读方案绑定等既有业务行为。
+- [x] 评估桌面常用流程、菜单与键盘操作、页面切换和反馈，改善整体操作感；按确认后的方向分阶段落地并由owner验收。（由 UX1 最终 47/47 验收覆盖）
+- [x] 同时检查浅深主题、缩放与窄宽窗口、减少动画偏好；保留阅读器chrome跟随主题、收藏身份/独立顺序、阅读方案绑定等既有业务行为。（由 UX1 最终 47/47 验收覆盖）
 
-2026-11-07已完成方向确认、正式proposal/design/delta spec/tasks与owner验收清单，design-spec v0.2已容纳A书架、多标签、普通阅读标签及浅深内容区。生产实现尚未启动，F1/F2作为UX1实施阶段，不另建平行交互规则；后续由architect按tasks派工并独立复核。
+2026-11-07已完成方向确认、正式proposal/design/delta spec/tasks与owner验收清单，design-spec v0.2已容纳A书架、多标签、普通阅读标签及浅深内容区。生产实现已完成并由 owner 于 2026-11-26 验收归档（47/47）；F1/F2 作为 UX1 实施阶段，未另建平行交互规则。
 
 ## 批次建议
 
@@ -101,6 +93,7 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 已知债务（architect 维护，2026-11-25 起）
 
+- [ ] **首个 Venera-PC Release 准备**：`release.json`/`pubspec.yaml` 仍为 1.18.0，`CHANGELOG.md` 的 `## v1.18.0` 是上游旧段，tag 发布时会被当作发布说明；需先决定是否 bump 版本并补写 rebrand + UX1 的发布说明，再做 `main.yml` workflow_dispatch 全平台 dry run，最后 tag 触发 Release。
 - [ ] **缩减架构 allowlist 的 4 条既有 UI 跨 feature 边**：`favorites→search`、`reader→settings`、`search→favorites`、`settings→search`。来源 `ci-quality-gate-recovery` 2.5（inventory 补齐后暴露，HEAD 已存在，仅 UI 层，无 business 反向边）；本次按基线机制登记，属已知债务。后续应以公共入口或注入重构，逐步把 `allowed_feature_edges` 从 62 缩回，不得把登记机制用于吸收新反向依赖。
 - [x] **全量测试 64 项 CI 必挂失败**：`ux1-bookshelf-workspace` 7.6 已清零（2026-11-26 architect 独立复跑 5791/0/150），清单见该 change 的 `full-suite-baseline.md`，复核见 `review-6x-7.6.md`。
 
@@ -109,6 +102,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 锚点功能不做实现，只做框架验收：其 propose 产出的 design.md 必须包含一节"框架容纳检查"——逐条核对 design-spec.md 的 token/断点/surface/壳层规则是否需要为本次功能新增例外。需要新增例外的，先改 design-system-foundation 的 spec 再实现。这样"为未来扩展做准备"是可执行、可验收的。
 
 ## 变更记录
+
+- 2026-11-27：文档收尾——更新 analyze 基线为 0、关闭 BACKLOG 中已被 UX1 验收覆盖的两项、把 UX1 历史阶段状态移出候选表、补充首个 Release 准备项、修正归档验收清单状态与 series spec Purpose。
 
 - 2026-11-27：归档 `venera-pc-rebrand`（21/21）——Linux 窗口标题 `Venera-PC-Dev` owner 目视确认，CI 构建 Windows 安装/启动与 macOS DMG 全绿；全部 change 归档（27 个），正式 specs 28 份。
 

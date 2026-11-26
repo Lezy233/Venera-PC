@@ -22,7 +22,7 @@ Venera-PC 是 PC 优先的独立 Flutter 漫画阅读器（仓库 `Lezy233/Vener
 
 - **`pubspec.lock` 禁止重新生成**（项目铁律；flutter pub upgrade/add 会动它，动完必须还原）。
 - 新 UI 文案必须走 `.tl` 翻译系统，并在 `assets/translation.json` 补 **zh_CN 和 zh_TW** 词条。
-- `flutter analyze` 基线 = **50 项**（tool/code_audit 环境 38 项 + lib/test 预存在 12 项，含 `folder_order_ownership_test.dart` 编译错误与 pdfrx 0.4.5 冲突）。交付标准 = **不新增**问题，不是清零；不要顺手修基线问题。
+- `flutter analyze --fatal-infos --fatal-warnings` 基线 = **0 项**（ci-quality-gate-recovery 已修复原 50 项）。本地跑前先在 `tool/code_audit` 执行 `dart pub get --enforce-lockfile`，否则会出现 38 项未解析依赖假阳性；交付标准 = 保持 0，不得新增。
 - **环境要点**：Flutter 走 fvm 3.47.7（.fvmrc）；跑 fvm 前 `export https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897`；pub-cache 热补丁 `~/.pub-cache/hosted/pub.dev/pdfrx_engine-0.4.5/lib/src/native/pdf_file_cache.dart` 368/380/382/392 行 `cache.`→`cache!.`（被清需重打）；GUI 验证 `DISPLAY=:1` 用隔离数据目录，截图只留 /tmp。
 - **阅读器深色例外已彻底移除**（owner 2026-10-20 决定）：阅读器 chrome 跟随应用当前主题，任何 change 不得重新引入深色沉浸例外。
 - 设计方向 = **现代极简**：浅色内容区 + 浅色壳，动态取色为唯一强调色来源，层级靠留白与 1px 分隔线。深色内容区主题是二期。
