@@ -41,16 +41,30 @@ class RepositoryUrlTests(unittest.TestCase):
 
 
 class DesktopWindowTitleTests(unittest.TestCase):
-    def test_desktop_window_titles_use_the_new_product_name(self):
-        for path, expected in (
-            ("linux/my_application.cc", '"Venera-PC-Dev"'),
-            ("windows/runner/main.cpp", 'L"Venera-PC-Dev"'),
-            ("macos/Runner/Base.lproj/MainMenu.xib", "Venera-PC-Dev"),
-            ("lib/main.dart", 'title: "Venera-PC-Dev"'),
-        ):
+    def test_release_and_dev_titles_use_new_product_name(self):
+        cases = {
+            "linux/my_application.cc": ['"Venera-PC"', '"Venera-PC-Dev"', "NDEBUG"],
+            "windows/runner/main.cpp": ['L"Venera-PC"', 'L"Venera-PC-Dev"', "NDEBUG"],
+            "macos/Runner/MainFlutterWindow.swift": [
+                '"Venera-PC"',
+                '"Venera-PC-Dev"',
+                "#if DEBUG",
+            ],
+            "macos/Runner/Base.lproj/MainMenu.xib": ["Venera-PC-Dev"],
+            "lib/main.dart": ["kReleaseMode", '"Venera-PC"', '"Venera-PC-Dev"'],
+        }
+        for path, expected in cases.items():
             text = (ROOT / path).read_text(encoding="utf-8")
-            self.assertIn(expected, text, path)
-            self.assertNotIn("VeneraNext-Dev", text, path)
+            for token in expected:
+                self.assertIn(token, text, path)
+            self.assertNotIn("VeneraNext", text, path)
+
+    def test_appimage_smoke_expects_release_window_title(self):
+        text = (ROOT / ".github/scripts/smoke_appimage.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("--name '^Venera-PC$'", text)
+        self.assertNotIn("VeneraNext", text)
 
 
 class CompatibilityIdentityTests(unittest.TestCase):

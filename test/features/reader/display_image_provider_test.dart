@@ -224,8 +224,7 @@ void main() {
       expect(source.loads, 1);
       expect(read.isCompleted, isFalse);
       read.complete(_png);
-      await pumpEventQueue();
-      await _frame();
+      await _frameUntil(() => received);
       expect(received, isTrue);
       releaseFirst();
       await pumpEventQueue();

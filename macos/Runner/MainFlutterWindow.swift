@@ -8,6 +8,12 @@ class MainFlutterWindow: NSWindow {
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
+    #if DEBUG
+    self.title = "Venera-PC-Dev"
+    #else
+    self.title = "Venera-PC"
+    #endif
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()

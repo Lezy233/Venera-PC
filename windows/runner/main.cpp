@@ -33,10 +33,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   // Destroy the Flutter window and plugins before releasing COM.
+#ifdef NDEBUG
+  constexpr const wchar_t* kWindowTitle = L"Venera-PC";
+#else
+  constexpr const wchar_t* kWindowTitle = L"Venera-PC-Dev";
+#endif
   int exit_code;
   {
     FlutterWindow window(project);
-    exit_code = RunWindowsApplication(window, L"Venera-PC-Dev");
+    exit_code = RunWindowsApplication(window, kWindowTitle);
   }
   ::CoUninitialize();
   return exit_code;
