@@ -32,7 +32,7 @@ Venera-PC 是 PC 优先的独立 Flutter 漫画阅读器（仓库 `Lezy233/Vener
 
 ## 4. 当前状态（规划者维护，执行前核对）
 
-**2026-11-27 状态（全部 change 已归档）**：活动 change **0**；归档 **27** 个、正式 `openspec/specs/` **28** 份，`openspec validate --changes/--specs` 通过。本轮归档 `venera-pc-rebrand`（21/21）：Linux 窗口标题遗留旧名已修为 `Venera-PC-Dev` 并由 owner 目视确认，CI `构建`（Windows 安装/启动 + macOS DMG）与 `代码分析` 全绿；同期归档 UX1（47/47）、`ci-quality-gate-recovery`（16/16）、`desktop-only-ci-cd`（12/12）。门禁（architect 独立复跑）：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0、Python 162/0/10、全量 5791/0/150。已知债务：4 条既有 UI 跨 feature 边（allowlist 58→62），清理项见 BACKLOG；后续新需求从 BACKLOG 起新 change。每次勾选/归档后须同步本节计数。
+**2026-11-27 状态（1.19.0 已发布；新增数据隔离 change）**：活动 change 1 个——`dev-release-data-isolation` 0/12；归档 27 个、正式 specs 28 份。1.19.0 Release 已发布（Windows/macOS/Linux 资产），macOS 安装与运行已由 owner 确认。新 change 针对“Release 首次启动出现调试标签/漫画源”：已核对 DMG 仅含 `.app`/assets/插件资源、不含用户数据，根因是 debug/release 共用 bundle id 与同一 Application Support/沙盒容器；方案为调试数据隔离到 `dev/`、Release 路径不变、启动日志暴露数据路径、发布产物洁净性检查与干净环境首启清单。门禁（architect 独立复跑）：结构/架构/`flutter analyze --fatal-infos --fatal-warnings` 均 0、Python 164/0/10、全量 5791/0/150。已知债务：4 条既有 UI 跨 feature 边（BACKLOG）。每次勾选/归档后须同步本节计数。
 
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`openspec/changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含5A.1审计、5A.2纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
 
@@ -43,7 +43,7 @@ Venera-PC 是 PC 优先的独立 Flutter 漫画阅读器（仓库 `Lezy233/Vener
 
 - **2026-11-16 最新状态（覆盖下方历史排期）**：owner 已授权归档、提交并推送 UX1 已完成的书架壳层与 F1 多标签阶段（tasks 2.1–2.4、3.1–3.6，含 1.1/1.2/1.4）。阶段证据归档 `openspec/changes/archive/2026-11-16-ux1-bookshelf-workspace-phase-1-f1/`；活动 change `ux1-bookshelf-workspace` 保留未完成的 1.3、4.x F2、5.x 搜索/详情、6.x 阅读器及 7.x 整体验收。继续该 change 时读活动四件套和 tasks；复核已验收阶段时读归档 README。整个 UX1 尚未完成，不运行整项 OpenSpec archive 或合入尚未实现的 delta spec。
 
-- 分支：**`main`**（github.com/Lezy233/Venera-PC；PR #2 于 2026-11-26 合并，2026-11-27 完成全部 change 归档）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送至当时的 `redesign-2026`。
+- 分支：**`main`**（github.com/Lezy233/Venera-PC；PR #2 于 2026-11-26 合并，v1.19.0 于 2026-11-27 发布）；2026-11-07 owner验收F11通过并授权归档推送，此次连同此前已验收的B5本地提交推送至当时的 `redesign-2026`。
 - 已完成并归档：`design-system-foundation`（设计基座 + 验收缺陷 5.1–5.3 修复）；`settings-ia-cleanup`（2026-10-21 归档）；`save-bar-layout-fix`（2026-10-21 归档，commit 9669b5c）；`desktop-shell-polish`（2026-10-21 归档，commit ae00919）；`desktop-search-context`（2026-10-21 归档，commit 5833677）；`reader-quick-settings-panel`（2026-10-22 归档，commit 11c495e）；`save-feedback-placement-fix`（2026-10-22 归档，commit 63d45e7）；`chrome-binding-lifecycle-fix`（2026-10-22 归档，commit 0121b81，BACKLOG B1）；`keyboard-shortcuts`（2026-10-23 归档，commit b735663，BACKLOG F3，批次 A——动作注册表/多键位自定义/冲突检测/独立主分类/平台默认键）；`reader-mode-presets`（2026-10-23 归档，commit 1c8fbc3，BACKLOG F4，批次 A——阅读模式方案 CRUD + 面板方案切换）；`favorite-series`（2026-10-25 归档，批次 C F5——跨来源手动系列、收藏交互入口、多选 Escape、批量加入系列）；`search-profiles-author`（2026-11-03 owner验收通过并归档，实现commit c5429bb，批次 C F6+F7——搜索方案与收藏创作者平台名称树，替代旧B2作者聚合入口）。
 - 2026-11-03 owner验收`comic-card-hit-target-fix`（B4）通过，按owner指令归档至`openspec/changes/archive/2026-11-03-comic-card-hit-target-fix/`；实现commit `6f65f7f`，独立174测试0skip、analyze50=38+12、GUI及正常构建通过。
 - B3 `reader-preset-state-recovery`于2026-11-03经owner验收通过并归档，实现commit `526c311`：持续编辑共享19键及「跟随默认」保持绑定；独立285测试、B4保护174测试均0skip，analyze raw/unique50=38+12零新增，GUI/真实重启/正常构建与清理通过。证据见`openspec/changes/archive/2026-11-03-reader-preset-state-recovery/review.md`。

@@ -103,6 +103,8 @@ owner最初反馈“样式有点过于僵硬”“整体软件的UI/UX风格不�
 
 ## 变更记录
 
+- 2026-11-27：v1.19.0 发布（Windows/macOS/Linux；未签名）。owner 反馈 macOS 首启出现调试标签/漫画源；核对 DMG 不含用户数据，根因是 debug/release 共用 bundle id 与数据目录。新建 `dev-release-data-isolation`（0/12）：调试数据隔离、路径日志、产物洁净性检查、干净首启验收。
+
 - 2026-11-27：文档收尾——更新 analyze 基线为 0、关闭 BACKLOG 中已被 UX1 验收覆盖的两项、把 UX1 历史阶段状态移出候选表、补充首个 Release 准备项、修正归档验收清单状态与 series spec Purpose。
 
 - 2026-11-27：归档 `venera-pc-rebrand`（21/21）——Linux 窗口标题 `Venera-PC-Dev` owner 目视确认，CI 构建 Windows 安装/启动与 macOS DMG 全绿；全部 change 归档（27 个），正式 specs 28 份。

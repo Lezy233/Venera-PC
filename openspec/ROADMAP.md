@@ -6,7 +6,7 @@
 
 ## 执行顺序（依赖关系）
 
-**2026-11-27 状态（全部 change 已归档）**：活动 change 0；归档 27 个、正式 specs 28 份。本日归档 `venera-pc-rebrand`（21/21，Linux 标题 `Venera-PC-Dev` 经 owner 目视确认，CI Windows 安装/启动与 macOS DMG 通过）；此前 UX1、`ci-quality-gate-recovery`、`desktop-only-ci-cd` 已归档。后续新需求从 BACKLOG 起新 change。门禁：结构/架构/analyze 0、Python 162/0/10、全量 5791/0/150。
+**2026-11-27 状态（1.19.0 已发布；新 change 启动）**：活动 change 1 个——`dev-release-data-isolation` 0/12；归档 27 个、正式 specs 28 份。1.19.0 已发布（Windows/macOS/Linux），macOS 安装运行已确认。新 change 处理 Release 首启出现调试标签/源的问题：DMG 不含用户数据，根因为 debug/release 共用数据目录；方案为调试数据隔离、Release 路径不变、路径日志、产物洁净性检查与干净首启验收。
 
 2026-11-21 owner指令归档并提交UX1 5A基本工作，未授权push。阶段快照：`changes/archive/2026-11-21-ux1-bookshelf-workspace-phase-4-5a-foundation/`；含审计、纠偏计划、Batch A–D已交付切片及标签布局/排序。Batch B后续项、owner GUI复核与6.x/7.x仍未完成，活动change继续保留，不整项archive或合入未实现delta。
 
@@ -46,6 +46,8 @@
 | 18 | **ci-quality-gate-recovery**（实施中，14/15） | WebDAV 客户端入库为 path 依赖、两个额外失效 git 依赖改同 commit 镜像、恢复 components/features/app_shell 依赖边界、macOS 授权检查迁到 macos-15；并补齐架构 inventory、修复 CI 可见 analyze 问题、vendored 目录排除格式/分析检查 | 无硬前置；4.5 需 UX1 合入的绿灯 PR 证据；⚠ UX1 6.x 基于本分支，两者同一 PR 落地 |
 | 19 | **desktop-only-ci-cd** ✅已归档 | 桌面专用 CI/CD：build/main/pr_build/analyze 收敛，移动商店工作流删除；4.1/4.3 经 PR #2 关闭 | 2026-11-26 归档 `archive/2026-11-26-desktop-only-ci-cd`；delta 合入正式 specs |
 | 20 | **venera-pc-rebrand** ✅已归档 | Venera-PC 产品身份与发布命名（Windows/macOS/Linux 资产、README、元数据）；21/21 | 2026-11-27 归档 `archive/2026-11-27-venera-pc-rebrand`；delta 合入正式 specs |
+
+| 21 | **dev-release-data-isolation**（新建，0/12） | 调试数据隔离到 `dev/`、Release 路径不变、启动日志暴露数据路径、发布产物禁止含用户数据、干净环境首启验收 | 依据 1.19.0 macOS 首启异常诊断；不迁移/删除既有数据 |
 
 当前状态：**F10于2026-11-06经owner最终验收通过并授权归档推送**，实现cdce3e6，归档2026-11-06-favorite-author-manual-order，复核证据见归档review-v2.2.md；F9此前本地提交随本次推送。**B5 reader-double-page-letterbox-fix已于2026-11-06经owner验收通过并归档提交**（实现49ea8a9，tasks4/4、148通过0skip/analyze50零新增、GUI/正常main构建/清理及SHA通过，局限见归档review.md；2026-11-07随F11推送）；F11收藏侧栏分类折叠于2026-11-07经owner验收通过并归档2026-11-07-favorites-sidebar-section-collapse，实现4a886a6，tasks5/5、独立140通过0skip/analyze50零新增，GUI/真实重启/正常构建/清理及四SHA通过，本次授权推送。2026-11-07 owner确认UX1 A书架型方向及全部默认值，正式方案位于openspec/changes/ux1-bookshelf-workspace；截至2026-11-24，F1/F2 与 5.x 已分阶段交付归档，UX1 整体 47/47（owner 已验收），详见文首状态与执行表 #17–#20。
 
